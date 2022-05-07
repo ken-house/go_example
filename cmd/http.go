@@ -5,10 +5,14 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/go_example/internal/routers"
-	"github.com/spf13/cobra"
 	"log"
+
+	"github.com/spf13/viper"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/go_example/internal/assembly"
+	"github.com/spf13/cobra"
 )
 
 // httpCmd represents the http command
@@ -17,12 +21,22 @@ var httpCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  `http server`,
 	Run: func(cmd *cobra.Command, args []string) {
-		r := gin.Default()
-		// 加载路由 todo 路由加载可以优化
-		routers.LoadRouter(r)
+		// 实例化依赖注入服务
+		httpSrv, clean, err := assembly.NewHttpServer()
+		if err != nil {
+			log.Fatalf("%+v\n", err)
+		}
+		defer clean()
 
-		// 运行http服务
-		if err := r.Run(); err != nil {
+		// 初始化engine
+		app := gin.Default()
+
+		// 注册路由
+		httpSrv.Register(app)
+
+		// 运行应用
+		port := viper.GetString("server.http.addr")
+		if err := app.Run(port); err != nil {
 			log.Fatalf("%+v\n", err)
 		}
 	},

@@ -1,3 +1,7 @@
+server:
+  http:
+    name: "http"
+    addr: ":8080"
 common:
   username: "小明"
   pwd: 123456
