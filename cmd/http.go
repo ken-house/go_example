@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/go_example/internal/assembly"
+	"github.com/go_example/internal/meta"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,9 @@ var httpCmd = &cobra.Command{
 			log.Fatalf("%+v\n", err)
 		}
 		defer clean()
+
+		// 设置gin的运行环境
+		gin.SetMode(meta.EnvMode)
 
 		// 初始化engine
 		app := gin.Default()

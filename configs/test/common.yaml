@@ -2,7 +2,7 @@ server:
   http:
     name: "http"
     addr: ":8080"
-  mode: "debug"
+  mode: "test"
 common:
   username: "小明"
   pwd: 123456

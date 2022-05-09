@@ -6,10 +6,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go_example/internal/meta"
-	"github.com/spf13/viper"
 	"log"
 	"os"
+
+	"github.com/go_example/internal/meta"
+	"github.com/go_example/internal/utils/env"
+	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
 )
@@ -46,10 +48,11 @@ func init() {
 
 // 初始化配置文件
 func initConfig() {
-	envMode := "debug" // todo 增加环境变量
+	// 从系统环境变量中读取运行环境
+	meta.EnvMode = env.Mode()
 
 	// 加载公共配置文件 todo 如何读取多个配置文件
-	viper.SetConfigFile(meta.CfgFile + "/" + envMode + "/common.yaml")
+	viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
