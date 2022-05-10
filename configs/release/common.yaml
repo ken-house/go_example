@@ -6,9 +6,13 @@ server:
 common:
   username: "小明"
   pwd: 123456
-database:
-  host: 127.0.0.1
-  port: 3306
-  username: root
-  password: root
-  dbName: test
+
+mysql:
+  go_example:
+    master:
+      dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+    slaves:
+      - dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+      - dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+  single:
+    dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"

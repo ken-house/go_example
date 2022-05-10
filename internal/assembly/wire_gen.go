@@ -8,6 +8,7 @@ package assembly
 
 import (
 	"github.com/go_example/internal/controller"
+	"github.com/go_example/internal/repository/mysql"
 	"github.com/go_example/internal/server"
 	"github.com/go_example/internal/service"
 )
@@ -41,7 +42,13 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 // Injectors from service.go:
 
 func NewHelloService() (service.HelloService, func(), error) {
-	helloService := service.NewHelloService()
+	mysqlGroupClient, cleanup, err := NewMysqlGroupClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	userRepository := mysql.NewUserRepository(mysqlGroupClient)
+	helloService := service.NewHelloService(userRepository)
 	return helloService, func() {
+		cleanup()
 	}, nil
 }
