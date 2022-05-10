@@ -14,7 +14,9 @@ type userRepository struct {
 	Table       string
 }
 
-func NewUserRepository(eg meta.MysqlGroupClient) UserRepository {
+func NewUserRepository(
+	eg meta.MysqlGroupClient,
+) UserRepository {
 	return &userRepository{
 		EngineGroup: eg,
 		Table:       "user",

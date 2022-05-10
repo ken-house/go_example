@@ -9,6 +9,7 @@ package assembly
 import (
 	"github.com/go_example/internal/controller"
 	"github.com/go_example/internal/repository/mysql"
+	"github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/server"
 	"github.com/go_example/internal/service"
 )
@@ -47,8 +48,15 @@ func NewHelloService() (service.HelloService, func(), error) {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	helloService := service.NewHelloService(userRepository)
+	redisSingleClient, cleanup2, err := NewRedisSingleClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	redisUserRepository := redis.NewUserRepository(redisSingleClient)
+	helloService := service.NewHelloService(userRepository, redisUserRepository)
 	return helloService, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

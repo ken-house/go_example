@@ -16,3 +16,17 @@ mysql:
       - dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
   single:
     dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+redis:
+  single:
+    addr: "192.168.163.130:6379"
+    password: ""
+    db: 0
+  group:
+    addrs:
+      - 192.168.163.130:7000
+      - 192.168.163.130:7001
+      - 192.168.163.130:7002
+      - 192.168.163.130:7003
+      - 192.168.163.130:7004
+      - 192.168.163.130:7005
+    password: ""

@@ -19,7 +19,7 @@ type singleClient struct {
 	*xorm.Engine
 }
 
-func NewSimpleClient(cfg SingleConfig) (SingleClient, func(), error) {
+func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
 	engine, err := newEngine(cfg)
 	if err != nil {
 		return nil, nil, err
