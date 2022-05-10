@@ -51,7 +51,7 @@ func initConfig() {
 	// 从系统环境变量中读取运行环境
 	meta.EnvMode = env.Mode()
 
-	// 加载公共配置文件 todo 如何读取多个配置文件
+	// viper目前仅支持单文件
 	viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
