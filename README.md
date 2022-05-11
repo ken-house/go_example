@@ -15,7 +15,7 @@
 + 版本v1.0.0实现了cobra+gin框架的结合；
 + 版本v1.1.0增加了wire解决依赖注入及项目文件目录整体架构；
 + 版本v1.2.0增加了xorm连接Mysql数据库；
-+ 版本v1.3.0实现了redis连接；
++ 版本v1.3.1实现了redis连接；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -281,10 +281,230 @@ wire
 这样就解决了文件互相依赖的问题，每层更加专注实现自己的功能，不用关心依赖方的实现。
 
 ## 连接MySQL
+在assembly目录下，创建一个common.go文件，该文件定义了获取MySQL连接，并遵循wire规范。
+```go
+// NewMysqlSingleClient 单机数据库连接
+func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
+	var cfg mysqlClient.SingleConfig
+	if err := viper.Sub("mysql." + meta.MysqlSingleDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	return mysqlClient.NewSingleClient(cfg)
+}
+
+// NewMysqlGroupClient 主从数据库连接
+func NewMysqlGroupClient() (meta.MysqlGroupClient, func(), error) {
+	var cfg mysqlClient.GroupConfig
+	if err := viper.Sub("mysql." + meta.MysqlGroupDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	cfg.IsDebug = !env.IsReleasing()
+	return mysqlClient.NewGroupClient(cfg)
+}
+```
+以单机数据库连接为例，定义了SingleClient接口，singleClient结构体为接收者，NewSingleClient用来返回一个客户端连接及wire所需要的回调方法和错误。
+
+在获取数据库连接中，使用了xorm创建数据库连接。
+```go
+package mysqlClient
+
+import (
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"github.com/pkg/errors"
+	"xorm.io/xorm"
+)
+
+//SingleClient 单实例客户端
+type SingleClient interface {
+	xorm.EngineInterface
+	Transaction(f func(*xorm.Session) (interface{}, error)) (interface{}, error)
+	GetEngine() *xorm.Engine
+}
+
+type singleClient struct {
+	*xorm.Engine
+}
+
+func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
+	engine, err := newEngine(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	client := &singleClient{Engine: engine}
+	return client, func() {
+		_ = client.Close()
+	}, nil
+}
+
+func (cli *singleClient) GetEngine() *xorm.Engine {
+	return cli.Engine
+}
+
+func (cli *singleClient) Transaction(f func(*xorm.Session) (interface{}, error)) (interface{}, error) {
+	return cli.Engine.Transaction(f)
+}
+
+type SingleConfig struct {
+	MaxIdle     int    `json:"max_idle" mapstructure:"max_idle"`
+	MaxOpen     int    `json:"max_open" mapstructure:"max_open"`
+	MaxLifetime int    `json:"max_lifetime" mapstructure:"max_lifetime"`
+	Dsn         string `json:"dsn" mapstructure:"dsn"`
+	IsDebug     bool   `json:"is_debug" mapstructure:"is_debug"`
+}
+
+func newEngine(cfg SingleConfig) (*xorm.Engine, error) {
+	engine, err := xorm.NewEngine("mysql", cfg.Dsn)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if err := engine.Ping(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if cfg.IsDebug {
+		engine.ShowSQL(true)
+	}
+	if cfg.MaxIdle > 0 {
+		engine.SetMaxIdleConns(cfg.MaxIdle)
+	}
+	if cfg.MaxOpen > 0 {
+		engine.SetMaxOpenConns(cfg.MaxOpen)
+	}
+	if cfg.MaxLifetime > 0 {
+		engine.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime) * time.Second)
+	}
+	dsnCfg, _ := mysql.ParseDSN(cfg.Dsn)
+	dsnCfg.Passwd = ""
+	return engine, nil
+}
+
+```
+最后，将NewMysqlSingleClient或NewMysqlGroupClient方法注入到Repository中，修改assembly/service.go文件如下：
+```go
+//go:build wireinject
+
+package assembly
+
+import (
+	MysqlRepo "github.com/go_example/internal/repository/mysql"
+	RedisRepo "github.com/go_example/internal/repository/redis"
+	"github.com/go_example/internal/service"
+	"github.com/google/wire"
+)
+
+func NewHelloService() (service.HelloService, func(), error) {
+	panic(wire.Build(
+		NewRedisGroupClient,
+		RedisRepo.NewUserRepository,
+		NewMysqlGroupClient,
+		MysqlRepo.NewUserRepository,
+		service.NewHelloService,
+	))
+}
+```
+这样在数据仓库层（repository）就可以使用数据库连接了。
 
 ## 连接Redis
+Redis连接同MySQL类似，目的也是提供一个Redis连接，注入到repository中。
+在assembly/common.go文件中定义两个方法分别为连接单机和redisCluster集群模式；
+```go
+// NewRedisSingleClient 连接Redis单机
+func NewRedisSingleClient() (meta.RedisSingleClient, func(), error) {
+	var cfg redisClient.SingleConfig
+	if err := viper.Sub("redis." + meta.RedisSingleDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	return redisClient.NewSingleClient(cfg)
+}
 
+// NewRedisGroupClient 连接RedisCluster集群
+func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
+	var cfg redisClient.GroupConfig
+	if err := viper.Sub("redis." + meta.RedisGroupDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	return redisClient.NewGroupClient(cfg)
+}
+```
+以单机连接为例，定义了SingleClient接口，singleClient结构体为接收者，NewSingleClient返回redis连接及回调方法和错误
 
+获取redis连接使用了github.com/go-redis/redis/v8包，代码如下：
+```go
+package redisClient
+
+import (
+	"context"
+
+	"github.com/pkg/errors"
+
+	"github.com/go-redis/redis/v8"
+)
+
+type SingleClient interface {
+	redis.UniversalClient
+}
+
+type singleClient struct {
+	redis.UniversalClient
+}
+
+func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
+	client, err := NewClient(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	sc := &singleClient{UniversalClient: client}
+	return sc, func() {
+		client.Close()
+	}, nil
+}
+
+type SingleConfig struct {
+	Addr     string `json:"addr" mapstructure:"addr"`
+	Password string `json:"password" mapstructure:"password"`
+	DB       int    `json:"db" mapstructure:"db"`
+}
+
+func NewClient(cfg SingleConfig) (*redis.Client, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		DB:       cfg.DB,
+	})
+	_, err := client.Ping(context.Background()).Result()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return client, err
+}
+```
+最后，将NewRedisSingleClient和NewRedisGroupClient方法注入到Repository中，修改assembly/service.go文件如下：
+```go
+//go:build wireinject
+
+package assembly
+
+import (
+	MysqlRepo "github.com/go_example/internal/repository/mysql"
+	RedisRepo "github.com/go_example/internal/repository/redis"
+	"github.com/go_example/internal/service"
+	"github.com/google/wire"
+)
+
+func NewHelloService() (service.HelloService, func(), error) {
+	panic(wire.Build(
+		NewRedisGroupClient,
+		RedisRepo.NewUserRepository,
+		NewMysqlGroupClient,
+		MysqlRepo.NewUserRepository,
+		service.NewHelloService,
+	))
+}
+```
+这样在数据仓库层（repository）就可以使用Redis连接了。
+
+## JWT登录验证
 
 
 

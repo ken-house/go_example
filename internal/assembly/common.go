@@ -27,15 +27,16 @@ func NewMysqlGroupClient() (meta.MysqlGroupClient, func(), error) {
 	return mysqlClient.NewGroupClient(cfg)
 }
 
+// NewRedisSingleClient 连接Redis单机
 func NewRedisSingleClient() (meta.RedisSingleClient, func(), error) {
 	var cfg redisClient.SingleConfig
 	if err := viper.Sub("redis." + meta.RedisSingleDriverKey).Unmarshal(&cfg); err != nil {
 		return nil, nil, err
 	}
-	cfg.IsDebug = !env.IsReleasing()
 	return redisClient.NewSingleClient(cfg)
 }
 
+// NewRedisGroupClient 连接RedisCluster集群
 func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 	var cfg redisClient.GroupConfig
 	if err := viper.Sub("redis." + meta.RedisGroupDriverKey).Unmarshal(&cfg); err != nil {

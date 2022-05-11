@@ -31,7 +31,6 @@ type SingleConfig struct {
 	Addr     string `json:"addr" mapstructure:"addr"`
 	Password string `json:"password" mapstructure:"password"`
 	DB       int    `json:"db" mapstructure:"db"`
-	IsDebug  bool   `json:"is_debug" mapstructure:"is_debug"`
 }
 
 func NewClient(cfg SingleConfig) (*redis.Client, error) {
