@@ -158,7 +158,7 @@ go get -u github.com/google/wire
 ```
 对项目目录结构进行分层，目录结构如下：
 
-![cmd-markdown-logo](./pics/1.png)
+![image](images/1.png)
 
 在项目中，web服务调用controller控制器，控制器调用service服务类，服务类调用repository数据仓库层，
 数据仓库层调用其他包生成的服务引擎客户端（如mysql）。
