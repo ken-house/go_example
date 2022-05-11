@@ -9,11 +9,13 @@
 + https://github.com/google/wire
 + https://github.com/spf13/viper
 + https://xorm.io/xorm
++ https://github.com/go-redis/redis
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
 + 版本v1.1.0增加了wire解决依赖注入及项目文件目录整体架构；
 + 版本v1.2.0增加了xorm连接Mysql数据库；
++ 版本v1.3.0实现了redis连接；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -278,9 +280,9 @@ wire
 ```
 这样就解决了文件互相依赖的问题，每层更加专注实现自己的功能，不用关心依赖方的实现。
 
-## OXRM连接MySQL
+## 连接MySQL
 
-
+## 连接Redis
 
 
 

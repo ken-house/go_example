@@ -1,8 +1,6 @@
 package assembly
 
 import (
-	"fmt"
-
 	"github.com/go_example/common/mysqlClient"
 	"github.com/go_example/common/redisClient"
 	"github.com/go_example/internal/meta"
@@ -43,6 +41,5 @@ func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 	if err := viper.Sub("redis." + meta.RedisGroupDriverKey).Unmarshal(&cfg); err != nil {
 		return nil, nil, err
 	}
-	fmt.Printf("%+v", cfg)
 	return redisClient.NewGroupClient(cfg)
 }

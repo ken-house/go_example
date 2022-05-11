@@ -11,7 +11,7 @@ import (
 
 func NewHelloService() (service.HelloService, func(), error) {
 	panic(wire.Build(
-		NewRedisSingleClient,
+		NewRedisGroupClient,
 		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,

@@ -48,12 +48,12 @@ func NewHelloService() (service.HelloService, func(), error) {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	redisSingleClient, cleanup2, err := NewRedisSingleClient()
+	redisGroupClient, cleanup2, err := NewRedisGroupClient()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	redisUserRepository := redis.NewUserRepository(redisSingleClient)
+	redisUserRepository := redis.NewUserRepository(redisGroupClient)
 	helloService := service.NewHelloService(userRepository, redisUserRepository)
 	return helloService, func() {
 		cleanup2()
