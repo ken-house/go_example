@@ -18,3 +18,11 @@ func NewHelloService() (service.HelloService, func(), error) {
 		service.NewHelloService,
 	))
 }
+
+func NewLoginService() (service.LoginService, func(), error) {
+	panic(wire.Build(
+		NewMysqlGroupClient,
+		MysqlRepo.NewUserRepository,
+		service.NewLoginService,
+	))
+}

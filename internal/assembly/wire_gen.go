@@ -27,6 +27,23 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	}, nil
 }
 
+func NewLoginController() (controller.LoginController, func(), error) {
+	loginService, cleanup, err := NewLoginService()
+	if err != nil {
+		return nil, nil, err
+	}
+	loginController := controller.NewLoginController(loginService)
+	return loginController, func() {
+		cleanup()
+	}, nil
+}
+
+func NewHomeController() (controller.HomeController, func(), error) {
+	homeController := controller.NewHomeController()
+	return homeController, func() {
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -34,8 +51,21 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(helloController)
+	loginController, cleanup2, err := NewLoginController()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	homeController, cleanup3, err := NewHomeController()
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(helloController, loginController, homeController)
 	return httpServer, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }
@@ -57,6 +87,18 @@ func NewHelloService() (service.HelloService, func(), error) {
 	helloService := service.NewHelloService(userRepository, redisUserRepository)
 	return helloService, func() {
 		cleanup2()
+		cleanup()
+	}, nil
+}
+
+func NewLoginService() (service.LoginService, func(), error) {
+	mysqlGroupClient, cleanup, err := NewMysqlGroupClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	userRepository := mysql.NewUserRepository(mysqlGroupClient)
+	loginService := service.NewLoginService(userRepository)
+	return loginService, func() {
 		cleanup()
 	}, nil
 }

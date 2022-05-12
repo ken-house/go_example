@@ -3,6 +3,11 @@
 本项目为基础的web开发架构设计，主要采用gin框架，使用cobra生成应用和命令文件的脚手架，使用wire解决依赖注入问题，
 最终实现一个高性能、可扩展、多应用的web框架。
 
+## 功能
++ 连接MySQL单机及主从数据库；
++ 连接Redis单机及Cluster集群；
++ 使用JWT登录验证；
+
 ## 主要贡献
 + https://github.com/gin-gonic/gin
 + https://github.com/spf13/cobra
@@ -10,6 +15,7 @@
 + https://github.com/spf13/viper
 + https://xorm.io/xorm
 + https://github.com/go-redis/redis
++ https://github.com/golang-jwt/jwt
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -281,6 +287,12 @@ wire
 这样就解决了文件互相依赖的问题，每层更加专注实现自己的功能，不用关心依赖方的实现。
 
 ## 连接MySQL
+### 安装
+```shell
+go get -u github.com/go-sql-driver/mysql
+go get -u xorm.io/xorm
+```
+### 代码解析
 在assembly目录下，创建一个common.go文件，该文件定义了获取MySQL连接，并遵循wire规范。
 ```go
 // NewMysqlSingleClient 单机数据库连接
@@ -406,6 +418,11 @@ func NewHelloService() (service.HelloService, func(), error) {
 这样在数据仓库层（repository）就可以使用数据库连接了。
 
 ## 连接Redis
+### 安装
+```shell
+go get -u github.com/go-redis/redis/v8
+```
+### 代码解析
 Redis连接同MySQL类似，目的也是提供一个Redis连接，注入到repository中。
 在assembly/common.go文件中定义两个方法分别为连接单机和redisCluster集群模式；
 ```go

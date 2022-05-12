@@ -32,7 +32,7 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	return map[string]string{
 		"hello": "world，golang",
 		"env":   viper.GetString("server.mode"),
-		"user":  user.Name,
+		"user":  user.Username,
 		"value": value,
 	}
 }
