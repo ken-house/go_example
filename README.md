@@ -525,7 +525,131 @@ func NewHelloService() (service.HelloService, func(), error) {
 这样在数据仓库层（repository）就可以使用Redis连接了。
 
 ## JWT登录验证
-### 普通登录验证
+JWT的出现就是为了解决传统Session+Cookie技术存在的各种问题，随着前后端分离的发展，JWT被广泛使用。
+### 普通验证
+#### 生成JWT
+注册两个路由，分别为登录和首页，其中首页需要登录用户才可以访问，修改internal/server/http.go文件，代码如下：
+```go
+func (srv *httpServer) Register(router *gin.Engine) {
+	router.GET("/hello", srv.Hello())
+	// 登录接口
+	router.POST("/login", srv.Login())
+	// 用户主页
+	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
+}
+```
+当请求127.0.0.1:8080/login进行登录，系统根据提交的表单数据验证用户密码后生成JWT，
+```go
+func (svc *loginService) Login(formData model.LoginForm) (token string, err error) {
+	// 验证用户登录
+	userInfo, err := svc.UserRepo.FindIdentity(formData)
+	if err != nil {
+		return "", errors.New("用户名密码不正确")
+	}
+
+	// 登录成功则生成Token
+	return auth.GenToken(userInfo)
+}
+```
+接下来，golang如何生成jwt的，需要先安装：
+```shell
+go get -u github.com/golang-jwt/jwt/v4
+```
++ 新建common/auth/auth.go文件，因为我们要自定义参数，所以定义一个CustomClaims结构体，其中包含用户信息；
++ 定义一个token的过期时间及加密盐；
++ 定义生成token的方法，使用jwt.SigningMethodHS256加密方式生成签名对象，然后通过加密盐进行加密并返回json字符串;
+```go
+type CustomClaims struct {
+	UserInfo MysqlModel.User `json:"user_info"`
+	jwt.RegisteredClaims
+}
+
+const TokenExpireDuration = time.Hour * 24
+
+// CustomSecret 用于加盐的字符串
+var CustomSecret = []byte("custom_salt")
+
+// GenToken 生成token
+func GenToken(userInfo MysqlModel.User) (string, error) {
+	claims := CustomClaims{
+		userInfo,
+		jwt.RegisteredClaims{
+			Issuer:    "ken",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExpireDuration)),
+		},
+	}
+
+	// 使用指定的签名方法创建签名对象
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// 使用指定的secret签名并获得完整的编码后的字符串token
+	return token.SignedString(CustomSecret)
+}
+```
+至此，登陆成功后会返回一个json字符串，我们称为token(令牌)。
+#### 解析JWT
+gin框架支持中间价，在访问主页的路由上使用中间价，即可完成验证；
+```go
+router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
+```
+创建internal/middleware/jwt_auth_middlerware.go文件，接收请求头里的AUTHORIZATION进行解析JWT，解析成功将JWT中的UserInfo信息写入到gin.context中；
+```go
+func JWTAuthMiddleware() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		authorization := c.Request.Header.Get("Authorization")
+		if authorization == "" {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "request header authorization is empty",
+			})
+			c.Abort()
+			return
+		}
+
+		parts := strings.SplitN(authorization, " ", 2)
+		if !(len(parts) == 2 && parts[0] == "Bearer") {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "request header authorization is invalid",
+			})
+			c.Abort()
+			return
+		}
+
+		claims, err := auth.ParseToken(parts[1])
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "request header authorization parse token err",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("userInfo", claims.UserInfo)
+		c.Next()
+	}
+}
+```
+接下来，就是对token进行解析，可以在common/auth/auth.go文件中看到，将token使用加密盐解析，最终得到CustomClaims；
+```go
+// ParseToken 解析token
+func ParseToken(tokenString string) (*CustomClaims, error) {
+	// 解析token
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return CustomSecret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("token invalid")
+}
+```
+至此，中间件若成功解析并写入到gin的上下文后，会进入到srv.Home()的业务逻辑中。
+这样就实现了普通的JWT登录验证。
 
 ### JWT续期
 
