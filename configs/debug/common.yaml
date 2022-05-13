@@ -3,6 +3,11 @@ server:
     name: "http"
     addr: ":8080"
   mode: "release"
+
+certs:
+  curKey: 1652421664
+  keys: [1652421664]
+
 common:
   username: "小明"
   pwd: 123456
