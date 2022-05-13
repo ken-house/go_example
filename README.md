@@ -525,7 +525,15 @@ func NewHelloService() (service.HelloService, func(), error) {
 这样在数据仓库层（repository）就可以使用Redis连接了。
 
 ## JWT登录验证
-1122222444111
+### 普通登录验证
+
+### JWT续期
+
+### 密钥升级
+
+### 单点登录
+
+
 
 
 

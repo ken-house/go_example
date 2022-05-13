@@ -7,6 +7,8 @@ package cmd
 import (
 	"log"
 
+	"github.com/go_example/common/auth"
+
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +24,9 @@ var httpCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  `http server`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// 读取证书内容
+		auth.SetCerts()
+
 		// 实例化依赖注入服务
 		httpSrv, clean, err := assembly.NewHttpServer()
 		if err != nil {

@@ -74,7 +74,7 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "令牌格式错误"})
 	}
 
-	claims, err := auth.ParseToken(parts[1], "refresh_token")
+	claims, err := auth.ParseToken(parts[1])
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "刷新令牌失败，请重新登录"})
 	}

@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
+	"io/ioutil"
 	"time"
-
-	"github.com/pkg/errors"
 
 	MysqlModel "github.com/go_example/internal/model/mysql"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/spf13/viper"
 )
 
 type CustomClaims struct {
@@ -18,14 +20,55 @@ const bearerSchema = "Bearer "
 const accessTokenExpire = time.Minute * 30
 const refreshTokenExpire = time.Hour * 24 * 30
 
-// accessTokenSecret 用于加盐的字符串
-var accessTokenSecret = []byte("custom_access_salt")
+type cert struct {
+	PrivateKey []byte
+	PublicKey  []byte
+}
 
-// refreshTokenSecret 用于加盐的字符串
-var refreshTokenSecret = []byte("custom_refresh_salt")
+// 证书密钥
+var certs = make(map[string]cert)
+
+// 当前使用的证书key
+var curKey string
+
+// SetCerts 生成密钥
+func SetCerts() {
+	var certKeyConfig struct {
+		CurKey string
+		Keys   []string
+	}
+	err := viper.Sub("certs").Unmarshal(&certKeyConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, key := range certKeyConfig.Keys {
+		privateKey, err := ioutil.ReadFile("assets/certs/" + key + "/rsa_private_key.pem")
+		if err != nil {
+			panic(err)
+		}
+		publicKey, err := ioutil.ReadFile("assets/certs/" + key + "/rsa_public_key.pem")
+		if err != nil {
+			panic(err)
+		}
+		cert := cert{
+			PrivateKey: privateKey,
+			PublicKey:  publicKey,
+		}
+		certs[key] = cert
+	}
+
+	// 读取当前的使用的证书key
+	curKey = viper.GetString("certs.curKey")
+}
 
 // GenToken 生成token
 func GenToken(userInfo MysqlModel.User) (string, string, error) {
+	// 读取当前使用的私钥证书
+	secret, err := jwt.ParseRSAPrivateKeyFromPEM(certs[curKey].PrivateKey)
+	if err != nil {
+		panic(err)
+	}
 	// 生成access_token
 	accessClaims := CustomClaims{
 		userInfo,
@@ -36,10 +79,12 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 	}
 
 	// 使用指定的签名方法创建签名对象
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS512, accessClaims)
+
 	// 使用指定的secret签名并获得完整的编码后的字符串token
-	accessTokenSign, err := accessToken.SignedString(accessTokenSecret)
+	accessTokenSign, err := accessToken.SignedString(secret)
 	if err != nil {
+		fmt.Println(err)
 		return "", "", err
 	}
 
@@ -53,8 +98,8 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenExpire)),
 		},
 	}
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshTokenSign, err := refreshToken.SignedString(refreshTokenSecret)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodRS512, refreshClaims)
+	refreshTokenSign, err := refreshToken.SignedString(secret)
 	if err != nil {
 		return "", "", err
 	}
@@ -63,12 +108,13 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 }
 
 // ParseToken 解析token
-func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
+func ParseToken(tokenString string) (*CustomClaims, error) {
 	// 解析token
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		secret := accessTokenSecret
-		if grantType == "refresh_token" {
-			secret = refreshTokenSecret
+		// 读取当前使用的公钥证书
+		secret, err := jwt.ParseRSAPublicKeyFromPEM(certs[curKey].PublicKey)
+		if err != nil {
+			panic(err)
 		}
 		return secret, nil
 	})
