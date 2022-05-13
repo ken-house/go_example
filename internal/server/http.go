@@ -12,13 +12,13 @@ type HttpServer interface {
 
 type httpServer struct {
 	helloCtr controller.HelloController
-	loginCtr controller.LoginController
+	loginCtr controller.AuthController
 	homeCtr  controller.HomeController
 }
 
 func NewHttpServer(
 	helloCtr controller.HelloController,
-	loginCtr controller.LoginController,
+	loginCtr controller.AuthController,
 	homeCtr controller.HomeController,
 ) HttpServer {
 	return &httpServer{
@@ -31,7 +31,9 @@ func NewHttpServer(
 func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/hello", srv.Hello())
 	// 登录接口
-	router.POST("/login", srv.Login())
+	router.POST("/auth/login", srv.Login())
+	// 刷新token接口
+	router.GET("/auth/refresh_token", srv.RefreshToken())
 	// 用户主页
 	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
 }
@@ -51,5 +53,11 @@ func (srv *httpServer) Login() gin.HandlerFunc {
 func (srv *httpServer) Home() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.homeCtr.Index(c))
+	}
+}
+
+func (srv *httpServer) RefreshToken() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.loginCtr.RefreshToken(c))
 	}
 }

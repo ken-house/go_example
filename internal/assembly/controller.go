@@ -15,10 +15,10 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	))
 }
 
-func NewLoginController() (controller.LoginController, func(), error) {
+func NewAuthController() (controller.AuthController, func(), error) {
 	panic(wire.Build(
-		NewLoginService,
-		controller.NewLoginController,
+		NewAuthService,
+		controller.NewAuthController,
 	))
 }
 

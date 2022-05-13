@@ -27,7 +27,7 @@ func NewHelloService(
 }
 
 func (svc *helloService) SayHello(c *gin.Context) map[string]string {
-	user, _ := svc.UserRepo.GetUserInfo(1)
+	user, _ := svc.UserRepo.GetUserInfoById(1)
 	value := svc.UserRedisRepo.GetValue("aa")
 	return map[string]string{
 		"hello": "world，golang",

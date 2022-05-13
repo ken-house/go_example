@@ -27,13 +27,13 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	}, nil
 }
 
-func NewLoginController() (controller.LoginController, func(), error) {
-	loginService, cleanup, err := NewLoginService()
+func NewAuthController() (controller.AuthController, func(), error) {
+	authService, cleanup, err := NewAuthService()
 	if err != nil {
 		return nil, nil, err
 	}
-	loginController := controller.NewLoginController(loginService)
-	return loginController, func() {
+	authController := controller.NewAuthController(authService)
+	return authController, func() {
 		cleanup()
 	}, nil
 }
@@ -51,7 +51,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	loginController, cleanup2, err := NewLoginController()
+	authController, cleanup2, err := NewAuthController()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
@@ -62,7 +62,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(helloController, loginController, homeController)
+	httpServer := server.NewHttpServer(helloController, authController, homeController)
 	return httpServer, func() {
 		cleanup3()
 		cleanup2()
@@ -91,14 +91,14 @@ func NewHelloService() (service.HelloService, func(), error) {
 	}, nil
 }
 
-func NewLoginService() (service.LoginService, func(), error) {
+func NewAuthService() (service.AuthService, func(), error) {
 	mysqlGroupClient, cleanup, err := NewMysqlGroupClient()
 	if err != nil {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	loginService := service.NewLoginService(userRepository)
-	return loginService, func() {
+	authService := service.NewAuthService(userRepository)
+	return authService, func() {
 		cleanup()
 	}, nil
 }

@@ -8,7 +8,7 @@ import (
 
 type UserRepository interface {
 	FindIdentity(model.LoginForm) (MysqlModel.User, error)
-	GetUserInfo(int) (MysqlModel.User, error)
+	GetUserInfoById(int) (MysqlModel.User, error)
 }
 
 type userRepository struct {
@@ -30,7 +30,7 @@ func (repo *userRepository) FindIdentity(formData model.LoginForm) (user MysqlMo
 	return user, err
 }
 
-func (repo *userRepository) GetUserInfo(id int) (user MysqlModel.User, err error) {
+func (repo *userRepository) GetUserInfoById(id int) (user MysqlModel.User, err error) {
 	_, err = repo.EngineGroup.Table(repo.Table).Where("id=?", id).Get(&user)
 	return user, err
 }

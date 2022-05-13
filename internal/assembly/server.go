@@ -10,7 +10,7 @@ import (
 func NewHttpServer() (server.HttpServer, func(), error) {
 	panic(wire.Build(
 		NewHelloController,
-		NewLoginController,
+		NewAuthController,
 		NewHomeController,
 		server.NewHttpServer,
 	))
