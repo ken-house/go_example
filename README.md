@@ -651,9 +651,162 @@ func ParseToken(tokenString string) (*CustomClaims, error) {
 至此，中间件若成功解析并写入到gin的上下文后，会进入到srv.Home()的业务逻辑中。
 这样就实现了普通的JWT登录验证。
 
-### JWT续期
+### JWT续期（Refresh Token）
+JWT是一次签发带有过期时间的令牌Token，当登录成功后，系统会签发一个token，过期时间假设为30分钟，若用户登录成功后在30分钟后操作，解析JWT将会失效，那么就无法进入主页。
+为了解决这个问题，可以采用refresh token的方式。
+
+在请求接口中，我们使用的token称为access_token，该token带有用户信息；当access_token过期后，我们使用refresh_token重新获取新的access_token,
+具体流程如下：
++ 客户端使用用户名密码进行认证
++ 服务端生成有效时间较短的 Access Token（例如 10 分钟），和有效时间较长的 Refresh Token（例如 7 天）
++ 客户端访问需要认证的接口时，携带 Access Token
++ 如果 Access Token 没有过期，服务端鉴权后返回给客户端需要的数据
++ 如果携带 Access Token 访问需要认证的接口时鉴权失败（例如返回 401 错误），则客户端使用 Refresh Token 向刷新接口申请新的 Access Token
++ 如果 Refresh Token 没有过期，服务端向客户端下发新的 Access Token
++ 客户端使用新的 Access Token 访问需要认证的接口
+  ![image](images/jwt.jpg)
+
+对普通验证代码进行改造，生成token时，返回一个access_token和refresh_token，解析token时使用对应的解密盐；
+```go
+package auth
+
+import (
+	"time"
+
+	"github.com/pkg/errors"
+
+	MysqlModel "github.com/go_example/internal/model/mysql"
+	"github.com/golang-jwt/jwt/v4"
+)
+
+type CustomClaims struct {
+	UserInfo MysqlModel.User `json:"user_info"`
+	jwt.RegisteredClaims
+}
+
+const bearerSchema = "Bearer "
+const accessTokenExpire = time.Minute * 30
+const refreshTokenExpire = time.Hour * 24 * 30
+
+// accessTokenSecret 用于加盐的字符串
+var accessTokenSecret = []byte("custom_access_salt")
+
+// refreshTokenSecret 用于加盐的字符串
+var refreshTokenSecret = []byte("custom_refresh_salt")
+
+// GenToken 生成token
+func GenToken(userInfo MysqlModel.User) (string, string, error) {
+	// 生成access_token
+	accessClaims := CustomClaims{
+		userInfo,
+		jwt.RegisteredClaims{
+			Issuer:    "ken",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenExpire)),
+		},
+	}
+
+	// 使用指定的签名方法创建签名对象
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	// 使用指定的secret签名并获得完整的编码后的字符串token
+	accessTokenSign, err := accessToken.SignedString(accessTokenSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	// 生成refresh_token，不包含自定义信息
+	refreshClaims := CustomClaims{
+		MysqlModel.User{
+			Id: userInfo.Id,
+		},
+		jwt.RegisteredClaims{
+			Issuer:    "ken",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenExpire)),
+		},
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshTokenSign, err := refreshToken.SignedString(refreshTokenSecret)
+	if err != nil {
+		return "", "", err
+	}
+
+	return bearerSchema + accessTokenSign, bearerSchema + refreshTokenSign, nil
+}
+
+// ParseToken 解析token
+func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
+	// 解析token
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		secret := accessTokenSecret
+		if grantType == "refresh_token" {
+			secret = refreshTokenSecret
+		}
+		return secret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, errors.New("token invalid")
+}
+```
+注册一个/auth/refresh_token路由，用于刷新token；
+```go
+func (srv *httpServer) Register(router *gin.Engine) {
+	router.GET("/hello", srv.Hello())
+	// 登录接口
+	router.POST("/auth/login", srv.Login())
+	// 刷新token接口
+	router.GET("/auth/refresh_token", srv.RefreshToken())
+	// 用户主页
+	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
+}
+```
+RefreshToken方法，从头信息AUTHORIZATION中读取refresh_token，若解析refresh_token成功，可以得到用户id,查询用户信息，生成新的access_token及refresh_token,客户端后期使用新的access_token进行请求；
+```go
+func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
+	authorization := c.Request.Header.Get("Authorization")
+	if authorization == "" {
+		return negotiate.JSON(http.StatusOK, gin.H{"message": "令牌为空"})
+	}
+
+	parts := strings.SplitN(authorization, " ", 2)
+	if !(len(parts) == 2 && parts[0] == "Bearer") {
+		return negotiate.JSON(http.StatusOK, gin.H{"message": "令牌格式错误"})
+	}
+
+	claims, err := auth.ParseToken(parts[1], "refresh_token")
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{"message": "刷新令牌失败，请重新登录"})
+	}
+
+	// 重新生成令牌
+	userInfo, err := ctr.authSvc.GetUserInfo(claims.UserInfo.Id)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{"message": "用户信息错误，请重新登录"})
+	}
+	accessToken, refreshToken, err := auth.GenToken(userInfo)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{"message": "生成令牌失败，请重新登录"})
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
+			"message":      "OK",
+		},
+	})
+}
+```
+经过Refresh Token机制处理，实现了JWT的续期。
 
 ### 密钥升级
+
 
 ### 单点登录
 
