@@ -664,7 +664,8 @@ JWT是一次签发带有过期时间的令牌Token，当登录成功后，系统
 + 如果携带 Access Token 访问需要认证的接口时鉴权失败（例如返回 401 错误），则客户端使用 Refresh Token 向刷新接口申请新的 Access Token
 + 如果 Refresh Token 没有过期，服务端向客户端下发新的 Access Token
 + 客户端使用新的 Access Token 访问需要认证的接口
-  ![image](images/jwt.jpg)
+
+![image](images/jwt.jpg)
 
 对普通验证代码进行改造，生成token时，返回一个access_token和refresh_token，解析token时使用对应的解密盐；
 ```go
