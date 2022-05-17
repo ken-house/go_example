@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/go_example/common/auth"
+	"github.com/go_example/internal/lib/auth"
 	"github.com/go_example/internal/model"
 	MysqlModel "github.com/go_example/internal/model/mysql"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"

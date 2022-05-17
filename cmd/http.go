@@ -7,7 +7,7 @@ package cmd
 import (
 	"log"
 
-	"github.com/go_example/common/auth"
+	"github.com/go_example/internal/lib/auth"
 
 	"github.com/spf13/viper"
 

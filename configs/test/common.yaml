@@ -2,7 +2,6 @@ server:
   http:
     name: "http"
     addr: ":8080"
-  mode: "release"
 
 certs:
   curKey: 1652421664
@@ -35,3 +34,6 @@ redis:
       - 192.168.163.131:7004
       - 192.168.163.131:7005
     password: ""
+
+redis_keys:
+  auth_token: "auth_token_%d"

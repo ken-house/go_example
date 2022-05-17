@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go_example/common/auth"
+	"github.com/go_example/internal/lib/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,12 +29,18 @@ func JWTAuthMiddleware() func(c *gin.Context) {
 			return
 		}
 
-		claims, err := auth.ParseToken(parts[1])
+		claims, err := auth.ParseToken(parts[1], "access_token")
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"message":     "当前登录已失效，请尝试请求refresh_token获取新令牌",
-				"refresh_url": "/auth/refresh_token",
-			})
+			if err.Error() == "账号已在其他设备登录" {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "账号已在其他设备登录",
+				})
+			} else {
+				c.JSON(http.StatusOK, gin.H{
+					"message":     "当前登录已失效，请尝试请求refresh_token获取新令牌",
+					"refresh_url": "/auth/refresh_token",
+				})
+			}
 			c.Abort()
 			return
 		}

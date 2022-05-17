@@ -25,6 +25,7 @@
 + 版本v1.4.0接入JWT实现登录验证；
 + 版本v1.4.1增加JWT Refresh Token；
 + 版本v1.4.2升级JWT密钥；
++ 版本v1.4.3单点登录；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -937,7 +938,28 @@ func ParseToken(tokenString string) (*CustomClaims, error) {
 ```
 
 ### 单点登录
+由于JWT令牌是一次签发，在有效时间内一直有效，因此在多个设备登录后，本地的token是有效的，为了保证单点登录，可通过Redis记录用户最新一次的token信息。
+生成或重新刷新token会将redis hash数据更新，解析token时，会检查token是否为用户的最新token信息。
 
+在jwt.go文件中的GenToken()方法中增加保存到redis的操作：
+```go
+// 将token写入redis hash中
+err = saveAuthTokenRedis(userInfo.Id, accessTokenSign, refreshTokenSign)
+if err != nil {
+    return "", "", err
+}
+```
+在ParseToken()方法中获取redis的认证token，并和当前使用的token判断；
+```go
+if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+    // 判断token是否有效，若无效返回错误
+    err = checkAuthTokenRedis(claims.UserInfo.Id, tokenString, grantType)
+    if err != nil {
+        return nil, err
+    }
+    return claims, nil
+}
+```
 
 
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go_example/common/auth"
+	"github.com/go_example/internal/lib/auth"
 
 	"github.com/go_example/internal/utils/negotiate"
 
@@ -74,7 +74,7 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "令牌格式错误"})
 	}
 
-	claims, err := auth.ParseToken(parts[1])
+	claims, err := auth.ParseToken(parts[1], "refresh_token")
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "刷新令牌失败，请重新登录"})
 	}
