@@ -26,6 +26,7 @@
 + 版本v1.4.1增加JWT Refresh Token；
 + 版本v1.4.2升级JWT密钥；
 + 版本v1.4.3单点登录；
++ 版本v1.4.4单点登录，对代码依赖优化；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -960,6 +961,166 @@ if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
     return claims, nil
 }
 ```
+### 单点登录优化（代码依赖）
+在v1.4.3版本中，单独创建了driver/目录，实现redis连接，这样就存在两套Redis连接（通过wire注入形式的连接和driver自己编写的连接），为了优化该问题，避免循环调用，
+对代码进行了以下调整：
+1. 在httpServer注入一个authService，并在中间件中传入该服务类；
+```go
+type httpServer struct {
+	helloCtr    controller.HelloController
+	loginCtr    controller.AuthController
+	homeCtr     controller.HomeController
+	authService service.AuthService
+}
+
+func NewHttpServer(
+	helloCtr controller.HelloController,
+	loginCtr controller.AuthController,
+	homeCtr controller.HomeController,
+	authService service.AuthService,
+) HttpServer {
+	return &httpServer{
+		helloCtr:    helloCtr,
+		loginCtr:    loginCtr,
+		homeCtr:     homeCtr,
+		authService: authService,
+	}
+}
+
+func (srv *httpServer) Register(router *gin.Engine) {
+    router.GET("/hello", srv.Hello())
+    // 登录接口
+    router.POST("/auth/login", srv.Login())
+    // 刷新token接口
+    router.GET("/auth/refresh_token", srv.RefreshToken())
+    // 用户主页
+    router.GET("/home", middleware.JWTAuthMiddleware(srv.authService), srv.Home())
+}
+```
+2. 中间件将authService服务类传入到auth.ParseToken方法中；
+```go
+func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		authorization := c.Request.Header.Get("Authorization")
+		if authorization == "" {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "令牌为空",
+			})
+			c.Abort()
+			return
+		}
+
+		parts := strings.SplitN(authorization, " ", 2)
+		if !(len(parts) == 2 && parts[0] == "Bearer") {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "令牌格式错误",
+			})
+			c.Abort()
+			return
+		}
+
+		claims, err := auth.ParseToken(authService, parts[1], "access_token")
+		if err != nil {
+			if err.Error() == "账号已在其他设备登录" {
+				c.JSON(http.StatusOK, gin.H{
+					"message": "账号已在其他设备登录",
+				})
+			} else {
+				c.JSON(http.StatusOK, gin.H{
+					"message":     "当前登录已失效，请尝试请求refresh_token获取新令牌",
+					"refresh_url": "/auth/refresh_token",
+				})
+			}
+			c.Abort()
+			return
+		}
+
+		c.Set("userInfo", claims.UserInfo)
+		c.Next()
+	}
+}
+```
+3. 在auth/jwt.go文件中，便可以使用authService下的验证令牌方法及生成令牌方法；
+```go
+// GenToken 生成token
+func GenToken(authService service.AuthService, userInfo MysqlModel.User) (string, string, error) {
+	// 读取当前使用的私钥证书
+	secret, err := jwt.ParseRSAPrivateKeyFromPEM(certs[curKey].PrivateKey)
+	if err != nil {
+		panic(err)
+	}
+	// 生成access_token
+	accessClaims := CustomClaims{
+		userInfo,
+		jwt.RegisteredClaims{
+			Issuer:    "ken",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenExpire)),
+		},
+	}
+
+	// 使用指定的签名方法创建签名对象
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS512, accessClaims)
+
+	// 使用指定的secret签名并获得完整的编码后的字符串token
+	accessTokenSign, err := accessToken.SignedString(secret)
+	if err != nil {
+		return "", "", err
+	}
+
+	// 生成refresh_token，不包含自定义信息
+	refreshClaims := CustomClaims{
+		MysqlModel.User{
+			Id: userInfo.Id,
+		},
+		jwt.RegisteredClaims{
+			Issuer:    "ken",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenExpire)),
+		},
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodRS512, refreshClaims)
+	refreshTokenSign, err := refreshToken.SignedString(secret)
+	if err != nil {
+		return "", "", err
+	}
+
+	// 将token写入redis hash中
+	err = authService.SaveAuthTokenRedis(userInfo.Id, accessTokenSign, refreshTokenSign)
+	if err != nil {
+		return "", "", err
+	}
+
+	return bearerSchema + accessTokenSign, bearerSchema + refreshTokenSign, nil
+}
+
+// ParseToken 解析token
+func ParseToken(authService service.AuthService, tokenString string, grantType string) (*CustomClaims, error) {
+	// 解析token
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// 读取当前使用的公钥证书
+		secret, err := jwt.ParseRSAPublicKeyFromPEM(certs[curKey].PublicKey)
+		if err != nil {
+			panic(err)
+		}
+		return secret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
+		// 判断token是否有效，若无效返回错误
+		err = authService.CheckAuthTokenRedis(claims.UserInfo.Id, tokenString, grantType)
+		if err != nil {
+			return nil, err
+		}
+		return claims, nil
+	}
+
+	return nil, errors.New("token invalid")
+}
+```
+最后，在authService中会依赖redis.UserRepository，该仓库会依赖redisClient连接，这样便实现了整个依赖注入的过程。
 
 
 
