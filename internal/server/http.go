@@ -13,20 +13,20 @@ type HttpServer interface {
 
 type httpServer struct {
 	helloCtr    controller.HelloController
-	loginCtr    controller.AuthController
+	authCtr     controller.AuthController
 	homeCtr     controller.HomeController
 	authService service.AuthService
 }
 
 func NewHttpServer(
 	helloCtr controller.HelloController,
-	loginCtr controller.AuthController,
+	authCtr controller.AuthController,
 	homeCtr controller.HomeController,
 	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
 		helloCtr:    helloCtr,
-		loginCtr:    loginCtr,
+		authCtr:     authCtr,
 		homeCtr:     homeCtr,
 		authService: authService,
 	}
@@ -50,7 +50,7 @@ func (srv *httpServer) Hello() gin.HandlerFunc {
 
 func (srv *httpServer) Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.loginCtr.Login(c))
+		c.Negotiate(srv.authCtr.Login(c))
 	}
 }
 
@@ -62,6 +62,6 @@ func (srv *httpServer) Home() gin.HandlerFunc {
 
 func (srv *httpServer) RefreshToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.loginCtr.RefreshToken(c))
+		c.Negotiate(srv.authCtr.RefreshToken(c))
 	}
 }
