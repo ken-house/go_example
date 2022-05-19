@@ -21,6 +21,8 @@ func NewHelloService() (service.HelloService, func(), error) {
 
 func NewAuthService() (service.AuthService, func(), error) {
 	panic(wire.Build(
+		NewRedisGroupClient,
+		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,
 		service.NewAuthService,

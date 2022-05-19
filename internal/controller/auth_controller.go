@@ -42,8 +42,19 @@ func (ctr *authController) Login(c *gin.Context) (int, gin.Negotiate) {
 		})
 	}
 
+	userInfo, err := ctr.authSvc.FindIdentity(paramData)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"accessToken":  "",
+				"refreshToken": "",
+				"message":      "用户名密码不正确",
+			},
+		})
+	}
+
 	// 登录验证
-	accessToken, refreshToken, err := ctr.authSvc.Login(paramData)
+	accessToken, refreshToken, err := auth.GenToken(ctr.authSvc, userInfo)
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
@@ -74,7 +85,7 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "令牌格式错误"})
 	}
 
-	claims, err := auth.ParseToken(parts[1], "refresh_token")
+	claims, err := auth.ParseToken(ctr.authSvc, parts[1], "refresh_token")
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "刷新令牌失败，请重新登录"})
 	}
@@ -84,7 +95,7 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "用户信息错误，请重新登录"})
 	}
-	accessToken, refreshToken, err := auth.GenToken(userInfo)
+	accessToken, refreshToken, err := auth.GenToken(ctr.authSvc, userInfo)
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, gin.H{"message": "生成令牌失败，请重新登录"})
 	}

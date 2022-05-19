@@ -34,6 +34,3 @@ redis:
       - 192.168.163.131:7004
       - 192.168.163.131:7005
     password: ""
-
-redis_keys:
-  auth_token: "auth_token_%d"

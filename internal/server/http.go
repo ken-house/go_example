@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/controller"
 	"github.com/go_example/internal/middleware"
+	"github.com/go_example/internal/service"
 )
 
 type HttpServer interface {
@@ -11,20 +12,23 @@ type HttpServer interface {
 }
 
 type httpServer struct {
-	helloCtr controller.HelloController
-	loginCtr controller.AuthController
-	homeCtr  controller.HomeController
+	helloCtr    controller.HelloController
+	loginCtr    controller.AuthController
+	homeCtr     controller.HomeController
+	authService service.AuthService
 }
 
 func NewHttpServer(
 	helloCtr controller.HelloController,
 	loginCtr controller.AuthController,
 	homeCtr controller.HomeController,
+	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
-		helloCtr: helloCtr,
-		loginCtr: loginCtr,
-		homeCtr:  homeCtr,
+		helloCtr:    helloCtr,
+		loginCtr:    loginCtr,
+		homeCtr:     homeCtr,
+		authService: authService,
 	}
 }
 
@@ -35,7 +39,7 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	// 刷新token接口
 	router.GET("/auth/refresh_token", srv.RefreshToken())
 	// 用户主页
-	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
+	router.GET("/home", middleware.JWTAuthMiddleware(srv.authService), srv.Home())
 }
 
 func (srv *httpServer) Hello() gin.HandlerFunc {

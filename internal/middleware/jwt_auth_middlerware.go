@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go_example/internal/service"
+
 	"github.com/go_example/internal/lib/auth"
 
 	"github.com/gin-gonic/gin"
 )
 
-func JWTAuthMiddleware() func(c *gin.Context) {
+func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		authorization := c.Request.Header.Get("Authorization")
 		if authorization == "" {
@@ -29,7 +31,7 @@ func JWTAuthMiddleware() func(c *gin.Context) {
 			return
 		}
 
-		claims, err := auth.ParseToken(parts[1], "access_token")
+		claims, err := auth.ParseToken(authService, parts[1], "access_token")
 		if err != nil {
 			if err.Error() == "账号已在其他设备登录" {
 				c.JSON(http.StatusOK, gin.H{

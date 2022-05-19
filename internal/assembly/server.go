@@ -12,6 +12,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		NewHelloController,
 		NewAuthController,
 		NewHomeController,
+		NewAuthService,
 		server.NewHttpServer,
 	))
 }

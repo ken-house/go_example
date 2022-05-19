@@ -1,13 +1,11 @@
 package auth
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"time"
 
-	"github.com/go_example/internal/lib/driver"
+	"github.com/go_example/internal/service"
 
 	MysqlModel "github.com/go_example/internal/model/mysql"
 	"github.com/golang-jwt/jwt/v4"
@@ -44,21 +42,21 @@ func SetCerts() {
 	if err != nil {
 		panic(err)
 	}
-
+	var privateKey []byte
+	var publicKey []byte
 	for _, key := range certKeyConfig.Keys {
-		privateKey, err := ioutil.ReadFile("assets/certs/" + key + "/rsa_private_key.pem")
+		privateKey, err = ioutil.ReadFile("assets/certs/" + key + "/rsa_private_key.pem")
 		if err != nil {
 			panic(err)
 		}
-		publicKey, err := ioutil.ReadFile("assets/certs/" + key + "/rsa_public_key.pem")
+		publicKey, err = ioutil.ReadFile("assets/certs/" + key + "/rsa_public_key.pem")
 		if err != nil {
 			panic(err)
 		}
-		cert := cert{
+		certs[key] = cert{
 			PrivateKey: privateKey,
 			PublicKey:  publicKey,
 		}
-		certs[key] = cert
 	}
 
 	// 读取当前的使用的证书key
@@ -66,7 +64,7 @@ func SetCerts() {
 }
 
 // GenToken 生成token
-func GenToken(userInfo MysqlModel.User) (string, string, error) {
+func GenToken(authService service.AuthService, userInfo MysqlModel.User) (string, string, error) {
 	// 读取当前使用的私钥证书
 	secret, err := jwt.ParseRSAPrivateKeyFromPEM(certs[curKey].PrivateKey)
 	if err != nil {
@@ -87,7 +85,6 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 	// 使用指定的secret签名并获得完整的编码后的字符串token
 	accessTokenSign, err := accessToken.SignedString(secret)
 	if err != nil {
-		fmt.Println(err)
 		return "", "", err
 	}
 
@@ -108,7 +105,7 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 	}
 
 	// 将token写入redis hash中
-	err = saveAuthTokenRedis(userInfo.Id, accessTokenSign, refreshTokenSign)
+	err = authService.SaveAuthTokenRedis(userInfo.Id, accessTokenSign, refreshTokenSign)
 	if err != nil {
 		return "", "", err
 	}
@@ -117,7 +114,7 @@ func GenToken(userInfo MysqlModel.User) (string, string, error) {
 }
 
 // ParseToken 解析token
-func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
+func ParseToken(authService service.AuthService, tokenString string, grantType string) (*CustomClaims, error) {
 	// 解析token
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// 读取当前使用的公钥证书
@@ -134,7 +131,7 @@ func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
 
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		// 判断token是否有效，若无效返回错误
-		err = checkAuthTokenRedis(claims.UserInfo.Id, tokenString, grantType)
+		err = authService.CheckAuthTokenRedis(claims.UserInfo.Id, tokenString, grantType)
 		if err != nil {
 			return nil, err
 		}
@@ -142,39 +139,4 @@ func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
 	}
 
 	return nil, errors.New("token invalid")
-}
-
-// 单点登录，检查用户认证redis中token是否为有效
-func checkAuthTokenRedis(userId int, token string, grantType string) (err error) {
-	redisCli, cleanup, err := driver.GetRedisGroupClient()
-	defer cleanup()
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	value, err := redisCli.HGet(ctx, getAuthTokenRedisKey(userId), grantType).Result()
-	if err != nil {
-		return err
-	}
-	if token != value {
-		return errors.New("账号已在其他设备登录")
-	}
-	return nil
-}
-
-// 单点登录，保存token到用户的认证redis
-func saveAuthTokenRedis(userId int, accessTokenSign, refreshTokenSign string) (err error) {
-	redisCli, cleanup, err := driver.GetRedisGroupClient()
-	defer cleanup()
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
-	tokenMap := make(map[string]string, 2)
-	tokenMap["access_token"] = accessTokenSign
-	tokenMap["refresh_token"] = refreshTokenSign
-	_, err = redisCli.HMSet(ctx, getAuthTokenRedisKey(userId), tokenMap).Result()
-	return err
-}
-
-// 获取用户认证token存储的redis key
-func getAuthTokenRedisKey(userId int) string {
-	format := viper.GetString("redis_keys.auth_token")
-	return fmt.Sprintf(format, userId)
 }

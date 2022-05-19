@@ -62,8 +62,16 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(helloController, authController, homeController)
+	authService, cleanup4, err := NewAuthService()
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(helloController, authController, homeController, authService)
 	return httpServer, func() {
+		cleanup4()
 		cleanup3()
 		cleanup2()
 		cleanup()
@@ -97,8 +105,15 @@ func NewAuthService() (service.AuthService, func(), error) {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	authService := service.NewAuthService(userRepository)
+	redisGroupClient, cleanup2, err := NewRedisGroupClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	redisUserRepository := redis.NewUserRepository(redisGroupClient)
+	authService := service.NewAuthService(userRepository, redisUserRepository)
 	return authService, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }
