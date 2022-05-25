@@ -27,3 +27,11 @@ func NewHomeController() (controller.HomeController, func(), error) {
 		controller.NewHomeController,
 	))
 }
+
+func NewExcelController() (controller.ExcelController, func(), error) {
+	panic(wire.Build(
+		NewUserService,
+		NewExcelService,
+		controller.NewExcelController,
+	))
+}

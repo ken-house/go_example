@@ -7,6 +7,7 @@
 package assembly
 
 import (
+	"github.com/go_example/common/excelHandler"
 	"github.com/go_example/internal/controller"
 	"github.com/go_example/internal/repository/mysql"
 	"github.com/go_example/internal/repository/redis"
@@ -44,6 +45,23 @@ func NewHomeController() (controller.HomeController, func(), error) {
 	}, nil
 }
 
+func NewExcelController() (controller.ExcelController, func(), error) {
+	userService, cleanup, err := NewUserService()
+	if err != nil {
+		return nil, nil, err
+	}
+	excelUserService, cleanup2, err := NewExcelService()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	excelController := controller.NewExcelController(userService, excelUserService)
+	return excelController, func() {
+		cleanup2()
+		cleanup()
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -62,15 +80,24 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup4, err := NewAuthService()
+	excelController, cleanup4, err := NewExcelController()
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(helloController, authController, homeController, authService)
+	authService, cleanup5, err := NewAuthService()
+	if err != nil {
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(helloController, authController, homeController, excelController, authService)
 	return httpServer, func() {
+		cleanup5()
 		cleanup4()
 		cleanup3()
 		cleanup2()
@@ -114,6 +141,30 @@ func NewAuthService() (service.AuthService, func(), error) {
 	authService := service.NewAuthService(userRepository, redisUserRepository)
 	return authService, func() {
 		cleanup2()
+		cleanup()
+	}, nil
+}
+
+func NewUserService() (service.UserService, func(), error) {
+	mysqlGroupClient, cleanup, err := NewMysqlGroupClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	userRepository := mysql.NewUserRepository(mysqlGroupClient)
+	userService := service.NewUserService(userRepository)
+	return userService, func() {
+		cleanup()
+	}, nil
+}
+
+func NewExcelService() (service.ExcelUserService, func(), error) {
+	excelExportHandler, cleanup, err := excelHandler.NewExcelExportHandler()
+	if err != nil {
+		return nil, nil, err
+	}
+	excelImportHandler := excelHandler.NewExcelImportHandler()
+	excelUserService := service.NewExcelUserService(excelExportHandler, excelImportHandler)
+	return excelUserService, func() {
 		cleanup()
 	}, nil
 }

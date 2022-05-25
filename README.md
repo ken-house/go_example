@@ -16,6 +16,7 @@
 + https://xorm.io/xorm
 + https://github.com/go-redis/redis
 + https://github.com/golang-jwt/jwt
++ https://github.com/qax-os/excelize
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -27,6 +28,7 @@
 + 版本v1.4.2升级JWT密钥；
 + 版本v1.4.3单点登录；
 + 版本v1.4.4单点登录，对代码依赖优化；
++ 版本v1.5.0增加xlsx文件导入导出；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -1121,7 +1123,220 @@ func ParseToken(authService service.AuthService, tokenString string, grantType s
 }
 ```
 最后，在authService中会依赖redis.UserRepository，该仓库会依赖redisClient连接，这样便实现了整个依赖注入的过程。
+## xlsx文件导入导出
+Excelize 是 Go 语言编写的用于操作 Office Excel 文档基础库。
+### 安装
+```shell
+go get -u github.com/xuri/excelize/v2
+```
 
+### xlsx导出
+在common/excelHandler目录下创建excel_export.go文件，定义了一个Export()公共方法用于导出文件；
+按行设置表头及文件内容，指定请求头进行下载；
+```go
+package excelHandler
 
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/xuri/excelize/v2"
+)
+
+type ExcelExportHandler interface {
+	Export(*gin.Context, [][]interface{}, []string, string) error
+}
+type excelExportHandler struct {
+	file *excelize.File
+}
+
+func NewExcelExportHandler() (ExcelExportHandler, func(), error) {
+	file := excelize.NewFile()
+	handler := &excelExportHandler{
+		file: file,
+	}
+	return handler, func() {
+		defer file.Close()
+	}, nil
+}
+
+// Export 文件导出
+func (excel *excelExportHandler) Export(c *gin.Context, rows [][]interface{}, headerArr []string, fileName string) error {
+	// 获取当前sheet
+	sheetName := excel.file.GetSheetName(0)
+
+	// 设置表头
+	err := excel.file.SetSheetRow(sheetName, "A1", &headerArr)
+	if err != nil {
+		return err
+	}
+
+	// 设置文件内容
+	err = excel.setExcelContent(rows, sheetName, 2)
+	if err != nil {
+		return err
+	}
+
+	// 指定请求头
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fileName))
+	c.Header("Content-Type", "application/octet-stream")
+
+	return excel.file.Write(c.Writer)
+}
+
+// 设置文档内容
+func (excel *excelExportHandler) setExcelContent(rows [][]interface{}, sheetName string, startRowIndex int) (err error) {
+	for i, row := range rows {
+		rowIndex := startRowIndex + i
+		if err = excel.file.SetSheetRow(sheetName, "A"+strconv.Itoa(rowIndex), &row); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+```
+新建一个service/excel_user_service.go文件，组装数据调用公共导入方法，代码如下：
+```go
+// ExportUser 导出用户信息
+func (svc *excelUserService) ExportUser(c *gin.Context, userList []MysqlModel.User) error {
+	// 文件名
+	fileName := "hello.xlsx"
+	// 表头
+	headerArr := []string{"用户Id", "用户名", "密码", "性别"}
+
+	// 表格数据
+	rows := make([][]interface{}, 0, 100)
+	for _, user := range userList {
+		row := []interface{}{user.Id, user.Username, user.Password, user.Gender}
+		rows = append(rows, row)
+	}
+
+	// 导出文件
+	return svc.excelExportHandler.Export(c, rows, headerArr, fileName)
+}
+```
+### xlsx导入
+通过router.LoadHTMLGlob("views/index.html")告诉gin加载文件，添加上传文件页面路由，并定义了文件导入处理路由；
+```go
+// Excel文件导出
+router.GET("/excel/export", srv.Export())
+// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
+router.LoadHTMLGlob("views/index.html")
+// Excel文件导入
+router.GET("/excel/import_index", func(c *gin.Context) {
+    c.HTML(http.StatusOK, "index.html", nil)
+})
+router.POST("/excel/import", srv.Import())
+```
+views/index.html文件如下：
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <title>上传⽂件⽰例</title>
+    </head>
+    <body>
+        <form action="http://127.0.0.1:8080/excel/import" method="post" enctype="multipart/form-data">
+           <input type="file" name="uploadFile">
+           <input type="submit" value="上传">
+        </form>
+    </body>
+</html>
+```
+在excel_user_service.go文件中，定义ImportUser()方法，代码如下：
+```go
+// ImportUser 导入文件
+func (svc *excelUserService) ImportUser(c *gin.Context, file io.Reader) ([]MysqlModel.User, error) {
+	userList := make([]MysqlModel.User, 0, 100)
+
+	// 表头（用于检测文件内容是否符合要求）
+	headerArr := []string{"用户Id", "用户名", "密码", "性别"}
+
+	// 读取文件数据
+	rows, err := svc.excelImportHandler.Import(c, file, 0, headerArr)
+	if err != nil {
+		return userList, err
+	}
+
+	// 格式化数据
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+		user := MysqlModel.User{
+			Id:       cast.ToInt(row[0]),
+			Username: row[1],
+			Password: row[2],
+			Gender:   cast.ToInt(row[3]),
+		}
+		userList = append(userList, user)
+	}
+	return userList, err
+}
+```
+调用了文件导入公共方法，新增文件common/excelHandler/excel_import.go文件，该文件从上传文件uploadFile文件打开Excel，读取文件内容，并根据表头判断文件内容格式，
+代码如下：
+```go
+package excelHandler
+
+import (
+	"io"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/go_example/internal/utils/tools"
+
+	"github.com/pkg/errors"
+
+	"github.com/xuri/excelize/v2"
+)
+
+type ExcelImportHandler interface {
+	Import(*gin.Context, io.Reader, int, []string) ([][]string, error)
+}
+
+type excelImportHandler struct {
+}
+
+func NewExcelImportHandler() ExcelImportHandler {
+	return &excelImportHandler{}
+}
+
+func (excel *excelImportHandler) Import(c *gin.Context, uploadFile io.Reader, sheetIndex int, headerArr []string) ([][]string, error) {
+	file, err := excelize.OpenReader(uploadFile)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// 获取当前sheet
+	sheetName := file.GetSheetName(sheetIndex)
+
+	// 按行读取文件内容
+	rows, err := file.GetRows(sheetName)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) == 0 {
+		return nil, errors.New("解析数据为空")
+	}
+
+	if len(rows[0]) != len(headerArr) {
+		return nil, errors.New("文件数据格式错误")
+	}
+
+	// 检查是否包含表头数据
+	for _, header := range headerArr {
+		if !tools.IsContain(rows[0], header) {
+			return nil, errors.New("文件数据格式错误")
+		}
+	}
+
+	return rows, err
+}
+```
 
 

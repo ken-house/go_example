@@ -3,6 +3,7 @@
 package assembly
 
 import (
+	"github.com/go_example/common/excelHandler"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/service"
@@ -26,5 +27,21 @@ func NewAuthService() (service.AuthService, func(), error) {
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,
 		service.NewAuthService,
+	))
+}
+
+func NewUserService() (service.UserService, func(), error) {
+	panic(wire.Build(
+		NewMysqlGroupClient,
+		MysqlRepo.NewUserRepository,
+		service.NewUserService,
+	))
+}
+
+func NewExcelService() (service.ExcelUserService, func(), error) {
+	panic(wire.Build(
+		excelHandler.NewExcelExportHandler,
+		excelHandler.NewExcelImportHandler,
+		service.NewExcelUserService,
 	))
 }
