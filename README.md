@@ -6,7 +6,8 @@
 ## 功能
 + 连接MySQL单机及主从数据库；
 + 连接Redis单机及Cluster集群；
-+ 使用JWT登录验证；
++ 使用JWT登录验证及单点登录；
++ Excel文件（.xlsx）导入导出；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
