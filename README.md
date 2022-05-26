@@ -29,6 +29,7 @@
 + 版本v1.4.3单点登录；
 + 版本v1.4.4单点登录，对代码依赖优化；
 + 版本v1.5.0增加xlsx文件导入导出；
++ 版本v1.6.0实现Gin优雅关机；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -1338,5 +1339,67 @@ func (excel *excelImportHandler) Import(c *gin.Context, uploadFile io.Reader, sh
 	return rows, err
 }
 ```
+## 优雅关机处理
+热更新时为了不影响正在访问的用户，需要进行优雅关机处理，将Gin通过一个groutine启动服务，不影响下面的优雅关机处理；
 
+在优雅关机处理中，通过通道接收指定的终止信号量，并读取通道实现是否执行关机操作；
 
+在关机处理中，定义了一个带超时时间的上下文，旧请求应该在超时时间内完成响应，超时后执行关闭服务；
+```go
+Run: func(cmd *cobra.Command, args []string) {
+    // 读取证书内容
+    auth.SetCerts()
+
+    // 实例化依赖注入服务
+    httpSrv, clean, err := assembly.NewHttpServer()
+    if err != nil {
+        log.Fatalf("%+v\n", err)
+    }
+    defer clean()
+
+    // 设置gin的运行环境
+    gin.SetMode(meta.EnvMode)
+
+    // 初始化engine
+    app := gin.Default()
+
+    // 注册路由
+    httpSrv.Register(app)
+
+    addr := viper.GetString("server.http.addr")
+
+    // 自定义server
+    srv := &http.Server{
+        Addr:    addr,
+        Handler: app,
+    }
+
+    // 启动监听服务
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("listen: %+v\n", err)
+        }
+    }()
+
+    quit := make(chan os.Signal)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Fatal("Server Shutdown:", err)
+    }
+    log.Println("Server exiting")
+},
+```
+### 测试效果
+在hello_controller.go文件中，增加一个超时时间
+```go
+func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
+	time.Sleep(5 * time.Second)
+	data := ctr.helloSvc.SayHello(c)
+	return negotiate.JSON(http.StatusOK, data)
+}
+```
+运行服务，访问127.0.0.1:8080/hello，立即执行Ctrl+C停止http服务，此时可以看到http服务不会立即停止，访问正常响应后服务关闭。

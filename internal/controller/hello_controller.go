@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go_example/internal/utils/negotiate"
 
@@ -24,6 +25,7 @@ func NewHelloController(helloSvc service.HelloService) HelloController {
 }
 
 func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
+	time.Sleep(5 * time.Second)
 	data := ctr.helloSvc.SayHello(c)
 	return negotiate.JSON(http.StatusOK, data)
 }
