@@ -17,3 +17,10 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		server.NewHttpServer,
 	))
 }
+
+func NewSocketServer() (server.SocketServer, func(), error) {
+	panic(wire.Build(
+		NewSocketController,
+		server.NewSocketServer,
+	))
+}

@@ -18,6 +18,9 @@ const (
 	RedisGroupDriverKey  = "group"      // redisCluster连接
 )
 
+// SocketWhiteIpList IP白名单
+var SocketWhiteIpList = []string{"127.0.0.1"}
+
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
 

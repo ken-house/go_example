@@ -1,0 +1,26 @@
+<html>
+<head>
+    <title>test</title>
+</head>
+<body>
+test ....
+</body>
+<script>
+    var ws = new WebSocket("ws://192.168.163.1:30000/socket");
+    var data = `{"name":"张三","age":"18"}`
+
+    //连接打开时触发
+    ws.onopen = function(evt) {
+        console.log("Connection open ...");
+        ws.send(data);
+    };
+    //接收到消息时触发
+    ws.onmessage = function(evt) {
+        console.log("Received Message: " + evt.data);
+    };
+    //连接关闭时触发
+    ws.onclose = function(evt) {
+        console.log("Connection closed.");
+    };
+</script>
+</html>

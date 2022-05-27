@@ -38,6 +38,21 @@ func NewHttpServer(
 }
 
 func (srv *httpServer) Register(router *gin.Engine) {
+	// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
+	router.LoadHTMLGlob("views/*.html")
+	// Excel文件导入
+	router.GET("/excel/import_index", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	// websocket连接
+	router.GET("/socket/index", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "socket.html", nil)
+	})
+	// websocket连接
+	router.GET("/socket/index2", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "socket2.html", nil)
+	})
+
 	router.GET("/hello", srv.Hello())
 	// 登录接口
 	router.POST("/auth/login", srv.Login())
@@ -47,12 +62,6 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/home", middleware.JWTAuthMiddleware(srv.authService), srv.Home())
 	// Excel文件导出
 	router.GET("/excel/export", srv.Export())
-	// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
-	router.LoadHTMLGlob("views/index.html")
-	// Excel文件导入
-	router.GET("/excel/import_index", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", nil)
-	})
 	router.POST("/excel/import", srv.Import())
 }
 

@@ -35,3 +35,9 @@ func NewExcelController() (controller.ExcelController, func(), error) {
 		controller.NewExcelController,
 	))
 }
+
+func NewSocketController() (controller.SocketController, func(), error) {
+	panic(wire.Build(
+		controller.NewSocketController,
+	))
+}

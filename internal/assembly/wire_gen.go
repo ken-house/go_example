@@ -62,6 +62,12 @@ func NewExcelController() (controller.ExcelController, func(), error) {
 	}, nil
 }
 
+func NewSocketController() (controller.SocketController, func(), error) {
+	socketController := controller.NewSocketController()
+	return socketController, func() {
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -101,6 +107,17 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup4()
 		cleanup3()
 		cleanup2()
+		cleanup()
+	}, nil
+}
+
+func NewSocketServer() (server.SocketServer, func(), error) {
+	socketController, cleanup, err := NewSocketController()
+	if err != nil {
+		return nil, nil, err
+	}
+	socketServer := server.NewSocketServer(socketController)
+	return socketServer, func() {
 		cleanup()
 	}, nil
 }
