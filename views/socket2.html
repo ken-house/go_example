@@ -17,7 +17,7 @@
                 if (ws) {
                     return false;
                 }
-                ws = new WebSocket("ws://192.168.163.1:30000/socket");
+                ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
                 ws.onopen = function(evt) {
                     print("OPEN");
                 }

@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"fmt"
+	"log"
 	"net/http"
-
-	"github.com/go_example/internal/utils/negotiate"
 
 	"github.com/gorilla/websocket"
 
@@ -23,7 +23,7 @@ var upGrader = websocket.Upgrader{
 }
 
 type SocketController interface {
-	Test(c *gin.Context)
+	SocketServer(c *gin.Context)
 }
 
 type socketController struct {
@@ -33,16 +33,12 @@ func NewSocketController() SocketController {
 	return &socketController{}
 }
 
-func (ctr *socketController) Test(c *gin.Context) {
+func (ctr *socketController) SocketServer(c *gin.Context) {
 	// 升级为WebSocket
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		_, resData := negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"message": "socket connection err",
-			},
-		})
-		ws.WriteJSON(resData.Data)
+		log.Fatalf("upGrader,err is %+v", err)
+		return
 	}
 	defer ws.Close()
 
@@ -71,6 +67,7 @@ func (ctr *socketController) Test(c *gin.Context) {
 		}
 
 		resData := "recv data:" + string(message)
+		fmt.Println(resData)
 		ws.WriteMessage(messageType, []byte(resData))
 	}
 }

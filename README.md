@@ -8,6 +8,7 @@
 + 连接Redis单机及Cluster集群；
 + 使用JWT登录验证及单点登录；
 + Excel文件（.xlsx）导入导出；
++ 提供WebSocket连接服务；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -18,6 +19,7 @@
 + https://github.com/go-redis/redis
 + https://github.com/golang-jwt/jwt
 + https://github.com/qax-os/excelize
++ https://github.com/gorilla/websocket
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -31,6 +33,7 @@
 + 版本v1.4.4单点登录，对代码依赖优化；
 + 版本v1.5.0增加xlsx文件导入导出；
 + 版本v1.6.0实现Gin优雅关机；
++ 版本v1.7.0实现WebSocket服务；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -1404,3 +1407,302 @@ func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
 }
 ```
 运行服务，访问127.0.0.1:8080/hello，立即执行Ctrl+C停止http服务，此时可以看到http服务不会立即停止，访问正常响应后服务关闭。
+## WebSocket服务
+Socket是实现TCP/IP连接的API接口，调用Socket提供的接口，可以实现一次TCP连接，客户端和服务端全双工数据交互，主要应用场景如游戏。
+
+### 创建子入口构建Socket服务
+通过cobra生成socket服务入口，在项目根目录下执行以下命令：
+```shell
+cobra add socket
+```
+同http服务构建类似，创建或编辑以下文件，并执行wire重新生成wire_gen.go文件：
++ internal/server/socket.go
++ internal/controller/socket_controller.go
++ internal/assembly/controller.go
++ internal/assembly/server.go
+### Socket服务端
+在socket_controller.go文件中，通过github.com/gorilla/websocket库升级http连接为websocket连接，并提供服务端服务。
+```go
+package controller
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/websocket"
+
+	"github.com/gin-gonic/gin"
+)
+
+var upGrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+type SocketController interface {
+	SocketServer(c *gin.Context)
+}
+
+type socketController struct {
+}
+
+func NewSocketController() SocketController {
+	return &socketController{}
+}
+
+func (ctr *socketController) SocketServer(c *gin.Context) {
+	// 升级为WebSocket
+	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Fatalf("upGrader,err is %+v", err)
+		return
+	}
+	defer ws.Close()
+
+	// 处理socket请求
+	for {
+		// 读取客户端的数据为字符串消息类型
+		messageType, message, err := ws.ReadMessage()
+		if err != nil {
+			break
+		}
+		
+		// 响应客户端的数据也为字符串消息类型
+		resData := "recv data:" + string(message)
+		ws.WriteMessage(messageType, []byte(resData))
+	}
+}
+```
+### 浏览器客户端
+在http服务中，增加html页面，通过前端发起websocket连接。
+
+在路由增加加载的html文件，代码如下：
+```go
+func (srv *httpServer) Register(router *gin.Engine) {
+    // 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
+    router.LoadHTMLGlob("views/*.html")
+    // Excel文件导入
+    router.GET("/excel/import_index", func (c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+    })
+    // websocket连接
+    router.GET("/socket/index2", func (c *gin.Context) {
+        c.HTML(http.StatusOK, "socket2.html", nil)
+    })
+	// ......
+}
+```
+views/socket2.html文件内容如下：
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script>
+        window.addEventListener("load", function(evt) {
+            var output = document.getElementById("output");
+            var input = document.getElementById("input");
+            var ws;
+            var print = function(message) {
+                var d = document.createElement("div");
+                d.textContent = message;
+                output.appendChild(d);
+                output.scroll(0, output.scrollHeight);
+            };
+            document.getElementById("open").onclick = function(evt) {
+                if (ws) {
+                    return false;
+                }
+                ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
+                ws.onopen = function(evt) {
+                    print("OPEN");
+                }
+                ws.onclose = function(evt) {
+                    print("CLOSE");
+                    ws = null;
+                }
+                ws.onmessage = function(evt) {
+                    print("RESPONSE: " + evt.data);
+                }
+                ws.onerror = function(evt) {
+                    print("ERROR: " + evt.data);
+                }
+                return false;
+            };
+            document.getElementById("send").onclick = function(evt) {
+                if (!ws) {
+                    return false;
+                }
+                print("SEND: " + input.value);
+                ws.send(input.value);
+                return false;
+            };
+            document.getElementById("close").onclick = function(evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.close();
+                return false;
+            };
+        });
+    </script>
+</head>
+<body>
+<table>
+    <tr><td valign="top" width="50%">
+        <p>Click "Open" to create a connection to the server,
+            "Send" to send a message to the server and "Close" to close the connection.
+            You can change the message and send multiple times.
+        <p>
+        <form>
+            <button id="open">Open</button>
+            <button id="close">Close</button>
+            <p><input id="input" type="text" value="Hello world!">
+                <button id="send">Send</button>
+        </form>
+    </td><td valign="top" width="50%">
+        <div id="output" style="max-height: 70vh;overflow-y: scroll;"></div>
+    </td></tr></table>
+</body>
+</html>
+```
+访问127.0.0.1:8080/socket/index2即可展示页面，点击发送socket请求；
+
+以上使用的数据格式为普通字符串类型，一般使用采用json数据格式，因此需要对服务端代码进行如下修改：
+```go
+for {
+    // 从ws中读取数据
+    var reqData map[string]string
+    err = ws.ReadJSON(&reqData)
+    if err != nil {
+        break
+    }
+    
+    message := reqData["name"] + "_" + reqData["age"]
+
+    _, resData := negotiate.JSON(http.StatusOK, gin.H{
+        "data": gin.H{
+            "message": "recv msg：" + string(message),
+        },
+    })
+    // 写入ws数据
+    ws.WriteJSON(resData.Data)
+}
+```
+客户端代码也需要进行修改，发送为json数据，接收也是json数据，如下所示：
+```html
+<html>
+<head>
+    <title>test</title>
+</head>
+<body>
+test ....
+</body>
+<script>
+    var ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
+    var data = `{"name":"张三","age":"18"}`
+
+    //连接打开时触发
+    ws.onopen = function(evt) {
+        console.log("Connection open ...");
+        ws.send(data);
+    };
+    //接收到消息时触发
+    ws.onmessage = function(evt) {
+        console.log("Received Message: " + evt.data);
+    };
+    //连接关闭时触发
+    ws.onclose = function(evt) {
+        console.log("Connection closed.");
+    };
+</script>
+</html>
+```
+### 客户端
+当需要连接其他项目提供的socket服务时，需要编写客户端代码，代码如下：
+```go
+package main
+
+import (
+	"bufio"
+	"flag"
+	"log"
+	"net/url"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
+
+	"github.com/gorilla/websocket"
+)
+
+var addr = flag.String("addr", ":30000", "http service address")
+
+func main() {
+	flag.Parse()
+	log.SetFlags(0)
+
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt)
+
+	u := url.URL{Scheme: "ws", Host: *addr, Path: "/socket_server"}
+	log.Printf("connecting to %s", u.String())
+
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		log.Fatal("dial:", err)
+	}
+	defer c.Close()
+
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				log.Println("read:", err)
+				return
+			}
+			log.Printf("recv: %s", message)
+		}
+	}()
+
+	inputReader := bufio.NewReader(os.Stdin)
+	// 发送数据
+	go func() {
+		for {
+			input, _ := inputReader.ReadString('\n')
+			inputInfo := strings.Trim(input, "\r\n")
+			err = c.WriteMessage(websocket.TextMessage, []byte(inputInfo))
+			if err != nil {
+				log.Printf("WriteMessage err:%+v", err)
+				break
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-interrupt:
+			log.Println("interrupt")
+
+			// 通过发送一个关闭消息，在等待1秒后关闭连接
+			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				log.Println("write close:", err)
+				return
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+			}
+			return
+		}
+	}
+}
+```

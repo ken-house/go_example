@@ -20,11 +20,12 @@ func NewSocketServer(socketCtr controller.SocketController) SocketServer {
 }
 
 func (srv *socketServer) Register(router *gin.Engine) {
-	router.GET("/socket", srv.TestSocket())
+	router.GET("/socket_server", srv.SocketServer())
+
 }
 
-func (srv *socketServer) TestSocket() gin.HandlerFunc {
+func (srv *socketServer) SocketServer() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		srv.socketCtr.Test(c)
+		srv.socketCtr.SocketServer(c)
 	}
 }

@@ -5,7 +5,13 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/assembly"
@@ -29,9 +35,28 @@ var socketCmd = &cobra.Command{
 
 		app := gin.Default()
 		socketSrv.Register(app)
-		if err := app.Run(":30000"); err != nil {
-			log.Fatalf("socket server start failed")
+
+		srv := http.Server{
+			Addr:    ":30000",
+			Handler: app,
 		}
+
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("socket server start failed")
+			}
+		}()
+
+		quit := make(chan os.Signal)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+		<-quit
+
+		ctx, cleanup := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cleanup()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Fatal("Server Shutdown:", err)
+		}
+		log.Println("Server exiting")
 	},
 }
 
