@@ -19,7 +19,7 @@ const (
 )
 
 // SocketWhiteIpList IP白名单
-var SocketWhiteIpList = []string{"127.0.0.1"}
+var SocketWhiteIpList = []string{"127.0.0.1", "192.168.163.*"}
 
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient

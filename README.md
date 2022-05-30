@@ -34,6 +34,7 @@
 + 版本v1.5.0增加xlsx文件导入导出；
 + 版本v1.6.0实现Gin优雅关机；
 + 版本v1.7.0实现WebSocket服务；
++ 版本v1.7.1实现WebSocket心跳检测及客户端来源检查；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。
@@ -1704,5 +1705,79 @@ func main() {
 			return
 		}
 	}
+}
+```
+### WebSocket服务增加心跳检测
+WebSocket服务启动后，若客户端不关闭连接且长时间不通信，服务端TCP连接会一直保持。当Socket连接数不断增多时，对服务器资源是个巨大的消耗，因此需要及时关闭连接。
+
+golang并没有提供针对长连接的方法，因此可以通过心跳检测策略来实现：
++ 当客户端有数据请求时，则重新设置服务端连接的超时时间为30秒；
++ 当客户端超过30秒未请求，则会超时并关闭服务端TCP连接；
+
+通过定义一个channel，定义一个goroutine若有数据则写入通道，另定义一个goroutine从通道里取值，若能取出，则重新设置连接超时时间，代码如下：
+```go
+func (ctr *socketController) SocketServer(c *gin.Context) {
+	// 升级为WebSocket
+	conn, err := upGrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Fatalf("upGrader,err is %+v", err)
+		return
+	}
+	defer conn.Close()
+
+	// 处理socket请求
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			break
+		}
+
+		resData := "recv data:" + string(message)
+		fmt.Println(resData)
+		conn.WriteMessage(messageType, []byte(resData))
+
+		// 定义一个chan
+		heartChan := make(chan byte)
+		go heartBeating(message[:1], heartChan)
+		go heartHandler(conn, heartChan, 30)
+	}
+}
+
+// 如果有消息则写入通道
+func heartBeating(msg []byte, heartChan chan byte) {
+	for _, v := range msg {
+		heartChan <- v
+	}
+}
+
+// 保活
+func heartHandler(conn *websocket.Conn, heartChan chan byte, timeout int) {
+	select {
+	case <-heartChan:
+		conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+		conn.SetWriteDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+	}
+}
+
+```
+
+### WebSocket增加客户端来源检查
+Socket服务端启动后，只需要知道IP和Port后，就可以连接，这样就不安全，可以增加一个来源检查。以下代码通过IP地址进行判断：
+```go
+var upGrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		clientIp := tools.GetClientIp(r)
+		if len(meta.SocketWhiteIpList) > 0 {
+			for _, ip := range meta.SocketWhiteIpList {
+				pattern := strings.ReplaceAll(strings.ReplaceAll(ip, ".", "\\."), "*", ".*")
+				match, _ := regexp.MatchString(pattern, clientIp)
+				if match {
+					return true
+				}
+			}
+			return false
+		}
+		return true
+	},
 }
 ```
