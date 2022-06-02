@@ -2,6 +2,12 @@ server:
   http:
     name: "http"
     addr: ":8080"
+  socket:
+    name: "socket"
+    addr: ":30000"
+  grpc:
+    name: "grpc"
+    addr: ":9090"
 
 certs:
   curKey: 1652421664

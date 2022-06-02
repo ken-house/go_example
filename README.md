@@ -8,7 +8,8 @@
 + 连接Redis单机及Cluster集群；
 + 使用JWT登录验证及单点登录；
 + Excel文件（.xlsx）导入导出；
-+ 提供WebSocket连接服务；
++ 提供WebSocket服务；
++ 提供gRPC服务；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -20,6 +21,7 @@
 + https://github.com/golang-jwt/jwt
 + https://github.com/qax-os/excelize
 + https://github.com/gorilla/websocket
++ https://google.golang.org/grpc
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -35,9 +37,10 @@
 + 版本v1.6.0实现Gin优雅关机；
 + 版本v1.7.0实现WebSocket服务；
 + 版本v1.7.1实现WebSocket心跳检测及客户端来源检查；
++ 版本v1.8.0实现grpc服务；
 
 ## 使用
-要求golang版本必须支持Go Modules，建议版本在1.14以上。
+要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
 
 克隆到本地目录
 ```shell
@@ -1781,3 +1784,225 @@ var upGrader = websocket.Upgrader{
 	},
 }
 ```
+## gRPC服务
+gRPC是一种实现rpc框架，gRPC能让我们更容易编写跨语言的分布式代码，使用protobuf协议效率更高、更规范。
+### 编写proto文件
+gRPC使用protobuf协议进行通信，在项目目录下创建common/protobuf/hello/hello.proto文件，代码如下：
+```protobuf
+syntax = "proto3";
+
+package hello;
+
+option go_package="common/protobuf/hello;pb";
+
+message HelloRequest{
+  int32 id=1;
+}
+
+message HelloResponse{
+  int32 id = 1;
+  string name = 2;
+}
+
+service HelloService{
+  rpc SayHello(HelloRequest) returns (HelloResponse);
+}
+```
+### 生成pb.go文件
+从https://github.com/protocolbuffers/protobuf/releases下载对应的protoc编译器，解压拷贝到$GOPATH/bin目录下；
+安装生成go语言代码插件
+```shell
+go get -u github.com/golang/protobuf/protoc-gen-go
+```
+在项目根目录下执行命令：
+```shell
+protoc  --go_out=plugins=grpc:. common/protobuf/hello/hello.proto
+```
+这样就在common/protobuf/hello目录下生成了hello.pb.go文件。
+
+### 创建gRPC服务
+使用cobra增加子命令：
+```shell
+cobra add grpc
+```
+在internal/server目录下创建一个grpc.go文件，该文件定义了一个grpcServer，包含注册服务到grpc及服务的一个实现方法，代码如下：
+```go
+package server
+
+import (
+	"context"
+
+	pb "github.com/go_example/common/protobuf/hello"
+	"google.golang.org/grpc"
+)
+
+type GrpcServer interface {
+	SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error)
+	Register(server *grpc.Server)
+}
+type grpcServer struct {
+	pb.UnimplementedHelloServiceServer
+}
+
+func NewGrpcServer() GrpcServer {
+	return &grpcServer{}
+}
+
+// Register 注册服务到grpc
+func (srv *grpcServer) Register(server *grpc.Server) {
+	pb.RegisterHelloServiceServer(server, &grpcServer{})
+}
+
+// SayHello grpc服务
+func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	name := "world"
+	if in.Id != 1 {
+		name = "gRPC"
+	}
+	return &pb.HelloResponse{
+		Id:   in.Id,
+		Name: "hello " + name,
+	}, nil
+}
+```
+### 启动grpc服务
+将protobuf定义的service服务注册到grpc中，并启动服务。代码如下：
+```go
+/*
+Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+
+*/
+package cmd
+
+import (
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/spf13/viper"
+
+	"google.golang.org/grpc"
+
+	"github.com/go_example/internal/assembly"
+	"github.com/spf13/cobra"
+)
+
+// grpcCmd represents the grpc command
+var grpcCmd = &cobra.Command{
+	Use:   "grpc",
+	Short: "A brief description of your command",
+	Long:  `grpc server`,
+	Run: func(cmd *cobra.Command, args []string) {
+		grpcSrv, cleanup, err := assembly.NewGrpcServer()
+		if err != nil {
+			log.Fatalf("%+v\n", err)
+		}
+		defer cleanup()
+
+		// 1.监听端口
+		addr := viper.GetString("server.grpc.addr")
+		listen, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Fatalf("Listen err:%+v", err)
+		}
+
+		// 2.创建一个grpc服务
+		app := grpc.NewServer()
+
+		// 3.注册服务
+		grpcSrv.Register(app)
+
+		// 4.启动服务
+		go func() {
+			err = app.Serve(listen)
+			if err != nil {
+				log.Fatalf("Serve err:%+v", err)
+			}
+		}()
+
+		// 优雅关闭服务
+		quit := make(chan os.Signal)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+		<-quit
+		app.GracefulStop()
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(grpcCmd)
+}
+```
+对internal/assembly/server.go文件增加NewGrpcServer方法后，执行wire重新生成文件：
+```go
+func NewGrpcServer() (server.GrpcServer, func(), error) {
+	panic(wire.Build(
+		server.NewGrpcServer,
+	))
+}
+```
+这样就完成了grpc服务端，执行go run main.go grpc即可。
+
+### gRPC客户端
+创建一个controller，对其进行wire注入，配置http服务的路由，最终代码如下：
+```go
+package controller
+
+import (
+	"net/http"
+
+	"github.com/spf13/cast"
+
+	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/utils/negotiate"
+
+	pb "github.com/go_example/common/protobuf/hello"
+	"google.golang.org/grpc"
+)
+
+type GrpcClientController interface {
+	HelloGrpc(c *gin.Context) (int, gin.Negotiate)
+}
+
+type grpcClientController struct {
+}
+
+func NewGrpcClientController() GrpcClientController {
+	return &grpcClientController{}
+}
+
+func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) {
+	idStr := c.DefaultQuery("id", "1")
+	// 连接服务
+	conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"name": "",
+			},
+		})
+	}
+
+	// 创建grpc client
+	client := pb.NewHelloServiceClient(conn)
+
+	// 调用服务
+	resp, err := client.SayHello(c, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"name": "",
+			},
+		})
+	}
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"name": resp.Name,
+		},
+	})
+}
+```
+启动http服务，访问对应的路由即可连接gRPC服务。

@@ -68,32 +68,38 @@ func NewSocketController() (controller.SocketController, func(), error) {
 	}, nil
 }
 
+func NewGrpcClientController() (controller.GrpcClientController, func(), error) {
+	grpcClientController := controller.NewGrpcClientController()
+	return grpcClientController, func() {
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
-	helloController, cleanup, err := NewHelloController()
+	grpcClientController, cleanup, err := NewGrpcClientController()
 	if err != nil {
 		return nil, nil, err
 	}
-	authController, cleanup2, err := NewAuthController()
+	helloController, cleanup2, err := NewHelloController()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	homeController, cleanup3, err := NewHomeController()
+	authController, cleanup3, err := NewAuthController()
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	excelController, cleanup4, err := NewExcelController()
+	homeController, cleanup4, err := NewHomeController()
 	if err != nil {
 		cleanup3()
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup5, err := NewAuthService()
+	excelController, cleanup5, err := NewExcelController()
 	if err != nil {
 		cleanup4()
 		cleanup3()
@@ -101,8 +107,18 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(helloController, authController, homeController, excelController, authService)
+	authService, cleanup6, err := NewAuthService()
+	if err != nil {
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, authService)
 	return httpServer, func() {
+		cleanup6()
 		cleanup5()
 		cleanup4()
 		cleanup3()
@@ -119,6 +135,12 @@ func NewSocketServer() (server.SocketServer, func(), error) {
 	socketServer := server.NewSocketServer(socketController)
 	return socketServer, func() {
 		cleanup()
+	}, nil
+}
+
+func NewGrpcServer() (server.GrpcServer, func(), error) {
+	grpcServer := server.NewGrpcServer()
+	return grpcServer, func() {
 	}, nil
 }
 

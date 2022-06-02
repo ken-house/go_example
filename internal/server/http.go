@@ -14,14 +14,16 @@ type HttpServer interface {
 }
 
 type httpServer struct {
-	helloCtr    controller.HelloController
-	authCtr     controller.AuthController
-	homeCtr     controller.HomeController
-	excelCtr    controller.ExcelController
-	authService service.AuthService
+	grpcClientCtr controller.GrpcClientController
+	helloCtr      controller.HelloController
+	authCtr       controller.AuthController
+	homeCtr       controller.HomeController
+	excelCtr      controller.ExcelController
+	authService   service.AuthService
 }
 
 func NewHttpServer(
+	grpcClientCtr controller.GrpcClientController,
 	helloCtr controller.HelloController,
 	authCtr controller.AuthController,
 	homeCtr controller.HomeController,
@@ -29,11 +31,12 @@ func NewHttpServer(
 	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
-		helloCtr:    helloCtr,
-		authCtr:     authCtr,
-		homeCtr:     homeCtr,
-		excelCtr:    excelCtr,
-		authService: authService,
+		grpcClientCtr: grpcClientCtr,
+		helloCtr:      helloCtr,
+		authCtr:       authCtr,
+		homeCtr:       homeCtr,
+		excelCtr:      excelCtr,
+		authService:   authService,
 	}
 }
 
@@ -63,6 +66,14 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	// Excel文件导出
 	router.GET("/excel/export", srv.Export())
 	router.POST("/excel/import", srv.Import())
+	router.GET("/gprc/hello", srv.HelloGrpc())
+}
+
+func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.grpcClientCtr.HelloGrpc(c))
+	}
+
 }
 
 func (srv *httpServer) Hello() gin.HandlerFunc {

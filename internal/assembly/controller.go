@@ -41,3 +41,9 @@ func NewSocketController() (controller.SocketController, func(), error) {
 		controller.NewSocketController,
 	))
 }
+
+func NewGrpcClientController() (controller.GrpcClientController, func(), error) {
+	panic(wire.Build(
+		controller.NewGrpcClientController,
+	))
+}

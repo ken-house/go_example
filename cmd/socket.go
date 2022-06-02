@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/assembly"
 	"github.com/go_example/internal/utils/env"
@@ -36,8 +38,9 @@ var socketCmd = &cobra.Command{
 		app := gin.Default()
 		socketSrv.Register(app)
 
+		addr := viper.GetString("server.socket.addr")
 		srv := http.Server{
-			Addr:    ":30000",
+			Addr:    addr,
 			Handler: app,
 		}
 

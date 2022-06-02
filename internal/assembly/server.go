@@ -9,6 +9,7 @@ import (
 
 func NewHttpServer() (server.HttpServer, func(), error) {
 	panic(wire.Build(
+		NewGrpcClientController,
 		NewHelloController,
 		NewAuthController,
 		NewHomeController,
@@ -22,5 +23,11 @@ func NewSocketServer() (server.SocketServer, func(), error) {
 	panic(wire.Build(
 		NewSocketController,
 		server.NewSocketServer,
+	))
+}
+
+func NewGrpcServer() (server.GrpcServer, func(), error) {
+	panic(wire.Build(
+		server.NewGrpcServer,
 	))
 }
