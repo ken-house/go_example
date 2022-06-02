@@ -1820,7 +1820,7 @@ protoc  --go_out=plugins=grpc:. common/protobuf/hello/hello.proto
 ```
 这样就在common/protobuf/hello目录下生成了hello.pb.go文件。
 
-### 创建gRPC服务
+### 创建gRPC服务入口
 使用cobra增加子命令：
 ```shell
 cobra add grpc
