@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/spf13/viper"
 
 	"google.golang.org/grpc"
@@ -39,7 +41,11 @@ var grpcCmd = &cobra.Command{
 		}
 
 		// 2.创建一个grpc服务
-		app := grpc.NewServer()
+		creds, err := credentials.NewServerTLSFromFile("./assets/certs/grpc_tls/server.pem", "./assets/certs/grpc_tls/server.key")
+		if err != nil {
+			log.Fatalf("NewServerTLSFromFile err:%+v", err)
+		}
+		app := grpc.NewServer(grpc.Creds(creds))
 
 		// 3.注册服务
 		grpcSrv.Register(app)

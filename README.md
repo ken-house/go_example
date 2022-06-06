@@ -37,7 +37,8 @@
 + 版本v1.6.0实现Gin优雅关机；
 + 版本v1.7.0实现WebSocket服务；
 + 版本v1.7.1实现WebSocket心跳检测及客户端来源检查；
-+ 版本v1.8.0实现grpc服务；
++ 版本v1.8.0实现gRPC服务；
++ 版本v1.8.1增加gRPC加密认证；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
@@ -2006,3 +2007,62 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 }
 ```
 启动http服务，访问对应的路由即可连接gRPC服务。
+
+### TLS加密认证
+在上面的示例中，服务端未使用加密认证，客户端通过指定insecure.NewCredentials()跳过加密认证，这样安全性不高，为此这里使用TLS证书加密。
+在1.15版本后，需要执行SAN证书通信。
+#### 生成证书
+copy一份openssl.cnf文件到要生成证书的目录下，对文件做如下修改：
+```text
+[ CA_default ]
+...
+# 打开下面这行
+copy_extensions = copy
+...
+[ req ]
+...
+# 打开下面这行
+req_extensions = v3_req
+...
+[ V3_req ]
+...
+# 增加如下一行
+subjectAltName = @alt_names
+...
+
+# 增加[ alt_names ]配置段，这里设置域名
+[ alt_names ]
+DNS.1 = *.org.example.com
+DNS.2 = *.example.com
+```
+生成根证书
+```shell
+# 生成根证书私钥
+openssl genrsa -out ca.key 2048
+# 生成CA证书请求
+openssl req -new -key ca.key -out ca.csr -subj "/C=cn/OU=myorg/O=mytest/CN=myname"
+# 自签名得到根证书
+openssl x509 -req -days 3650 -in ca.csr -signkey ca.key -out ca.crt
+```
+生成服务端证书
+```shell
+# 生成服务端证书私钥
+openssl genrsa -out server.key 2048
+# 根据私钥server.key生成证书请求文件server.csr
+openssl req -new -nodes -key server.key -out server.csr -subj "/C=cn/OU=myserver/O=servercomp/CN=servername" -config ./openssl.cnf -extensions v3_req
+# 请求CA对证书请求文件签名，生成最终的证书文件
+openssl x509 -req -days 365 -in server.csr -out server.pem -CA ca.crt -CAkey ca.key -CAcreateserial -extfile ./openssl.cnf -extensions v3_req
+```
+#### 代码实现
+下面将使用到ca.crt、server.key、server.pem文件，复制到/assets/certs/grpc_tls/目录下；
+服务端代码修改
+```go
+creds, _ := credentials.NewServerTLSFromFile("./assets/certs/grpc_tls/server.pem", "./assets/certs/grpc_tls/server.key")
+app := grpc.NewServer(grpc.Creds(creds))
+```
+客户端代码修改
+```go
+creds, err := credentials.NewClientTLSFromFile("./assets/certs/grpc_tls/server.pem", "a.example.com")
+conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
+```
+运行服务端和客户端即可。

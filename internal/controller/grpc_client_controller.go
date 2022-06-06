@@ -1,11 +1,12 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 
-	"github.com/spf13/cast"
+	"google.golang.org/grpc/credentials"
 
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/spf13/cast"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/utils/negotiate"
@@ -28,8 +29,19 @@ func NewGrpcClientController() GrpcClientController {
 func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) {
 	idStr := c.DefaultQuery("id", "1")
 	// 连接服务
-	conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	creds, err := credentials.NewClientTLSFromFile("./assets/certs/grpc_tls/server.pem", "www.example.com")
 	if err != nil {
+		log.Printf("NewClientTLSFromFile err:%+v", err)
+		return negotiate.JSON(http.StatusOK, gin.H{
+			"data": gin.H{
+				"name": "",
+			},
+		})
+	}
+	conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
+	if err != nil {
+		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
 				"name": "",
@@ -43,6 +55,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	// 调用服务
 	resp, err := client.SayHello(c, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
 	if err != nil {
+		log.Printf("client.SayHello err:%+v", err)
 		return negotiate.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
 				"name": "",
