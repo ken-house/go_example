@@ -2136,3 +2136,90 @@ conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
 
 ### gRPC基于Token认证
 gRPC还为每个gRPC方法调用提供了认证支持，这样就基于用户Token对不同的方法访问进行权限管理。
+要实现对每个gRPC方法进行认证，需要实现`grpc.PerRPCCredentials`接口，在internal/lib/auth下创建一个grpc.go文件，代码如下：
+
+```Go
+package auth
+
+import (
+  "context"
+  "fmt"
+
+  "google.golang.org/grpc/metadata"
+)
+
+type Authentication interface {
+  GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error)
+  RequireTransportSecurity() bool
+  Auth(ctx context.Context) error
+}
+
+type authentication struct {
+  User     string
+  Password string
+}
+
+func NewAuthentication(user, password string) Authentication {
+  return &authentication{
+    User:     user,
+    Password: password,
+  }
+}
+
+// GetRequestMetadata 返回地认证信息
+func (auth *authentication) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+  return map[string]string{"user": auth.User, "password": auth.Password}, nil
+}
+
+// RequireTransportSecurity 返回true需要证书认证
+func (auth *authentication) RequireTransportSecurity() bool {
+  return true
+}
+
+// Auth 进行权限判断
+func (auth *authentication) Auth(ctx context.Context) error {
+  md, ok := metadata.FromIncomingContext(ctx)
+  if !ok {
+    return fmt.Errorf("missing credentials")
+  }
+  var appId, appKey string
+  if val, ok := md["user"]; ok {
+    appId = val[0]
+  }
+  if val, ok := md["password"]; ok {
+    appKey = val[0]
+  }
+  if appId != auth.User || appKey != auth.Password {
+    return fmt.Errorf("invaild token")
+  }
+  return nil
+}
+
+```
+
+客户端在之前基础上修改：
+
+```Go
+grpcAuth := auth.NewAuthentication("root", "root123")
+conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+```
+
+服务端在提供的方法修改：
+
+```Go
+// SayHello grpc服务
+func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+  grpcAuth := auth.NewAuthentication("root", "root123")
+  if err := grpcAuth.Auth(ctx); err != nil {
+    return nil, err
+  }
+  name := "world"
+  if in.Id != 1 {
+    name = "gRPC"
+  }
+  return &pb.HelloResponse{
+    Id:   in.Id,
+    Name: "hello " + name,
+  }, nil
+}
+```
