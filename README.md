@@ -38,7 +38,8 @@
 + 版本v1.7.0实现WebSocket服务；
 + 版本v1.7.1实现WebSocket心跳检测及客户端来源检查；
 + 版本v1.8.0实现gRPC服务；
-+ 版本v1.8.1增加gRPC加密认证；
++ 版本v1.8.1增加gRPC使用服务端认证；
++ 版本v1.8.2增加gRPC使用客户端/服务端各自证书认证；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
@@ -2066,3 +2067,69 @@ creds, err := credentials.NewClientTLSFromFile("./assets/certs/grpc_tls/server.p
 conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
 ```
 运行服务端和客户端即可。
+### TLS加密证书认证升级
+同样的方式生成客户端证书，得到client.key、client.crs、client.pem文件，复制文件到grpc_tls目录下；
+
+```Bash
+openssl genrsa -out client.key 2048
+openssl req -new -nodes -key client.key -out client.csr -subj "/C=cn/OU=myclient/O=clientcomp/CN=clientname" -config ./openssl.cnf -extensions v3_req
+openssl x509 -req -days 365 -in client.csr -out client.pem -CA ca.crt -CAkey ca.key -CAcreateserial -extfile ./openssl.cnf -extensions v3_req
+```
+
+服务端：
+
+```Go
+// 从证书相关文件中读取和解析信息，得到证书公钥、密钥对
+certificate, err := tls.LoadX509KeyPair("./assets/certs/grpc_tls/server.pem", "./assets/certs/grpc_tls/server.key")
+if err != nil {
+  log.Fatalf("tls.LoadX509KeyPair err:%+v", err)
+}
+// 创建一个新的、空的 CertPool
+certPool := x509.NewCertPool()
+ca, err := ioutil.ReadFile("./assets/certs/grpc_tls/ca.crt")
+if err != nil {
+  log.Fatalf("ioutil.ReadFile err:%+v", err)
+}
+// 尝试解析所传入的 PEM 编码的证书。如果解析成功会将其加到 CertPool 中，便于后面的使用
+if ok := certPool.AppendCertsFromPEM(ca); !ok {
+  log.Fatalf("certPool.AppendCertsFromPEM err:%+v", err)
+}
+// credentials.NewTLS:构建基于 TLS 的 TransportCredentials 选项
+creds := credentials.NewTLS(&tls.Config{ // Config 结构用于配置 TLS 客户端或服务器
+  Certificates: []tls.Certificate{certificate}, // 设置证书链，允许包含一个或多个
+  // tls.RequireAndVerifyClientCert 表示 Server 也会使用 CA 认证的根证书对 Client 端的证书进行校验
+  ClientAuth: tls.RequireAndVerifyClientCert, // 要求必须校验客户端的证书
+  ClientCAs:  certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
+})
+
+app := grpc.NewServer(grpc.Creds(creds))
+```
+
+客户端（基本与服务端获取证书一样）：
+
+```Go
+certificate, err:= tls.LoadX509KeyPair("./assets/certs/grpc_tls/client.pem", "./assets/certs/grpc_tls/client.key")
+if err != nil {
+  log.Fatalf("tls.LoadX509KeyPair err:%+v", err)
+}
+// 创建一个新的、空的 CertPool
+certPool := x509.NewCertPool()
+ca, err:= ioutil.ReadFile("./assets/certs/grpc_tls/ca.crt")
+if err != nil {
+  log.Fatalf("ioutil.ReadFile err:%+v", err)
+}
+// 尝试解析所传入的 PEM 编码的证书。如果解析成功会将其加到 CertPool 中，便于后面的使用
+if ok := certPool.AppendCertsFromPEM(ca); !ok {
+  log.Fatalf("certPool.AppendCertsFromPEM err:%+v", err)
+}
+
+creds := credentials.NewTLS(&tls.Config{
+  Certificates: []tls.Certificate{certificate},
+  ServerName:   "www.example.com",
+  RootCAs:      certPool,
+})
+
+conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
+```
+
+这样我们使用 CA 颁发的根证书对客户端、服务端的证书进行了签发。进一步的提高了两者的通讯安全。
