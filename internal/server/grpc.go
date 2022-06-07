@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 
+	"github.com/go_example/internal/lib/auth"
+
 	pb "github.com/go_example/common/protobuf/hello"
 	"google.golang.org/grpc"
 )
@@ -26,6 +28,10 @@ func (srv *grpcServer) Register(server *grpc.Server) {
 
 // SayHello grpc服务
 func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	grpcAuth := auth.NewAuthentication("root", "root123")
+	if err := grpcAuth.Auth(ctx); err != nil {
+		return nil, err
+	}
 	name := "world"
 	if in.Id != 1 {
 		name = "gRPC"
