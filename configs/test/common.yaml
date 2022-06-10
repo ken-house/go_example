@@ -44,3 +44,5 @@ redis:
     password: ""
 consul:
   addr: "192.168.163.131:8500"
+cacheKeys:
+  userInfo: "user_info:%d"

@@ -4,6 +4,7 @@ package assembly
 
 import (
 	"github.com/go_example/common/excelHandler"
+	CacheRepo "github.com/go_example/internal/repository/cache"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/service"
@@ -16,6 +17,7 @@ func NewHelloService() (service.HelloService, func(), error) {
 		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,
+		CacheRepo.NewUserRepository,
 		service.NewHelloService,
 	))
 }

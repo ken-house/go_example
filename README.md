@@ -24,6 +24,7 @@
 + https://github.com/gorilla/websocket
 + https://google.golang.org/grpc
 + https://github.com/hashicorp/consul
++ https://github.com/patrickmn/go-cache
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -43,6 +44,7 @@
 + 版本v1.8.1增加gRPC使用服务端认证及使用客户端/服务端各自证书认证；
 + 版本v1.8.2实现gRPC基于Token认证；
 + 版本v1.9.0使用consul做服务注册与服务发现；
++ 版本v1.10.0增加go-cache内存缓存；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
@@ -2338,3 +2340,104 @@ conn, err := grpc.Dial("consul://192.168.163.131:8500/hello?wait=10s", grpc.With
 ```
 ### 存在的问题
 当grpc使用证书认证时，consul健康检查会失败。
+
+## 内存缓存
+项目选用go-cache作为内存缓存。
+###安装
+```shell
+go get github.com/patrickmn/go-cache
+```
+### 代码实现
+在meta.go文件中定义全局变量
+```go
+// CacheDriver go-cache缓存对象
+var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
+```
+在internal/repository/cache/创建cache_repository.go，文件定义了获取key的方法及其他公共方法。
+```go
+package cache
+
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+
+	"github.com/spf13/viper"
+)
+
+// GetCacheKey 获取缓存key
+func GetCacheKey(key string, vals ...interface{}) (string, error) {
+	cacheKey := viper.GetString("cacheKeys." + key)
+	if cacheKey == "" {
+		return "", errors.New("key不存在")
+	}
+	return fmt.Sprintf(cacheKey, vals...), nil
+}
+```
+创建一个user_repository.go文件，包含读取和写入go-cache。
+```go
+package cache
+
+import (
+	"errors"
+	"time"
+
+	"github.com/go_example/internal/meta"
+	MysqlModel "github.com/go_example/internal/model/mysql"
+)
+
+type UserRepository interface {
+	SetUserInfo(uid int, userInfo MysqlModel.User) error
+	GetUserInfo(uid int) (MysqlModel.User, error)
+}
+
+type userRepository struct {
+}
+
+func NewUserRepository() UserRepository {
+	return &userRepository{}
+}
+
+func (repo *userRepository) SetUserInfo(uid int, userInfo MysqlModel.User) error {
+	cacheKey, err := GetCacheKey("userInfo", uid)
+	if err != nil {
+		return err
+	}
+	meta.CacheDriver.Set(cacheKey, userInfo, time.Hour)
+	return nil
+}
+
+func (repo *userRepository) GetUserInfo(uid int) (MysqlModel.User, error) {
+	cacheKey, err := GetCacheKey("userInfo", uid)
+	if err != nil {
+		return MysqlModel.User{}, err
+	}
+	data, isExist := meta.CacheDriver.Get(cacheKey)
+	if !isExist {
+		return MysqlModel.User{}, errors.New("key不存在")
+	}
+	return data.(MysqlModel.User), nil
+}
+```
+在hello_service.go文件中使用，代码如下：
+```go
+func (svc *helloService) SayHello(c *gin.Context) map[string]string {
+	uid := cast.ToInt(c.DefaultQuery("id", "0"))
+	// 先从gocache中读取数据
+	user, err := svc.userCacheRepo.GetUserInfo(uid)
+	if err != nil {
+		user, err = svc.userRepo.GetUserInfoById(uid)
+		if err == nil {
+			// 写入数据到gocache中
+			_ = svc.userCacheRepo.SetUserInfo(uid, user)
+		}
+	}
+	value := svc.userRedisRepo.GetValue("aa")
+	return map[string]string{
+		"hello": "world，golang",
+		"env":   viper.GetString("server.mode"),
+		"user":  user.Username,
+		"value": value,
+	}
+}
+```

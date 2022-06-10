@@ -9,6 +9,7 @@ package assembly
 import (
 	"github.com/go_example/common/excelHandler"
 	"github.com/go_example/internal/controller"
+	"github.com/go_example/internal/repository/cache"
 	"github.com/go_example/internal/repository/mysql"
 	"github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/server"
@@ -162,7 +163,8 @@ func NewHelloService() (service.HelloService, func(), error) {
 		return nil, nil, err
 	}
 	redisUserRepository := redis.NewUserRepository(redisGroupClient)
-	helloService := service.NewHelloService(userRepository, redisUserRepository)
+	cacheUserRepository := cache.NewUserRepository()
+	helloService := service.NewHelloService(userRepository, redisUserRepository, cacheUserRepository)
 	return helloService, func() {
 		cleanup2()
 		cleanup()
