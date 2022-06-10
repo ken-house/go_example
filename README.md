@@ -11,6 +11,7 @@
 + 提供WebSocket服务；
 + 提供gRPC服务；
 + Consul服务注册与服务发现；
++ 增加go-cache内存缓存使用；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
