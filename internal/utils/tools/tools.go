@@ -45,3 +45,15 @@ func GetClientIp(r *http.Request) string {
 	}
 	return clientIp
 }
+
+// GetOutBoundIp 获取本机出口IP
+func GetOutBoundIp() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return ""
+	}
+
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
+}

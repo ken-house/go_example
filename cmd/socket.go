@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -39,8 +40,9 @@ var socketCmd = &cobra.Command{
 		socketSrv.Register(app)
 
 		addr := viper.GetString("server.socket.addr")
+		port := viper.GetString("server.socket.port")
 		srv := http.Server{
-			Addr:    addr,
+			Addr:    fmt.Sprintf("%s:%s", addr, port),
 			Handler: app,
 		}
 

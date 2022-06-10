@@ -1,6 +1,7 @@
 package assembly
 
 import (
+	"github.com/go_example/common/consulClient"
 	"github.com/go_example/common/mysqlClient"
 	"github.com/go_example/common/redisClient"
 	"github.com/go_example/internal/meta"
@@ -43,4 +44,10 @@ func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 		return nil, nil, err
 	}
 	return redisClient.NewGroupClient(cfg)
+}
+
+// NewConsulClient 连接consul单机
+func NewConsulClient() (meta.ConsulClient, error) {
+	addr := viper.GetString("consul.addr")
+	return consulClient.NewClient(addr)
 }

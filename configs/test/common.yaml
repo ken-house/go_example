@@ -1,13 +1,16 @@
 server:
   http:
     name: "http"
-    addr: ":8080"
+    addr: ""
+    port: "8080"
   socket:
     name: "socket"
-    addr: ":30000"
+    addr: ""
+    port: "30000"
   grpc:
     name: "grpc"
-    addr: ":9090"
+    addr: ""
+    port: "9090"
 
 certs:
   curKey: 1652421664
@@ -22,8 +25,7 @@ mysql:
     master:
       dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
     slaves:
-      - dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
-      - dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+      - dsn: "root:root@tcp(192.168.163.131:3306)/go_example?charset=utf8mb4"
   single:
     dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
 redis:
@@ -40,3 +42,5 @@ redis:
       - 192.168.163.131:7004
       - 192.168.163.131:7005
     password: ""
+consul:
+  addr: "192.168.163.131:8500"

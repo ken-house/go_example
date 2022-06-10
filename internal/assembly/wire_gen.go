@@ -139,7 +139,11 @@ func NewSocketServer() (server.SocketServer, func(), error) {
 }
 
 func NewGrpcServer() (server.GrpcServer, func(), error) {
-	grpcServer := server.NewGrpcServer()
+	consulClient, err := NewConsulClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	grpcServer := server.NewGrpcServer(consulClient)
 	return grpcServer, func() {
 	}, nil
 }

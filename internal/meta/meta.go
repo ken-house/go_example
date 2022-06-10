@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/go_example/common/consulClient"
 	"github.com/go_example/common/mysqlClient"
 	"github.com/go_example/common/redisClient"
 )
@@ -18,6 +19,8 @@ const (
 	RedisGroupDriverKey  = "group"      // redisCluster连接
 )
 
+const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
+
 // SocketWhiteIpList IP白名单
 var SocketWhiteIpList = []string{"127.0.0.1", "192.168.163.*"}
 
@@ -32,3 +35,6 @@ type RedisSingleClient redisClient.SingleClient
 
 // RedisGroupClient redisCluster连接
 type RedisGroupClient redisClient.GroupClient
+
+// ConsulClient consul连接
+type ConsulClient consulClient.ConsulClient

@@ -10,6 +10,7 @@
 + Excel文件（.xlsx）导入导出；
 + 提供WebSocket服务；
 + 提供gRPC服务；
++ Consul服务注册与服务发现；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -22,6 +23,7 @@
 + https://github.com/qax-os/excelize
 + https://github.com/gorilla/websocket
 + https://google.golang.org/grpc
++ https://github.com/hashicorp/consul
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -40,6 +42,7 @@
 + 版本v1.8.0实现gRPC服务；
 + 版本v1.8.1增加gRPC使用服务端认证及使用客户端/服务端各自证书认证；
 + 版本v1.8.2实现gRPC基于Token认证；
++ 版本v1.9.0使用consul做服务注册与服务发现；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
@@ -182,7 +185,7 @@ go get -u github.com/google/wire
 ```
 对项目目录结构进行分层，目录结构如下：
 
-![image](images/1.png)
+![image](assets/images/1.png)
 
 在项目中，web服务调用controller控制器，控制器调用service服务类，服务类调用repository数据仓库层，
 数据仓库层调用其他包生成的服务引擎客户端（如mysql）。
@@ -680,7 +683,7 @@ JWT是一次签发带有过期时间的令牌Token，当登录成功后，系统
 + 如果 Refresh Token 没有过期，服务端向客户端下发新的 Access Token
 + 客户端使用新的 Access Token 访问需要认证的接口
 
-![image](images/jwt.jpg)
+![image](assets/images/jwt.jpg)
 
 对普通验证代码进行改造，生成token时，返回一个access_token和refresh_token，解析token时使用对应的解密盐；
 ```go
@@ -2223,3 +2226,115 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
   }, nil
 }
 ```
+## 服务注册与服务发现
+Consul提供服务注册与服务发现API接口，可实现gRPC分布式服务负载均衡。
+### 安装
+官方提供了golang版本的库，通过下面命令进行安装：
+```shell
+go get github.com/hashicorp/consul/api
+```
+创建common/consulClient/consulClient.go文件，通过consul官方提供的api包调用对应的服务注册与发现接口。
+```go
+package consulClient
+
+import (
+	"fmt"
+
+	consulApi "github.com/hashicorp/consul/api"
+)
+
+type ConsulClient interface {
+	RegisterService(serviceName string, ip string, port int) error
+	DeregisterService(serviceId string) error
+}
+
+type consulClient struct {
+	Client *consulApi.Client
+}
+
+func NewClient(addr string) (ConsulClient, error) {
+	cfg := consulApi.DefaultConfig()
+	cfg.Address = addr
+	cli, err := consulApi.NewClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &consulClient{
+		Client: cli,
+	}, nil
+}
+
+// RegisterService 注册服务
+func (cli *consulClient) RegisterService(serviceName string, ip string, port int) error {
+	// 服务健康检查
+	check := &consulApi.AgentServiceCheck{
+		Interval:                       "10s",
+		Timeout:                        "10s",
+		GRPC:                           fmt.Sprintf("%s:%d", ip, port),
+		GRPCUseTLS:                     true,
+		TLSSkipVerify:                  true,
+		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
+	}
+	return cli.Client.Agent().ServiceRegister(&consulApi.AgentServiceRegistration{
+		ID:      fmt.Sprintf("%s-%s-%d", serviceName, ip, port),
+		Name:    serviceName,
+		Tags:    []string{"my_grpc"},
+		Port:    port,
+		Address: ip,
+		Check:   check,
+	})
+}
+
+// DeregisterService 注销服务
+func (cli *consulClient) DeregisterService(serviceId string) error {
+	return cli.Client.Agent().ServiceDeregister(serviceId)
+}
+```
+在cmd/grpc.go文件中，添加服务注册与服务注销，同时增加健康检查。
+```go
+Run: func(cmd *cobra.Command, args []string) {
+    app := grpc.NewServer(grpc.Creds(creds))
+    
+    // 开启健康检查
+    healthServer := health.NewServer()
+    healthServer.SetServingStatus(meta.HEALTHCHECK_SERVICE, healthpb.HealthCheckResponse_SERVING)
+    healthpb.RegisterHealthServer(app, healthServer)
+    
+    // 3.注册服务
+    grpcSrv.Register(app)
+    
+    // 注册服务到consul
+    consulClient, serviceIdArr, err := grpcSrv.RegisterConsul()
+    if err != nil {
+        log.Fatalf("RegisterConsul err%+v\n", err)
+    }
+    
+    // 4.启动服务
+    go func() {
+        err = app.Serve(listen)
+        if err != nil {
+        log.Fatalf("Serve err:%+v\n", err)
+        }
+    }()
+    
+    // 优雅关闭服务
+    quit := make(chan os.Signal)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+    <-quit
+    
+    app.GracefulStop()
+    
+    // 注销consul服务
+    for _, serviceId := range serviceIdArr {
+        if err := consulClient.DeregisterService(serviceId); err != nil {
+            log.Fatalf("consulClient.DeregisterService err:%+v", err)
+        }
+    }
+}
+```
+客户端修改连接地址为consul地址，并指定负载均衡及服务健康检查。
+```go
+conn, err := grpc.Dial("consul://192.168.163.131:8500/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+```
+### 存在的问题
+当grpc使用证书认证时，consul健康检查会失败。

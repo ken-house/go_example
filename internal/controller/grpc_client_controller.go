@@ -3,21 +3,25 @@ package controller
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
-	"github.com/go_example/internal/lib/auth"
+	"github.com/go_example/internal/meta"
 
 	"google.golang.org/grpc/credentials"
 
+	"github.com/go_example/internal/lib/auth"
+
 	"github.com/spf13/cast"
+	"google.golang.org/grpc"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/utils/negotiate"
 
 	pb "github.com/go_example/common/protobuf/hello"
-	"google.golang.org/grpc"
+	_ "github.com/mbobakov/grpc-consul-resolver"
 )
 
 type GrpcClientController interface {
@@ -83,7 +87,8 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	})
 
 	grpcAuth := auth.NewAuthentication("root", "root123")
-	conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+	conn, err := grpc.Dial("consul://192.168.163.131:8500/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
 	if err != nil {
 		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, gin.H{

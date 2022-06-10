@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -50,10 +51,11 @@ var httpCmd = &cobra.Command{
 		httpSrv.Register(app)
 
 		addr := viper.GetString("server.http.addr")
+		port := viper.GetString("server.http.port")
 
 		// 自定义server
 		srv := &http.Server{
-			Addr:    addr,
+			Addr:    fmt.Sprintf("%s:%s", addr, port),
 			Handler: app,
 		}
 
