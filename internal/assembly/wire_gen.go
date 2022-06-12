@@ -157,12 +157,12 @@ func NewHelloService() (service.HelloService, func(), error) {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	redisGroupClient, cleanup2, err := NewRedisGroupClient()
+	redisSingleClient, cleanup2, err := NewRedisSingleClient()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	redisUserRepository := redis.NewUserRepository(redisGroupClient)
+	redisUserRepository := redis.NewUserRepository(redisSingleClient)
 	cacheUserRepository := cache.NewUserRepository()
 	helloService := service.NewHelloService(userRepository, redisUserRepository, cacheUserRepository)
 	return helloService, func() {
@@ -177,12 +177,12 @@ func NewAuthService() (service.AuthService, func(), error) {
 		return nil, nil, err
 	}
 	userRepository := mysql.NewUserRepository(mysqlGroupClient)
-	redisGroupClient, cleanup2, err := NewRedisGroupClient()
+	redisSingleClient, cleanup2, err := NewRedisSingleClient()
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	redisUserRepository := redis.NewUserRepository(redisGroupClient)
+	redisUserRepository := redis.NewUserRepository(redisSingleClient)
 	authService := service.NewAuthService(userRepository, redisUserRepository)
 	return authService, func() {
 		cleanup2()

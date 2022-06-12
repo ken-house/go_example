@@ -8,6 +8,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/go_example/internal/meta"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"io/ioutil"
 	"log"
 	"net"
@@ -15,14 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc/credentials"
-
 	"google.golang.org/grpc"
-
-	"github.com/go_example/internal/meta"
-
-	"google.golang.org/grpc/health"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/spf13/viper"
 
@@ -74,9 +71,8 @@ var grpcCmd = &cobra.Command{
 		// credentials.NewTLS:构建基于 TLS 的 TransportCredentials 选项
 		creds := credentials.NewTLS(&tls.Config{ // Config 结构用于配置 TLS 客户端或服务器
 			Certificates: []tls.Certificate{certificate}, // 设置证书链，允许包含一个或多个
-			// tls.RequireAndVerifyClientCert 表示 Server 也会使用 CA 认证的根证书对 Client 端的证书进行校验
-			ClientAuth: tls.RequireAndVerifyClientCert, // 要求必须校验客户端的证书
-			ClientCAs:  certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
+			ClientAuth:   tls.RequestClientCert,          // 请求客户端证书，握手期间不要求发送证书
+			ClientCAs:    certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
 		})
 
 		app := grpc.NewServer(grpc.Creds(creds))

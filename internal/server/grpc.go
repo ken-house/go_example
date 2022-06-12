@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-
 	"github.com/go_example/common/consulClient"
 
 	"github.com/go_example/internal/meta"

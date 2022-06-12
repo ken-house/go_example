@@ -13,7 +13,7 @@ import (
 
 func NewHelloService() (service.HelloService, func(), error) {
 	panic(wire.Build(
-		NewRedisGroupClient,
+		NewRedisSingleClient,
 		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,
@@ -24,7 +24,7 @@ func NewHelloService() (service.HelloService, func(), error) {
 
 func NewAuthService() (service.AuthService, func(), error) {
 	panic(wire.Build(
-		NewRedisGroupClient,
+		NewRedisSingleClient,
 		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,
 		MysqlRepo.NewUserRepository,

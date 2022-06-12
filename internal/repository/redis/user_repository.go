@@ -14,10 +14,10 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	redisClient meta.RedisGroupClient
+	redisClient meta.RedisSingleClient
 }
 
-func NewUserRepository(redisClient meta.RedisGroupClient) UserRepository {
+func NewUserRepository(redisClient meta.RedisSingleClient) UserRepository {
 	return &userRepository{
 		redisClient: redisClient,
 	}

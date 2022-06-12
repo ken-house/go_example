@@ -48,7 +48,7 @@
 + 版本v1.10.0增加go-cache内存缓存；
 
 ## 使用
-要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.17.9版本。
+要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
 
 克隆到本地目录
 ```shell
@@ -2104,7 +2104,8 @@ if ok := certPool.AppendCertsFromPEM(ca); !ok {
 creds := credentials.NewTLS(&tls.Config{ // Config 结构用于配置 TLS 客户端或服务器
   Certificates: []tls.Certificate{certificate}, // 设置证书链，允许包含一个或多个
   // tls.RequireAndVerifyClientCert 表示 Server 也会使用 CA 认证的根证书对 Client 端的证书进行校验
-  ClientAuth: tls.RequireAndVerifyClientCert, // 要求必须校验客户端的证书
+  // ClientAuth: tls.RequireAndVerifyClientCert, // 要求必须校验客户端的证书
+  ClientAuth:   tls.RequestClientCert,          // 请求客户端证书，握手期间不要求发送证书(服务发现时健康检查使用这个参数)
   ClientCAs:  certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
 })
 
@@ -2339,8 +2340,6 @@ Run: func(cmd *cobra.Command, args []string) {
 ```go
 conn, err := grpc.Dial("consul://192.168.163.131:8500/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
 ```
-### 存在的问题
-当grpc使用证书认证时，consul健康检查会失败。
 
 ## 内存缓存
 项目选用go-cache作为内存缓存。

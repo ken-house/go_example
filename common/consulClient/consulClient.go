@@ -31,9 +31,9 @@ func NewClient(addr string) (ConsulClient, error) {
 func (cli *consulClient) RegisterService(serviceName string, ip string, port int) error {
 	// 服务健康检查
 	check := &consulApi.AgentServiceCheck{
-		Interval:                       "10s",
+		Interval:                       "2s",
 		Timeout:                        "10s",
-		GRPC:                           fmt.Sprintf("%s:%d/%s", ip, port, serviceName),
+		GRPC:                           fmt.Sprintf("%s:%d", ip, port),
 		GRPCUseTLS:                     true,
 		TLSSkipVerify:                  true,
 		DeregisterCriticalServiceAfter: "30s", //check失败后30秒删除本服务
