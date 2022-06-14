@@ -21,17 +21,17 @@ common:
   pwd: 123456
 
 mysql:
-  go_example:
+  group:
     master:
       dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
     slaves:
       - dsn: "root:root@tcp(192.168.163.131:3306)/go_example?charset=utf8mb4"
   single:
-    dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+    dsn: "root:root@tcp(192.168.163.131:3306)/go_example?charset=utf8mb4"
 redis:
   single:
-    addr: "192.168.163.130:6379"
-    password: ""
+    addr: "192.168.163.131:6379"
+    password: "redis"
     db: 0
   group:
     addrs:
