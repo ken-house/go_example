@@ -16,10 +16,10 @@ var EnvMode string
 const CfgFile = "./configs"
 
 const (
-	MysqlSingleDriverKey = "single"     // 单机数据库
-	MysqlGroupDriverKey  = "go_example" // MysqlGroupDriverKey Mysql配置驱动Key
-	RedisSingleDriverKey = "single"     // redis普通连接
-	RedisGroupDriverKey  = "group"      // redisCluster连接
+	MysqlSingleDriverKey = "single" // 单机数据库
+	MysqlGroupDriverKey  = "group"  // MysqlGroupDriverKey Mysql配置驱动Key
+	RedisSingleDriverKey = "single" // redis普通连接
+	RedisGroupDriverKey  = "group"  // redisCluster连接
 )
 
 const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
