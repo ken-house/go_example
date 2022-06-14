@@ -3,6 +3,8 @@ package meta
 import (
 	"time"
 
+	"github.com/go_example/common/mongoClient"
+
 	"github.com/go_example/common/consulClient"
 	"github.com/go_example/common/mysqlClient"
 	"github.com/go_example/common/redisClient"
@@ -20,6 +22,7 @@ const (
 	MysqlGroupDriverKey  = "group"  // MysqlGroupDriverKey Mysql配置驱动Key
 	RedisSingleDriverKey = "single" // redis普通连接
 	RedisGroupDriverKey  = "group"  // redisCluster连接
+	MongoSingleDriverKey = "single" // mongo单机连接
 )
 
 const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
@@ -41,6 +44,9 @@ type RedisSingleClient redisClient.SingleClient
 
 // RedisGroupClient redisCluster连接
 type RedisGroupClient redisClient.GroupClient
+
+// MongoSingleClient mongodb单机连接
+type MongoSingleClient mongoClient.SingleClient
 
 // ConsulClient consul连接
 type ConsulClient consulClient.ConsulClient

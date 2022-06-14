@@ -12,6 +12,7 @@
 + 提供gRPC服务；
 + Consul服务注册与服务发现；
 + 增加go-cache内存缓存使用；
++ 连接MongoDB单机；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -26,6 +27,7 @@
 + https://google.golang.org/grpc
 + https://github.com/hashicorp/consul
 + https://github.com/patrickmn/go-cache
++ https://go.mongodb.org/mongo-driver
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -46,6 +48,7 @@
 + 版本v1.8.2实现gRPC基于Token认证；
 + 版本v1.9.0使用consul做服务注册与服务发现；
 + 版本v1.10.0增加go-cache内存缓存；
++ 版本v1.11.0实现mongodb连接；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2441,3 +2444,154 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	}
 }
 ```
+
+## 实现MongoDB连接
+安装MongoDB Go驱动包
+```shell
+go get go.mongodb.org/mongo-driver/mongo
+```
+创建common/mongoClient/mongo_single.go文件，定义了连接Mongo的方法，由于mongo包中没有提供方法的interface，需要将mongo包client.go定义的方法定义复制到SingleClient interface，代码如下：
+```go
+package mongoClient
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+
+	"github.com/pkg/errors"
+
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+type SingleClient interface {
+	Connect(ctx context.Context) error
+	Disconnect(ctx context.Context) error
+	Ping(ctx context.Context, rp *readpref.ReadPref) error
+	StartSession(opts ...*options.SessionOptions) (mongo.Session, error)
+	Database(name string, opts ...*options.DatabaseOptions) *mongo.Database
+	ListDatabases(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) (mongo.ListDatabasesResult, error)
+	ListDatabaseNames(ctx context.Context, filter interface{}, opts ...*options.ListDatabasesOptions) ([]string, error)
+	UseSession(ctx context.Context, fn func(mongo.SessionContext) error) error
+	UseSessionWithOptions(ctx context.Context, opts *options.SessionOptions, fn func(mongo.SessionContext) error) error
+	Watch(ctx context.Context, pipeline interface{}, opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
+	NumberSessionsInProgress() int
+}
+type singleClient struct {
+	*mongo.Client
+}
+
+type SingleConfig struct {
+	Addr     string `json:"addr" mapstructure:"addr"`
+	Username string `json:"username" mapstructure:"username"`
+	Password string `json:"password" mapstructure:"password"`
+	MaxOpen  uint64 `json:"max_open" mapstructure:"max_open"`
+}
+
+func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// 得到连接信息
+	uri := fmt.Sprintf("mongodb://%s", cfg.Addr)
+	clientOption := options.Client().ApplyURI(uri)
+	if cfg.MaxOpen > 0 {
+		clientOption.SetMaxPoolSize(cfg.MaxOpen)
+	}
+
+	// 连接
+	client, err := mongo.Connect(ctx, clientOption)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	// 检查连接
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	return &singleClient{Client: client}, func() {
+		_ = client.Disconnect(ctx)
+	}, nil
+}
+```
+在internal/assembly/common.go文件中定义实现MongoDB连接的方法：
+```go
+// NewMongoSingleClient 连接mongodb单机
+func NewMongoSingleClient() (meta.MongoSingleClient, func(), error) {
+	var cfg mongoClient.SingleConfig
+	if err := viper.Sub("mongodb." + meta.MongoSingleDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	return mongoClient.NewSingleClient(cfg)
+}
+```
+在internal/respository/mongodb目录下创建user_repository.go文件，该文件依赖mongo连接，定义了mongo CRUD文档的具体操作。
+```go
+package mongodb
+
+import (
+	"context"
+
+	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/go_example/internal/meta"
+	MongoModel "github.com/go_example/internal/model/mongodb"
+)
+
+type UserRepository interface {
+	SetUserInfo(int, string, string) error
+	GetUserInfo(int) (MongoModel.User, error)
+}
+
+type userRepository struct {
+	client     meta.MongoSingleClient
+	database   string
+	collection string
+}
+
+func NewUserRepository(client meta.MongoSingleClient) UserRepository {
+	return &userRepository{
+		client:     client,
+		database:   "test",
+		collection: "user",
+	}
+}
+
+func (repo *userRepository) SetUserInfo(id int, username, password string) error {
+	userDocument := MongoModel.User{
+		Id:       id,
+		Username: username,
+		Password: password,
+	}
+	_, err := repo.client.Database(repo.database).Collection(repo.collection).InsertOne(context.TODO(), userDocument)
+	if err != nil {
+		return nil
+	}
+	return nil
+}
+
+func (repo *userRepository) GetUserInfo(uid int) (MongoModel.User, error) {
+	var userInfo MongoModel.User
+
+	err := repo.client.Database(repo.database).Collection(repo.collection).FindOne(context.TODO(), bson.D{}).Decode(&userInfo)
+	if err != nil {
+		return userInfo, err
+	}
+	return userInfo, nil
+}
+```
+最后，在hello_service.go文件中使用，代码如下：
+```go
+// mongodb操作数据
+if user.Username != "" {
+    _ = svc.userMongoRepo.SetUserInfo(uid, user.Username, user.Password)
+}
+userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
+```
+这样就可以愉快地使用mongodb了。

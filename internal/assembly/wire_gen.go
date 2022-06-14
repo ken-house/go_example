@@ -10,6 +10,7 @@ import (
 	"github.com/go_example/common/excelHandler"
 	"github.com/go_example/internal/controller"
 	"github.com/go_example/internal/repository/cache"
+	"github.com/go_example/internal/repository/mongodb"
 	"github.com/go_example/internal/repository/mysql"
 	"github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/server"
@@ -164,8 +165,16 @@ func NewHelloService() (service.HelloService, func(), error) {
 	}
 	redisUserRepository := redis.NewUserRepository(redisSingleClient)
 	cacheUserRepository := cache.NewUserRepository()
-	helloService := service.NewHelloService(userRepository, redisUserRepository, cacheUserRepository)
+	mongoSingleClient, cleanup3, err := NewMongoSingleClient()
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	mongodbUserRepository := mongodb.NewUserRepository(mongoSingleClient)
+	helloService := service.NewHelloService(userRepository, redisUserRepository, cacheUserRepository, mongodbUserRepository)
 	return helloService, func() {
+		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil

@@ -42,7 +42,15 @@ redis:
       - 192.168.163.131:7004
       - 192.168.163.131:7005
     password: ""
+mongodb:
+  single:
+    addr: "192.168.163.131:27017"
+    username: ""
+    password: ""
+    max_open: 10
 consul:
   addr: "192.168.163.131:8500"
 cacheKeys:
   userInfo: "user_info:%d"
+
+

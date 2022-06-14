@@ -5,6 +5,7 @@ package assembly
 import (
 	"github.com/go_example/common/excelHandler"
 	CacheRepo "github.com/go_example/internal/repository/cache"
+	MongoRepo "github.com/go_example/internal/repository/mongodb"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/service"
@@ -13,6 +14,8 @@ import (
 
 func NewHelloService() (service.HelloService, func(), error) {
 	panic(wire.Build(
+		NewMongoSingleClient,
+		MongoRepo.NewUserRepository,
 		NewRedisSingleClient,
 		RedisRepo.NewUserRepository,
 		NewMysqlGroupClient,

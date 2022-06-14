@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"github.com/go_example/common/consulClient"
+	"github.com/go_example/common/mongoClient"
 	"github.com/go_example/common/mysqlClient"
 	"github.com/go_example/common/redisClient"
 	"github.com/go_example/internal/meta"
@@ -44,6 +45,15 @@ func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 		return nil, nil, err
 	}
 	return redisClient.NewGroupClient(cfg)
+}
+
+// NewMongoSingleClient 连接mongodb单机
+func NewMongoSingleClient() (meta.MongoSingleClient, func(), error) {
+	var cfg mongoClient.SingleConfig
+	if err := viper.Sub("mongodb." + meta.MongoSingleDriverKey).Unmarshal(&cfg); err != nil {
+		return nil, nil, err
+	}
+	return mongoClient.NewSingleClient(cfg)
 }
 
 // NewConsulClient 连接consul单机
