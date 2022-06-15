@@ -14,7 +14,7 @@ import (
 
 func NewHelloService() (service.HelloService, func(), error) {
 	panic(wire.Build(
-		NewMongoSingleClient,
+		NewMongoClient,
 		MongoRepo.NewUserRepository,
 		NewRedisSingleClient,
 		RedisRepo.NewUserRepository,

@@ -2,7 +2,6 @@ package mongoClient
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -14,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SingleClient interface {
+type MongoClient interface {
 	Connect(ctx context.Context) error
 	Disconnect(ctx context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
@@ -27,24 +26,23 @@ type SingleClient interface {
 	Watch(ctx context.Context, pipeline interface{}, opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
 	NumberSessionsInProgress() int
 }
-type singleClient struct {
+type mongoClient struct {
 	*mongo.Client
 }
 
-type SingleConfig struct {
+type MongoConfig struct {
 	Addr     string `json:"addr" mapstructure:"addr"`
 	Username string `json:"username" mapstructure:"username"`
 	Password string `json:"password" mapstructure:"password"`
 	MaxOpen  uint64 `json:"max_open" mapstructure:"max_open"`
 }
 
-func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
+func NewMongoClient(cfg MongoConfig) (MongoClient, func(), error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// 得到连接信息
-	uri := fmt.Sprintf("mongodb://%s", cfg.Addr)
-	clientOption := options.Client().ApplyURI(uri)
+	clientOption := options.Client().ApplyURI(cfg.Addr)
 	if cfg.MaxOpen > 0 {
 		clientOption.SetMaxPoolSize(cfg.MaxOpen)
 	}
@@ -61,7 +59,7 @@ func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	return &singleClient{Client: client}, func() {
+	return &mongoClient{Client: client}, func() {
 		_ = client.Disconnect(ctx)
 	}, nil
 }

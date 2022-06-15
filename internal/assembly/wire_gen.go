@@ -165,7 +165,7 @@ func NewHelloService() (service.HelloService, func(), error) {
 	}
 	redisUserRepository := redis.NewUserRepository(redisSingleClient)
 	cacheUserRepository := cache.NewUserRepository()
-	mongoSingleClient, cleanup3, err := NewMongoSingleClient()
+	mongoSingleClient, cleanup3, err := NewMongoClient()
 	if err != nil {
 		cleanup2()
 		cleanup()

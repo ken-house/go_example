@@ -47,13 +47,13 @@ func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 	return redisClient.NewGroupClient(cfg)
 }
 
-// NewMongoSingleClient 连接mongodb单机
-func NewMongoSingleClient() (meta.MongoSingleClient, func(), error) {
-	var cfg mongoClient.SingleConfig
-	if err := viper.Sub("mongodb." + meta.MongoSingleDriverKey).Unmarshal(&cfg); err != nil {
+// NewMongoClient 连接mongodb单机
+func NewMongoClient() (meta.MongoClient, func(), error) {
+	var cfg mongoClient.MongoConfig
+	if err := viper.Sub("mongodb").Unmarshal(&cfg); err != nil {
 		return nil, nil, err
 	}
-	return mongoClient.NewSingleClient(cfg)
+	return mongoClient.NewMongoClient(cfg)
 }
 
 // NewConsulClient 连接consul单机

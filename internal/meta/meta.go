@@ -22,7 +22,6 @@ const (
 	MysqlGroupDriverKey  = "group"  // MysqlGroupDriverKey Mysql配置驱动Key
 	RedisSingleDriverKey = "single" // redis普通连接
 	RedisGroupDriverKey  = "group"  // redisCluster连接
-	MongoSingleDriverKey = "single" // mongo单机连接
 )
 
 const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
@@ -45,8 +44,8 @@ type RedisSingleClient redisClient.SingleClient
 // RedisGroupClient redisCluster连接
 type RedisGroupClient redisClient.GroupClient
 
-// MongoSingleClient mongodb单机连接
-type MongoSingleClient mongoClient.SingleClient
+// MongoClient mongodb单机连接
+type MongoClient mongoClient.MongoClient
 
 // ConsulClient consul连接
 type ConsulClient consulClient.ConsulClient

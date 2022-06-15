@@ -12,7 +12,7 @@
 + 提供gRPC服务；
 + Consul服务注册与服务发现；
 + 增加go-cache内存缓存使用；
-+ 连接MongoDB单机；
++ 连接MongoDB单机及集群；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -2450,13 +2450,19 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 ```shell
 go get go.mongodb.org/mongo-driver/mongo
 ```
-创建common/mongoClient/mongo_single.go文件，定义了连接Mongo的方法，由于mongo包中没有提供方法的interface，需要将mongo包client.go定义的方法定义复制到SingleClient interface，代码如下：
+添加mongodb连接配置，如果是分片集群则为多个地址以逗号隔开，若为replicas集群在后面还要加?replicaSet=myRepl
+```yaml
+mongodb:
+  # addr格式：mongodb://username:password@addr1:port2,addr2:port2
+  addr: "mongodb://192.168.163.131:27017"
+  max_open: 20
+```
+创建common/mongoClient/mongo.go文件，定义了连接Mongo的方法，由于mongo包中没有提供方法的interface，需要将mongo包client.go定义的方法定义复制到SingleClient interface，代码如下：
 ```go
 package mongoClient
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -2468,7 +2474,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SingleClient interface {
+type MongoClient interface {
 	Connect(ctx context.Context) error
 	Disconnect(ctx context.Context) error
 	Ping(ctx context.Context, rp *readpref.ReadPref) error
@@ -2481,24 +2487,23 @@ type SingleClient interface {
 	Watch(ctx context.Context, pipeline interface{}, opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error)
 	NumberSessionsInProgress() int
 }
-type singleClient struct {
+type mongoClient struct {
 	*mongo.Client
 }
 
-type SingleConfig struct {
+type MongoConfig struct {
 	Addr     string `json:"addr" mapstructure:"addr"`
 	Username string `json:"username" mapstructure:"username"`
 	Password string `json:"password" mapstructure:"password"`
 	MaxOpen  uint64 `json:"max_open" mapstructure:"max_open"`
 }
 
-func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
+func NewMongoClient(cfg MongoConfig) (MongoClient, func(), error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// 得到连接信息
-	uri := fmt.Sprintf("mongodb://%s", cfg.Addr)
-	clientOption := options.Client().ApplyURI(uri)
+	clientOption := options.Client().ApplyURI(cfg.Addr)
 	if cfg.MaxOpen > 0 {
 		clientOption.SetMaxPoolSize(cfg.MaxOpen)
 	}
@@ -2515,21 +2520,11 @@ func NewSingleClient(cfg SingleConfig) (SingleClient, func(), error) {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	return &singleClient{Client: client}, func() {
+	return &mongoClient{Client: client}, func() {
 		_ = client.Disconnect(ctx)
 	}, nil
 }
-```
-在internal/assembly/common.go文件中定义实现MongoDB连接的方法：
-```go
-// NewMongoSingleClient 连接mongodb单机
-func NewMongoSingleClient() (meta.MongoSingleClient, func(), error) {
-	var cfg mongoClient.SingleConfig
-	if err := viper.Sub("mongodb." + meta.MongoSingleDriverKey).Unmarshal(&cfg); err != nil {
-		return nil, nil, err
-	}
-	return mongoClient.NewSingleClient(cfg)
-}
+
 ```
 在internal/respository/mongodb目录下创建user_repository.go文件，该文件依赖mongo连接，定义了mongo CRUD文档的具体操作。
 ```go
@@ -2550,12 +2545,12 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	client     meta.MongoSingleClient
+	client     meta.MongoClient
 	database   string
 	collection string
 }
 
-func NewUserRepository(client meta.MongoSingleClient) UserRepository {
+func NewUserRepository(client meta.MongoClient) UserRepository {
 	return &userRepository{
 		client:     client,
 		database:   "test",
@@ -2585,6 +2580,7 @@ func (repo *userRepository) GetUserInfo(uid int) (MongoModel.User, error) {
 	}
 	return userInfo, nil
 }
+
 ```
 最后，在hello_service.go文件中使用，代码如下：
 ```go

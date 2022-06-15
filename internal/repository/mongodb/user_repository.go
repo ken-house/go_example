@@ -15,12 +15,12 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	client     meta.MongoSingleClient
+	client     meta.MongoClient
 	database   string
 	collection string
 }
 
-func NewUserRepository(client meta.MongoSingleClient) UserRepository {
+func NewUserRepository(client meta.MongoClient) UserRepository {
 	return &userRepository{
 		client:     client,
 		database:   "test",
