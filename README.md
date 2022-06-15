@@ -2450,7 +2450,7 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 ```shell
 go get go.mongodb.org/mongo-driver/mongo
 ```
-添加mongodb连接配置，如果是分片集群则为多个地址以逗号隔开，若为replicas集群在后面还要加?replicaSet=myRepl
+添加mongodb连接配置，如果是分片集群则为多个地址以逗号隔开，若为replicas集群在后面还要加/?replicaSet=myRepl
 ```yaml
 mongodb:
   # addr格式：mongodb://username:password@addr1:port2,addr2:port2
