@@ -2600,8 +2600,13 @@ userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
 ```shell
 go get -u github.com/felixge/fgprof
 ```
-采用fgprof包代替官方提供的pprof，仅需在main.go文件中添加如下代码：
+采用fgprof包代替官方提供的pprof，仅需在cmd/http.go文件中添加如下代码：
 ```go
+import(
+    _ "net/http/pprof"
+    "github.com/felixge/fgprof"
+)
+// ......
 Run: func(cmd *cobra.Command, args []string) {
     // pprof性能分析
     if !env.IsReleasing() {
