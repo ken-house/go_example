@@ -14,11 +14,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/felixge/fgprof"
+	"github.com/go_example/internal/utils/env"
+
 	"github.com/go_example/internal/lib/auth"
 
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
+
+	_ "net/http/pprof"
 
 	"github.com/go_example/internal/assembly"
 	"github.com/go_example/internal/meta"
@@ -31,6 +36,14 @@ var httpCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  `http server`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// pprof性能分析
+		if !env.IsReleasing() {
+			http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+			go func() {
+				log.Println(http.ListenAndServe(":6060", nil))
+			}()
+		}
+
 		// 读取证书内容
 		auth.SetCerts()
 

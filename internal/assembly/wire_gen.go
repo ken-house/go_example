@@ -165,13 +165,13 @@ func NewHelloService() (service.HelloService, func(), error) {
 	}
 	redisUserRepository := redis.NewUserRepository(redisSingleClient)
 	cacheUserRepository := cache.NewUserRepository()
-	mongoSingleClient, cleanup3, err := NewMongoClient()
+	mongoClient, cleanup3, err := NewMongoClient()
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
-	mongodbUserRepository := mongodb.NewUserRepository(mongoSingleClient)
+	mongodbUserRepository := mongodb.NewUserRepository(mongoClient)
 	helloService := service.NewHelloService(userRepository, redisUserRepository, cacheUserRepository, mongodbUserRepository)
 	return helloService, func() {
 		cleanup3()

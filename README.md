@@ -13,6 +13,7 @@
 + Consul服务注册与服务发现；
 + 增加go-cache内存缓存使用；
 + 连接MongoDB单机及集群；
++ 增加PProf性能分析；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -28,6 +29,7 @@
 + https://github.com/hashicorp/consul
 + https://github.com/patrickmn/go-cache
 + https://go.mongodb.org/mongo-driver
++ https://github.com/felixge/fgprof
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -49,6 +51,8 @@
 + 版本v1.9.0使用consul做服务注册与服务发现；
 + 版本v1.10.0增加go-cache内存缓存；
 + 版本v1.11.0实现mongodb连接；
++ 版本v1.11.1修改为mongodb可连接单机或集群；
++ 版本v1.12.0增加了pprof性能分析器
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2591,3 +2595,25 @@ if user.Username != "" {
 userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
 ```
 这样就可以愉快地使用mongodb了。
+## pprof性能分析器
+安装
+```shell
+go get -u github.com/felixge/fgprof
+```
+采用fgprof包代替官方提供的pprof，仅需在main.go文件中添加如下代码：
+```go
+Run: func(cmd *cobra.Command, args []string) {
+    // pprof性能分析
+    if !env.IsReleasing() {
+        http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+        go func() {
+            log.Println(http.ListenAndServe(":6060", nil))
+        }()
+    }
+}
+```
+打开浏览器访问http://127.0.0.1:6060/debug/pprof/ 即可查看概览。若要显示图形化界面，需要安装Graphviz，安装完成后执行如下代码：
+```Bash
+go tool pprof -http=:6061 http://localhost:6060/debug/pprof/profile?seconds=60
+```
+等待60秒后，会自动跳转到图形界面。
