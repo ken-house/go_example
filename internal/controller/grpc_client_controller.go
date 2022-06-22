@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc/credentials"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/afex/hystrix-go/hystrix"
+
+	"github.com/spf13/viper"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/go_example/internal/meta"
 
@@ -33,6 +37,26 @@ type grpcClientController struct {
 
 func NewGrpcClientController() GrpcClientController {
 	return &grpcClientController{}
+}
+
+// UnaryClientInterceptor grpc拦截器
+func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		hystrix.ConfigureCommand(method, hystrix.CommandConfig{
+			Timeout:                1000,
+			MaxConcurrentRequests:  10,
+			RequestVolumeThreshold: 10,
+			SleepWindow:            5000,
+			ErrorPercentThreshold:  50,
+		})
+		return hystrix.Do(method, func() (err error) {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}, func(err error) error {
+			// 降级处理，若需要可以在这里调用其他的grpc方法
+			// return invoker(ctx, method, req, reply, cc, opts...)
+			return nil
+		})
+	}
 }
 
 func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) {
@@ -89,7 +113,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	grpcAuth := auth.NewAuthentication("root", "root123")
 	consulAddr := viper.GetString("consul.addr")
 	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
-	conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+	conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
 	if err != nil {
 		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, gin.H{

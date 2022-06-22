@@ -66,7 +66,7 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	// Excel文件导出
 	router.GET("/excel/export", srv.Export())
 	router.POST("/excel/import", srv.Import())
-	router.GET("/gprc/hello", srv.HelloGrpc())
+	router.GET("/grpc/hello", srv.HelloGrpc())
 }
 
 func (srv *httpServer) HelloGrpc() gin.HandlerFunc {

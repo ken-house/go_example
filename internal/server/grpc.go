@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/go_example/common/consulClient"
 
 	"github.com/go_example/internal/meta"
@@ -67,10 +68,12 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
 	if err := grpcAuth.Auth(ctx); err != nil {
 		return nil, err
 	}
+
 	name := "world"
 	if in.Id != 1 {
 		name = "gRPC"
 	}
+
 	return &pb.HelloResponse{
 		Id:   in.Id,
 		Name: "hello " + name,

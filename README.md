@@ -14,6 +14,7 @@
 + 增加go-cache内存缓存使用；
 + 连接MongoDB单机及集群；
 + 增加PProf性能分析；
++ 增加gRPC熔断降级处理；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -30,6 +31,7 @@
 + https://github.com/patrickmn/go-cache
 + https://go.mongodb.org/mongo-driver
 + https://github.com/felixge/fgprof
++ https://github.com/afex/hystrix-go
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -53,6 +55,7 @@
 + 版本v1.11.0实现mongodb连接；
 + 版本v1.11.1修改为mongodb可连接单机或集群；
 + 版本v1.12.0增加了pprof性能分析器
++ 版本v1.13.0增加gRPC熔断降级处理；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2622,3 +2625,35 @@ Run: func(cmd *cobra.Command, args []string) {
 go tool pprof -http=:6061 http://localhost:6060/debug/pprof/profile?seconds=60
 ```
 等待60秒后，会自动跳转到图形界面。
+## RPC熔断和降级
+微服务架构，服务间调用，当一个服务发生故障，若不对其进行熔断或降级处理，容易导致整个系统崩溃，造成雪崩。
+这里使用hystrix-go来实现服务熔断和降级。
+### 安装
+```shell
+go get github.com/afex/hystrix-go
+```
+### 代码实现
+在gRPC调用方，增加拦截器，在拦截器中实现断路器的作用。增加一个拦截器方法，并在grpc.Dail()方法增加拦截器。
+```go
+// UnaryClientInterceptor grpc拦截器
+func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		hystrix.ConfigureCommand(method, hystrix.CommandConfig{
+			Timeout:                1000,
+			MaxConcurrentRequests:  10,
+			RequestVolumeThreshold: 10,
+			SleepWindow:            5000,
+			ErrorPercentThreshold:  50,
+		})
+		return hystrix.Do(method, func() (err error) {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}, func(err error) error {
+			// 降级处理，若需要可以在这里调用其他的grpc方法
+			// return invoker(ctx, method, req, reply, cc, opts...)
+			return nil
+		})
+	}
+}
+// ...省略代码
+conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+```
