@@ -52,8 +52,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 		return hystrix.Do(method, func() (err error) {
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}, func(err error) error {
-			// 降级处理，若需要可以在这里调用其他的grpc方法
-			// return invoker(ctx, method, req, reply, cc, opts...)
+			// 因为这里是在调用方实现熔断，若服务不可用可以发邮件通知或什么都不做，实现降级
 			return nil
 		})
 	}
