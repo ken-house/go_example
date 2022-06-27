@@ -41,6 +41,9 @@ func NewHttpServer(
 }
 
 func (srv *httpServer) Register(router *gin.Engine) {
+	// 若为后台调用，避免跨域
+	router.Use(middleware.Cors())
+
 	// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
 	router.LoadHTMLGlob("views/*.html")
 	// Excel文件导入
