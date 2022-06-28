@@ -56,6 +56,7 @@
 + 版本v1.11.1修改为mongodb可连接单机或集群；
 + 版本v1.12.0增加了pprof性能分析器
 + 版本v1.13.0增加gRPC熔断降级处理；
++ 版本v1.14.0统一错误码；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2655,4 +2656,108 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 }
 // ...省略代码
 conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+```
+## 统一错误码
+当前返回错误码与成功返回公用一个结构体，存在冗余等问题。为了更加清晰的分辨错误返回和成功返回，使用两种结构体分别处理，并统一错误码。
+### 错误码服务
+在common目录errorAssets下，创建error_list.go，该文件规定了哪些错误码
+```go
+package errorAssets
+
+var (
+	// ERR_PARAM 公共错误
+	ERR_PARAM     = NewError(10000, "参数错误")
+	ERR_SYSTEM    = NewError(10001, "系统错误")
+	ERR_CERT      = NewError(10002, "证书错误")
+	ERR_CALL_FUNC = NewError(10003, "调用方法出错")
+	ERR_DIAL      = NewError(10004, "连接错误")
+
+	// ERR_LOGIN 登录注册认证相关错误
+	ERR_LOGIN         = NewError(20000, "用户名或密码不正确")
+	ERR_LOGIN_REMOTE  = NewError(20001, "账号已在其他设备登录")
+	ERR_LOGIN_FAILURE = NewError(20002, "当前登录已失效，请尝试请求refresh_token获取新令牌")
+	ERR_REFRESH_TOKEN = NewError(20003, "刷新令牌失败，请重新登录")
+
+	// ERR_EXPOSE 导入导出相关错误
+	ERR_EXPORT     = NewError(30000, "导出失败")
+	ERR_IMPORT     = NewError(30001, "导入失败")
+	ERR_FILE_PARSE = NewError(30002, "文件解析失败")
+)
+```
+创建error_no.go文件，定义了返回错误的结构体及方法。
+```go
+package errorAssets
+
+type Level int
+
+// 提示错误显示效果
+const (
+	LevelToast Level = 1 // toast提示
+	LevelPopup Level = 2 // 弹窗提示
+)
+
+type ErrorNo interface {
+	GetTitle() string
+	GetCode() int
+	ToastError() errorNo
+	PopupError(popupTitle, popupContent string, popupStyle int) errorNo
+}
+
+type errorNo struct {
+	Error error `json:"error"`
+}
+
+type error struct {
+	Code         int    `json:"code,string"`   // 业务编码
+	Level        Level  `json:"level,string"`  // 弹窗提示类型
+	Message      string `json:"message"`       // level=1 toast标题
+	PopupTitle   string `json:"popup_title"`   // level=2 弹框标题
+	PopupContent string `json:"popup_content"` // level=2 弹框内容
+}
+
+func NewError(code int, title string) ErrorNo {
+	return &errorNo{
+		Error: error{
+			Code:    code,
+			Level:   LevelToast,
+			Message: title,
+		},
+	}
+}
+
+func (err *errorNo) GetTitle() string {
+	return err.Error.Message
+}
+
+func (err *errorNo) GetCode() int {
+	return err.Error.Code
+}
+
+// ToastError toast提示返回结构
+func (err *errorNo) ToastError() errorNo {
+	return errorNo{
+		error{
+			Code:    err.Error.Code,
+			Level:   LevelToast,
+			Message: err.Error.Message,
+		},
+	}
+}
+
+// PopupError 弹窗返回结构
+func (err *errorNo) PopupError(popupTitle, popupContent string, popupStyle int) errorNo {
+	return errorNo{
+		error{
+			Code:         err.Error.Code,
+			Level:        LevelPopup,
+			PopupTitle:   popupTitle,
+			PopupContent: popupContent,
+		},
+	}
+}
+```
+
+### 错误码调用
+```go
+return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 ```
