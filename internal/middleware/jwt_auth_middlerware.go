@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go_example/common/errorAssets"
+
 	"github.com/go_example/internal/service"
 
 	"github.com/go_example/internal/lib/auth"
@@ -15,18 +17,14 @@ func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		authorization := c.Request.Header.Get("Authorization")
 		if authorization == "" {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "令牌为空",
-			})
+			c.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authorization, " ", 2)
 		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "令牌格式错误",
-			})
+			c.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
 			c.Abort()
 			return
 		}
@@ -34,14 +32,9 @@ func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
 		claims, err := auth.ParseToken(authService, parts[1], "access_token")
 		if err != nil {
 			if err.Error() == "账号已在其他设备登录" {
-				c.JSON(http.StatusOK, gin.H{
-					"message": "账号已在其他设备登录",
-				})
+				c.JSON(http.StatusOK, errorAssets.ERR_LOGIN_REMOTE.ToastError())
 			} else {
-				c.JSON(http.StatusOK, gin.H{
-					"message":     "当前登录已失效，请尝试请求refresh_token获取新令牌",
-					"refresh_url": "/auth/refresh_token",
-				})
+				c.JSON(http.StatusOK, errorAssets.ERR_LOGIN_FAILURE.ToastError())
 			}
 			c.Abort()
 			return

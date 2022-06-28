@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go_example/common/errorAssets"
+
 	"github.com/afex/hystrix-go/hystrix"
 
 	"github.com/spf13/viper"
@@ -75,32 +77,20 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	certificate, err := tls.LoadX509KeyPair("./assets/certs/grpc_tls/client.pem", "./assets/certs/grpc_tls/client.key")
 	if err != nil {
 		log.Printf("tls.LoadX509KeyPair err:%+v", err)
-		return negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"name": "",
-			},
-		})
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CERT.ToastError())
 	}
 	// 创建一个新的、空的 CertPool
 	certPool := x509.NewCertPool()
 	ca, err := ioutil.ReadFile("./assets/certs/grpc_tls/ca.crt")
 	if err != nil {
 		log.Printf("ioutil.ReadFile err:%+v", err)
-		return negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"name": "",
-			},
-		})
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CERT.ToastError())
 	}
 
 	// 尝试解析所传入的 PEM 编码的证书。如果解析成功会将其加到 CertPool 中，便于后面的使用
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
 		log.Printf("certPool.AppendCertsFromPEM err:%+v", err)
-		return negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"name": "",
-			},
-		})
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CERT.ToastError())
 	}
 
 	creds := credentials.NewTLS(&tls.Config{
@@ -115,11 +105,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
 	if err != nil {
 		log.Printf("Dial err:%+v", err)
-		return negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"name": "",
-			},
-		})
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
 	}
 
 	// 创建grpc client
@@ -129,11 +115,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	resp, err := client.SayHello(c, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
 	if err != nil {
 		log.Printf("client.SayHello err:%+v", err)
-		return negotiate.JSON(http.StatusOK, gin.H{
-			"data": gin.H{
-				"name": "",
-			},
-		})
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CALL_FUNC.ToastError())
 	}
 	return negotiate.JSON(http.StatusOK, gin.H{
 		"data": gin.H{

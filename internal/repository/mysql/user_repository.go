@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"errors"
+
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/model"
 	MysqlModel "github.com/go_example/internal/model/mysql"
@@ -28,12 +30,18 @@ func NewUserRepository(
 }
 
 func (repo *userRepository) GetUserInfoByFormData(formData model.LoginForm) (user MysqlModel.User, err error) {
-	_, err = repo.EngineGroup.Table(repo.Table).Where("username=? and password=?", formData.Username, formData.Password).Get(&user)
-	return user, err
+	exist, err := repo.EngineGroup.Table(repo.Table).Where("username=? and password=?", formData.Username, formData.Password).Get(&user)
+	if !exist {
+		return MysqlModel.User{}, errors.New("用户名或密码不正确")
+	}
+	return user, nil
 }
 
 func (repo *userRepository) GetUserInfoById(id int) (user MysqlModel.User, err error) {
-	_, err = repo.EngineGroup.Table(repo.Table).Where("id=?", id).Get(&user)
+	exist, err := repo.EngineGroup.Table(repo.Table).Where("id=?", id).Get(&user)
+	if !exist {
+		return MysqlModel.User{}, errors.New("用户名或密码不正确")
+	}
 	return user, err
 }
 
