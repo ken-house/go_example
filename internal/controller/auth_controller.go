@@ -53,6 +53,7 @@ func (ctr *authController) Login(c *gin.Context) (int, gin.Negotiate) {
 		"data": gin.H{
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
+			"userInfo":     userInfo,
 		},
 	})
 }

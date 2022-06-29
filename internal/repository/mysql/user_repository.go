@@ -30,10 +30,16 @@ func NewUserRepository(
 }
 
 func (repo *userRepository) GetUserInfoByFormData(formData model.LoginForm) (user MysqlModel.User, err error) {
-	exist, err := repo.EngineGroup.Table(repo.Table).Where("username=? and password=?", formData.Username, formData.Password).Get(&user)
+	exist, err := repo.EngineGroup.Table(repo.Table).Where("username=?", formData.Username).Get(&user)
 	if !exist {
-		return MysqlModel.User{}, errors.New("用户名或密码不正确")
+		return MysqlModel.User{}, errors.New("用户名不正确")
 	}
+
+	// 密码判断，这里可以自定义加密方法
+	if user.Password != formData.Password {
+		return MysqlModel.User{}, errors.New("密码不正确")
+	}
+
 	return user, nil
 }
 
