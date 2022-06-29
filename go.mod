@@ -33,6 +33,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/fgprof v0.9.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/gin-contrib/cors v1.3.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

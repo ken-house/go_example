@@ -1,22 +1,19 @@
 package middleware
 
 import (
-	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func CrossDomainMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		method := c.Request.Method
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token")
-		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		if method == "OPTIONS" { // 跨域做预检查
-			c.AbortWithStatus(http.StatusNoContent)
-		}
-		c.Next()
-	}
+	return cors.New(cors.Config{
+		AllowAllOrigins:  true,
+		AllowMethods:     []string{"POST", "GET", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "AccessToken", "X-CSRF-Token", "Authorization", "Token"},
+		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type"},
+		MaxAge:           time.Minute * 10,
+		AllowCredentials: true,
+	})
 }
