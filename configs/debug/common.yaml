@@ -23,31 +23,31 @@ common:
 mysql:
   group:
     master:
-      dsn: "root:root@tcp(192.168.163.130:3306)/go_example?charset=utf8mb4"
+      dsn: "root:root@tcp(10.0.98.240:3306)/go_example?charset=utf8mb4"
     slaves:
-      - dsn: "root:root@tcp(192.168.163.131:3306)/go_example?charset=utf8mb4"
+      - dsn: "root:root@tcp(10.0.98.240:3306)/go_example?charset=utf8mb4"
   single:
-    dsn: "root:root@tcp(192.168.163.131:3306)/go_example?charset=utf8mb4"
+    dsn: "root:root@tcp(10.0.98.240:3306)/go_example?charset=utf8mb4"
 redis:
   single:
-    addr: "192.168.163.131:6379"
+    addr: "10.0.98.240:6379"
     password: "redis"
     db: 0
   group:
     addrs:
-      - 192.168.163.131:7000
-      - 192.168.163.131:7001
-      - 192.168.163.131:7002
-      - 192.168.163.131:7003
-      - 192.168.163.131:7004
-      - 192.168.163.131:7005
+      - 10.0.98.240:7000
+      - 10.0.98.240:7001
+      - 10.0.98.240:7002
+      - 10.0.98.240:7003
+      - 10.0.98.240:7004
+      - 10.0.98.240:7005
     password: ""
 mongodb:
   # 格式：mongodb://username:password@addr1:port2,addr2:port2
-  addr: "mongodb://192.168.163.131:27017"
+  addr: "mongodb://10.0.98.240:27017"
   max_open: 20
 consul:
-  addr: "192.168.163.131:8500"
+  addr: "10.0.98.240:8500"
 cacheKeys:
   userInfo: "user_info:%d"
 
