@@ -57,6 +57,7 @@
 + 版本v1.12.0增加了pprof性能分析器
 + 版本v1.13.0增加gRPC熔断降级处理；
 + 版本v1.14.0统一错误码；
++ 版本v2.0.0调整代码结构引用自有包；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2761,3 +2762,5 @@ func (err *errorNo) PopupError(popupTitle, popupContent string, popupStyle int) 
 ```go
 return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 ```
+## 引用自有包
+将项目目录下的common目录替换成github.com/ken-house/go-contrib库，在internal/lib目录下增加errorAssets错误码包，实现项目可自定义错误码。

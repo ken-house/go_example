@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go_example/common/consulClient"
+	"github.com/ken-house/go-contrib/prototype/consulClient"
 
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/utils/tools"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/go_example/internal/lib/auth"
 
-	pb "github.com/go_example/common/protobuf/hello"
+	pb "github.com/ken-house/go-contrib/prototype/protobuf/hello"
 	"google.golang.org/grpc"
 )
 

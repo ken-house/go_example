@@ -38,6 +38,8 @@ func Execute() {
 func init() {
 	// 初始化配置文件
 	cobra.OnInitialize(initConfig)
+	// todo 初始化log
+
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 

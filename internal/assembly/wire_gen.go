@@ -7,7 +7,6 @@
 package assembly
 
 import (
-	"github.com/go_example/common/excelHandler"
 	"github.com/go_example/internal/controller"
 	"github.com/go_example/internal/repository/cache"
 	"github.com/go_example/internal/repository/mongodb"
@@ -15,6 +14,7 @@ import (
 	"github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/server"
 	"github.com/go_example/internal/service"
+	"github.com/ken-house/go-contrib/prototype/excelHandler"
 )
 
 // Injectors from controller.go:

@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	"github.com/go_example/common/errorAssets"
+	"github.com/go_example/internal/lib/errorAssets"
 
 	"github.com/go_example/internal/service"
 

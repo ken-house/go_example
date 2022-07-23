@@ -3,11 +3,11 @@ package meta
 import (
 	"time"
 
-	"github.com/go_example/common/mongoClient"
+	"github.com/ken-house/go-contrib/prototype/mongoClient"
 
-	"github.com/go_example/common/consulClient"
-	"github.com/go_example/common/mysqlClient"
-	"github.com/go_example/common/redisClient"
+	"github.com/ken-house/go-contrib/prototype/consulClient"
+	"github.com/ken-house/go-contrib/prototype/mysqlClient"
+	"github.com/ken-house/go-contrib/prototype/redisClient"
 	"github.com/patrickmn/go-cache"
 )
 

@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go_example/common/errorAssets"
+	"github.com/go_example/internal/lib/errorAssets"
 
 	"github.com/afex/hystrix-go/hystrix"
 
@@ -26,7 +26,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/utils/negotiate"
 
-	pb "github.com/go_example/common/protobuf/hello"
+	pb "github.com/ken-house/go-contrib/prototype/protobuf/hello"
 	_ "github.com/mbobakov/grpc-consul-resolver"
 )
 

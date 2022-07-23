@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go_example/common/excelHandler"
+	"github.com/ken-house/go-contrib/prototype/excelHandler"
 
 	MysqlModel "github.com/go_example/internal/model/mysql"
 )
