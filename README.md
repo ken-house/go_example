@@ -2768,9 +2768,9 @@ return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 ## 引用自有包
 将项目目录下的common目录替换成github.com/ken-house/go-contrib库，在internal/lib目录下增加errorAssets错误码包，实现项目可自定义错误码。
 
-### zap高性能日志
+## zap高性能日志
 zap是uber开源的Go高性能日志库，是非常快的、结构化的，分日志级别的Go日志库。
-#### 默认使用
+### 默认使用
 使用zap提供的配置
 ```go
 // SimpleLogger 使用zap包自带的配置文件
