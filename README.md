@@ -15,6 +15,7 @@
 + 连接MongoDB单机及集群；
 + 增加PProf性能分析；
 + 增加gRPC熔断降级处理；
++ 增加zap高性能日志库；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -32,6 +33,7 @@
 + https://go.mongodb.org/mongo-driver
 + https://github.com/felixge/fgprof
 + https://github.com/afex/hystrix-go
++ https://github.com/uber-go/zap
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -58,6 +60,7 @@
 + 版本v1.13.0增加gRPC熔断降级处理；
 + 版本v1.14.0统一错误码；
 + 版本v2.0.0调整代码结构引用自有包；
++ 版本v2.1.0增加zap高性能日志；
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2764,3 +2767,121 @@ return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 ```
 ## 引用自有包
 将项目目录下的common目录替换成github.com/ken-house/go-contrib库，在internal/lib目录下增加errorAssets错误码包，实现项目可自定义错误码。
+
+### zap高性能日志
+zap是uber开源的Go高性能日志库，是非常快的、结构化的，分日志级别的Go日志库。
+#### 默认使用
+使用zap提供的配置
+```go
+// SimpleLogger 使用zap包自带的配置文件
+func SimpleLogger(outPutPaths []string) {
+	var logger *zap.Logger
+	var err error
+
+	config := zap.NewProductionConfig()
+
+	// 增加自定义日志记录位置 // todo 确保目录存在，不存在则创建目录
+	if len(outPutPaths) > 0 {
+		outPutPathsArr := config.OutputPaths
+		outPutPathsArr = append(outPutPathsArr, outPutPaths...)
+
+		config.OutputPaths = outPutPathsArr
+		config.ErrorOutputPaths = outPutPathsArr
+	}
+
+	// 更改时间编码
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	config.EncoderConfig = encoderConfig
+
+	// 保证生产环境和其他环境日志存储格式一致，仅日志等级不同
+	if env.IsReleasing() {
+		logger, err = config.Build()
+	} else {
+		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+		config.Development = true
+
+		logger, err = config.Build()
+	}
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer logger.Sync()
+
+	// 注册全局的单例的logger
+	zap.ReplaceGlobals(logger)
+	// 改变全局的标准库的log的输出，将其通过zap.Logger来输出
+	zap.RedirectStdLog(logger)
+}
+```
+### 自定义配置
+支持日志文件切割归档
+```go
+// CustomLogger 自定义zap日志，支持日志切割归档
+func CustomLogger(lumberjackLogger lumberjack.Logger, outPutFile string) {
+	encoder := getEncoder()
+	writeSyncer := getWriteSyncer(&lumberjackLogger, outPutFile)
+
+	logLevel := zapcore.DebugLevel
+	if env.IsReleasing() {
+		logLevel = zapcore.InfoLevel
+	}
+	core := zapcore.NewCore(encoder, writeSyncer, logLevel)
+	logger := zap.New(core, zap.AddCaller())
+
+	defer logger.Sync()
+
+	// 注册全局的单例的logger
+	zap.ReplaceGlobals(logger)
+	// 改变全局的标准库的log的输出，将其通过zap.Logger来输出
+	zap.RedirectStdLog(logger)
+}
+
+// 获取编码器
+func getEncoder() zapcore.Encoder {
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	return zapcore.NewJSONEncoder(encoderConfig)
+}
+
+// 日志写入目标，使用lumberjack进行日志切割
+func getWriteSyncer(lumberjackLogger *lumberjack.Logger, outPutFile string) zapcore.WriteSyncer {
+	if lumberjackLogger != nil {
+		return zapcore.AddSync(lumberjackLogger)
+	} else {
+		// todo 确保目录存在，不存在则创建目录
+		if outPutFile == "" {
+			outPutFile = "./log/test.log"
+		}
+		file, err := os.Create(outPutFile)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return zapcore.AddSync(file)
+	}
+}
+```
+在cmd/root.go中，初始化日志。
+```go
+func init() {
+    // 初始化配置文件
+    cobra.OnInitialize(initConfig, initLog)
+}
+
+// 初始化日志
+func initLog() {
+    zapLogger.SimpleLogger([]string{"./log/test2.log"})
+    
+    //zapLogger.CustomLogger(lumberjack.Logger{
+    //	Filename:   "./log/test.log",
+    //	MaxSize:    10,
+    //	MaxAge:     7,
+    //	MaxBackups: 5,
+    //	LocalTime:  false,
+    //	Compress:   false,
+    //}, "")
+}
+```
+在其他要记录日志的地方可以直接使用zap.L()写日志信息。

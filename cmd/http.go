@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/felixge/fgprof"
-	"github.com/go_example/internal/utils/env"
+	"github.com/ken-house/go-contrib/utils/env"
 
 	"github.com/go_example/internal/lib/auth"
 

@@ -18,7 +18,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/assembly"
-	"github.com/go_example/internal/utils/env"
+	"github.com/ken-house/go-contrib/utils/env"
 	"github.com/spf13/cobra"
 )
 

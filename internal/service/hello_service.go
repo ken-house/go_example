@@ -8,6 +8,7 @@ import (
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type HelloService interface {
@@ -55,6 +56,9 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 		_ = svc.userMongoRepo.SetUserInfo(uid, user.Username, user.Password)
 	}
 	userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
+
+	// 测试
+	zap.L().Debug("this is test")
 
 	return map[string]string{
 		"hello":          "world，golang",

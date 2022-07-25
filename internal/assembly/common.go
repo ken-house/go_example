@@ -2,11 +2,11 @@ package assembly
 
 import (
 	"github.com/go_example/internal/meta"
-	"github.com/go_example/internal/utils/env"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
+	"github.com/ken-house/go-contrib/utils/env"
 	"github.com/spf13/viper"
 )
 
