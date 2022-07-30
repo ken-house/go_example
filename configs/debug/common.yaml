@@ -22,17 +22,24 @@ common:
 
 mysql:
   group:
+    max_open: 20
+    max_idle: 5
+    max_lifetime: 10
     master:
       dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
     slaves:
       - dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
   single:
     dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+    max_open: 20
+    max_idle: 5
+    max_lifetime: 10
 redis:
   single:
     addr: "127.0.0.1:6379"
     password: "redis"
     db: 0
+    pool_size: 20
   group:
     addrs:
       - 127.0.0.1:7000
@@ -42,6 +49,7 @@ redis:
       - 127.0.0.1:7004
       - 127.0.0.1:7005
     password: ""
+    pool_size: 20
 mongodb:
   # 格式：mongodb://username:password@addr1:port2,addr2:port2
   addr: "mongodb://127.0.0.1:27017"

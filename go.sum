@@ -402,6 +402,8 @@ github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 h1:Z9n2FFNU
 github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51/go.mod h1:CzGEWj7cYgsdH8dAjBGEr58BoE7ScuLd+fwFZ44+/x8=
 github.com/ken-house/go-contrib v1.0.9 h1:qSFbqqYTKtCuWx4XeoOM3JQEJVDDR9v8WZcZ0DK9xks=
 github.com/ken-house/go-contrib v1.0.9/go.mod h1:eWkPMD2VwALVf7zxWbGTqQCU1/wOaGtsOCElMWNFhQM=
+github.com/ken-house/go-contrib v1.0.10 h1:IGtJQC41bDhg3yLTvHFJAMw7ml8GpKn4ycyrWpoIaLY=
+github.com/ken-house/go-contrib v1.0.10/go.mod h1:eWkPMD2VwALVf7zxWbGTqQCU1/wOaGtsOCElMWNFhQM=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQxcgc=
