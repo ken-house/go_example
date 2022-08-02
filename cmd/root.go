@@ -62,10 +62,10 @@ func initConfig() {
 
 // 初始化日志
 func initLog() {
-	zapLogger.SimpleLogger([]string{"./log/test2.log"})
+	zapLogger.SimpleLogger([]string{"./logs/test2.log"})
 
 	//zapLogger.CustomLogger(lumberjack.Logger{
-	//	Filename:   "./log/test.log",
+	//	Filename:   "./logs/test.log",
 	//	MaxSize:    10,
 	//	MaxAge:     7,
 	//	MaxBackups: 5,
