@@ -3,6 +3,7 @@ package assembly
 import (
 	"github.com/go_example/internal/meta"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
+	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
@@ -60,4 +61,12 @@ func NewMongoClient() (meta.MongoClient, func(), error) {
 func NewConsulClient() (meta.ConsulClient, error) {
 	addr := viper.GetString("consul.addr")
 	return consulClient.NewClient(addr)
+}
+
+func NewJenkinsClient() (meta.JenkinsClient, error) {
+	var cfg jenkinsClient.JenkinsConfig
+	if err := viper.Sub("jenkins").Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+	return jenkinsClient.NewJenkinsClient(cfg)
 }

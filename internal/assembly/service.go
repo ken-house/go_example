@@ -25,6 +25,13 @@ func NewHelloService() (service.HelloService, func(), error) {
 	))
 }
 
+func NewJenkinsService() (service.JenkinsService, func(), error) {
+	panic(wire.Build(
+		NewJenkinsClient,
+		service.NewJenkinsService,
+	))
+}
+
 func NewAuthService() (service.AuthService, func(), error) {
 	panic(wire.Build(
 		NewRedisSingleClient,

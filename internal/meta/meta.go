@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"time"
 
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -49,3 +50,6 @@ type MongoClient mongoClient.MongoClient
 
 // ConsulClient consul连接
 type ConsulClient consulClient.ConsulClient
+
+// JenkinsClient jenkins连接
+type JenkinsClient jenkinsClient.JenkinsClient

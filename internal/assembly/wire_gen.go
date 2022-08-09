@@ -30,6 +30,17 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	}, nil
 }
 
+func NewJenkinsController() (controller.JenkinsController, func(), error) {
+	jenkinsService, cleanup, err := NewJenkinsService()
+	if err != nil {
+		return nil, nil, err
+	}
+	jenkinsController := controller.NewJenkinsController(jenkinsService)
+	return jenkinsController, func() {
+		cleanup()
+	}, nil
+}
+
 func NewAuthController() (controller.AuthController, func(), error) {
 	authService, cleanup, err := NewAuthService()
 	if err != nil {
@@ -109,7 +120,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup6, err := NewAuthService()
+	jenkinsController, cleanup6, err := NewJenkinsController()
 	if err != nil {
 		cleanup5()
 		cleanup4()
@@ -118,8 +129,19 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, authService)
+	authService, cleanup7, err := NewAuthService()
+	if err != nil {
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, authService)
 	return httpServer, func() {
+		cleanup7()
 		cleanup6()
 		cleanup5()
 		cleanup4()
@@ -177,6 +199,16 @@ func NewHelloService() (service.HelloService, func(), error) {
 		cleanup3()
 		cleanup2()
 		cleanup()
+	}, nil
+}
+
+func NewJenkinsService() (service.JenkinsService, func(), error) {
+	jenkinsClient, err := NewJenkinsClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	jenkinsService := service.NewJenkinsService(jenkinsClient)
+	return jenkinsService, func() {
 	}, nil
 }
 

@@ -1,5 +1,0 @@
-{"level":"DEBUG","ts":"2022-07-25T14:29:32.020+0800","caller":"service/hello_service.go:61","msg":"this is test"}
-{"level":"INFO","ts":"2022-07-25T14:32:25.703+0800","caller":"cmd/http.go:91","msg":"Server exiting"}
-{"level":"DEBUG","ts":"2022-07-25T14:33:14.556+0800","caller":"service/hello_service.go:61","msg":"this is test"}
-{"level":"DEBUG","ts":"2022-07-25T14:33:20.538+0800","caller":"service/hello_service.go:61","msg":"this is test"}
-{"level":"INFO","ts":"2022-07-25T14:33:27.871+0800","caller":"cmd/http.go:91","msg":"Server exiting"}

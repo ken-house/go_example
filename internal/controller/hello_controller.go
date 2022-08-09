@@ -17,7 +17,9 @@ type helloController struct {
 	helloSvc service.HelloService
 }
 
-func NewHelloController(helloSvc service.HelloService) HelloController {
+func NewHelloController(
+	helloSvc service.HelloService,
+) HelloController {
 	return &helloController{
 		helloSvc: helloSvc,
 	}
@@ -26,5 +28,7 @@ func NewHelloController(helloSvc service.HelloService) HelloController {
 func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
 	//time.Sleep(5 * time.Second)
 	data := ctr.helloSvc.SayHello(c)
-	return negotiate.JSON(http.StatusOK, data)
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
 }

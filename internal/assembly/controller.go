@@ -15,6 +15,13 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	))
 }
 
+func NewJenkinsController() (controller.JenkinsController, func(), error) {
+	panic(wire.Build(
+		NewJenkinsService,
+		controller.NewJenkinsController,
+	))
+}
+
 func NewAuthController() (controller.AuthController, func(), error) {
 	panic(wire.Build(
 		NewAuthService,
