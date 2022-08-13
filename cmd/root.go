@@ -6,12 +6,16 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/go_example/internal/meta"
 	"github.com/ken-house/go-contrib/prototype/zapLogger"
 	"github.com/ken-house/go-contrib/utils/env"
+	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -37,7 +41,7 @@ func Execute() {
 
 func init() {
 	// 初始化配置文件
-	cobra.OnInitialize(initConfig, initLog)
+	cobra.OnInitialize(initConfig, initLog, initValidator)
 
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
@@ -62,14 +66,27 @@ func initConfig() {
 
 // 初始化日志
 func initLog() {
-	zapLogger.SimpleLogger([]string{"./logs/test2.log"})
+	// 普通日志记录
+	outputFile := fmt.Sprintf("./logs/log_%s.log", time.Now().Format("20060102"))
+	//zapLogger.SimpleLogger([]string{outputFile})
 
-	//zapLogger.CustomLogger(lumberjack.Logger{
-	//	Filename:   "./logs/test.log",
-	//	MaxSize:    10,
-	//	MaxAge:     7,
-	//	MaxBackups: 5,
-	//	LocalTime:  false,
-	//	Compress:   false,
-	//}, "")
+	// 支持日志文件切割
+	zapLogger.CustomLogger(&lumberjack.Logger{
+		Filename:   outputFile,
+		MaxSize:    10,
+		MaxAge:     7,
+		MaxBackups: 5,
+		LocalTime:  false,
+		Compress:   false,
+	}, "")
+}
+
+// 参数验证器
+func initValidator() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validatePhone", meta.ValidatePhone)
+		v.RegisterValidation("validatePassword", meta.ValidatePassword)
+		v.RegisterValidation("validateUsername", meta.ValidateUsername)
+		v.RegisterValidation("validateVerifyCode", meta.ValidateVerifyCode)
+	}
 }

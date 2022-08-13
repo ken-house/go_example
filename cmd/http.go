@@ -39,8 +39,10 @@ var httpCmd = &cobra.Command{
 		// pprof性能分析
 		if !env.IsReleasing() {
 			http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+			pprofAddr := viper.GetString("server.http_pprof.addr")
+			pprofPort := viper.GetString("server.http_pprof.port")
 			go func() {
-				log.Println(http.ListenAndServe(":6060", nil))
+				log.Println(http.ListenAndServe(fmt.Sprintf("%s:%s", pprofAddr, pprofPort), nil))
 			}()
 		}
 

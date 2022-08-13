@@ -16,6 +16,8 @@
 + 增加PProf性能分析；
 + 增加gRPC熔断降级处理；
 + 增加zap高性能日志库；
++ 增加gin参数验证；
++ 增加jenkins服务；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -34,6 +36,9 @@
 + https://github.com/felixge/fgprof
 + https://github.com/afex/hystrix-go
 + https://github.com/uber-go/zap
++ https://github.com/go-playground/validator
++ https://github.com/dlclark/regexp2
++ https://github.com/bndr/gojenkins
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -61,6 +66,76 @@
 + 版本v1.14.0统一错误码；
 + 版本v2.0.0调整代码结构引用自有包；
 + 版本v2.1.0增加zap高性能日志；
++ 版本v2.2.0增加gin参数验证；
++ 版本v2.3.0增加jenkins服务；
+
+## 环境安装
+可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
+1. MySQL服务；
+这里推荐使用MySQL8.0.18版本，高版本数据库在xorm生成model时会报错
+```shell
+# 拉取镜像后，启动容器
+docker pull mysql:8.0.18
+docker run -itd -p 3306:3306 -v /data/mysql:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql mysql:8.0.18
+
+# 进入容器，设置可远程连接
+docker exec -it mysql /bin/bash
+# 连接mysql
+root@af4b3222a631: mysql -u root -p
+# 设置本地连接和远程连接
+mysql> use mysql;
+# 可以看到root有一个本地连接和一个远程连接，plugin都是caching_sha2_password
+mysql> select user,host,plugin from user;
++------------------+-----------+-----------------------+
+| user             | host      | plugin                |
++------------------+-----------+-----------------------+
+| root             | %         | caching_sha2_password |
+| mysql.infoschema | localhost | caching_sha2_password |
+| mysql.session    | localhost | caching_sha2_password |
+| mysql.sys        | localhost | caching_sha2_password |
+| root             | localhost | caching_sha2_password |
++------------------+-----------+-----------------------+
+
+# 修改本地连接
+mysql> alter user 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
+# 修改远程连接
+mysql> alter user 'root'@'%'IDENTIFIED WITH mysql_native_password BY 'root';
+
+# 现在可以使用navicat工具连接Mysql，创建项目所需的数据库go_example及user表
+CREATE TABLE `user` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '用户名',
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '密码',
+  `gender` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT '性别 1男 2女 0未知',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
+```
+2. Redis服务；
+```shell
+# 拉去镜像，运行容器
+docker pull redis:latest
+docker run -itd -p 6379:6379 -v /data/redis:/data --name redis redis:latest
+```
+3. Mongodb服务；
+```shell
+docker pull mongo:latest
+docker run -itd -p 27017:27017 -v /data/mongo:/data/db --name mongo mongo:latest
+```
+4. Consul服务；
+```shell
+docker pull consul:latest
+docker run -itd -p 8500:8500 -v /data/consul/data:/consul/data -v /data/consul/conf:/consul/conf --name consul consul:latest
+```
+5. Jenkins服务；
+```shell
+# 拉取jenkins/jenkins:latest镜像
+docker pull jenkins/jenkins
+docker run -itd -p 8088:8080 -p 50000:50000 \
+           -u root -e TZ="Asia/shanghai" \
+           -v /data/jenkins:/var/jenkins_home \
+           -v /var/run/docker.sock:/var/run/docker.sock \
+           --name jenkins jenkins/jenkins
+```
 
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
@@ -2664,28 +2739,30 @@ conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaul
 ## 统一错误码
 当前返回错误码与成功返回公用一个结构体，存在冗余等问题。为了更加清晰的分辨错误返回和成功返回，使用两种结构体分别处理，并统一错误码。
 ### 错误码服务
-在common目录errorAssets下，创建error_list.go，该文件规定了哪些错误码
+在目录internal/lib/errorAssets下，创建error_list.go，该文件规定了哪些错误码
 ```go
 package errorAssets
 
+import "github.com/ken-house/go-contrib/prototype/errorAssets"
+
 var (
 	// ERR_PARAM 公共错误
-	ERR_PARAM     = NewError(10000, "参数错误")
-	ERR_SYSTEM    = NewError(10001, "系统错误")
-	ERR_CERT      = NewError(10002, "证书错误")
-	ERR_CALL_FUNC = NewError(10003, "调用方法出错")
-	ERR_DIAL      = NewError(10004, "连接错误")
+	ERR_PARAM     = errorAssets.NewError(10000, "参数错误")
+	ERR_SYSTEM    = errorAssets.NewError(10001, "系统错误")
+	ERR_CERT      = errorAssets.NewError(10002, "证书错误")
+	ERR_CALL_FUNC = errorAssets.NewError(10003, "调用方法出错")
+	ERR_DIAL      = errorAssets.NewError(10004, "连接错误")
 
 	// ERR_LOGIN 登录注册认证相关错误
-	ERR_LOGIN         = NewError(20000, "用户名或密码不正确")
-	ERR_LOGIN_REMOTE  = NewError(20001, "账号已在其他设备登录")
-	ERR_LOGIN_FAILURE = NewError(20002, "当前登录已失效，请尝试请求refresh_token获取新令牌")
-	ERR_REFRESH_TOKEN = NewError(20003, "刷新令牌失败，请重新登录")
+	ERR_LOGIN         = errorAssets.NewError(20000, "用户名或密码不正确")
+	ERR_LOGIN_REMOTE  = errorAssets.NewError(20001, "账号已在其他设备登录")
+	ERR_LOGIN_FAILURE = errorAssets.NewError(20002, "当前登录已失效，请尝试请求refresh_token获取新令牌")
+	ERR_REFRESH_TOKEN = errorAssets.NewError(20003, "刷新令牌失败，请重新登录")
 
 	// ERR_EXPOSE 导入导出相关错误
-	ERR_EXPORT     = NewError(30000, "导出失败")
-	ERR_IMPORT     = NewError(30001, "导入失败")
-	ERR_FILE_PARSE = NewError(30002, "文件解析失败")
+	ERR_EXPORT     = errorAssets.NewError(30000, "导出失败")
+	ERR_IMPORT     = errorAssets.NewError(30001, "导入失败")
+	ERR_FILE_PARSE = errorAssets.NewError(30002, "文件解析失败")
 )
 ```
 创建error_no.go文件，定义了返回错误的结构体及方法。
@@ -2779,11 +2856,18 @@ func SimpleLogger(outPutPaths []string) {
 	var err error
 
 	config := zap.NewProductionConfig()
+	config.Encoding = "console"
 
-	// 增加自定义日志记录位置 // todo 确保目录存在，不存在则创建目录
+	// 增加自定义日志记录位置
 	if len(outPutPaths) > 0 {
 		outPutPathsArr := config.OutputPaths
-		outPutPathsArr = append(outPutPathsArr, outPutPaths...)
+		for _, filePath := range outPutPaths {
+			_, err = tools.FileNotExistAndCreate(filePath)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			outPutPathsArr = append(outPutPathsArr, filePath)
+		}
 
 		config.OutputPaths = outPutPathsArr
 		config.ErrorOutputPaths = outPutPathsArr
@@ -2819,16 +2903,16 @@ func SimpleLogger(outPutPaths []string) {
 支持日志文件切割归档
 ```go
 // CustomLogger 自定义zap日志，支持日志切割归档
-func CustomLogger(lumberjackLogger lumberjack.Logger, outPutFile string) {
+func CustomLogger(lumberjackLogger *lumberjack.Logger, outPutFile string) {
 	encoder := getEncoder()
-	writeSyncer := getWriteSyncer(&lumberjackLogger, outPutFile)
+	writeSyncer := getWriteSyncer(lumberjackLogger, outPutFile)
 
 	logLevel := zapcore.DebugLevel
 	if env.IsReleasing() {
 		logLevel = zapcore.InfoLevel
 	}
 	core := zapcore.NewCore(encoder, writeSyncer, logLevel)
-	logger := zap.New(core, zap.AddCaller())
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(logLevel))
 
 	defer logger.Sync()
 
@@ -2843,45 +2927,118 @@ func getEncoder() zapcore.Encoder {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	return zapcore.NewJSONEncoder(encoderConfig)
+	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
 // 日志写入目标，使用lumberjack进行日志切割
 func getWriteSyncer(lumberjackLogger *lumberjack.Logger, outPutFile string) zapcore.WriteSyncer {
-	if lumberjackLogger != nil {
-		return zapcore.AddSync(lumberjackLogger)
-	} else {
-		// todo 确保目录存在，不存在则创建目录
+	if lumberjackLogger != nil { // 使用lumberjack进行日志切割
+		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackLogger))
+	} else { // 不使用切割
+		// 确保目录存在，不存在则创建目录
 		if outPutFile == "" {
-			outPutFile = "./log/test.log"
+			outPutFile = fmt.Sprintf("./logs/log_%s.log", time.Now().Format("20060102"))
 		}
-		file, err := os.Create(outPutFile)
+		file, err := tools.FileNotExistAndCreate(outPutFile)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		return zapcore.AddSync(file)
+		return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(file))
 	}
 }
 ```
 在cmd/root.go中，初始化日志。
 ```go
-func init() {
-    // 初始化配置文件
-    cobra.OnInitialize(initConfig, initLog)
-}
-
 // 初始化日志
 func initLog() {
-    zapLogger.SimpleLogger([]string{"./log/test2.log"})
+    // 普通日志记录
+    outputFile := fmt.Sprintf("./logs/log_%s.log", time.Now().Format("20060102"))
+    //zapLogger.SimpleLogger([]string{outputFile})
     
-    //zapLogger.CustomLogger(lumberjack.Logger{
-    //	Filename:   "./log/test.log",
-    //	MaxSize:    10,
-    //	MaxAge:     7,
-    //	MaxBackups: 5,
-    //	LocalTime:  false,
-    //	Compress:   false,
-    //}, "")
+    // 支持日志文件切割
+    zapLogger.CustomLogger(&lumberjack.Logger{
+    Filename:   outputFile,
+    MaxSize:    10,
+    MaxAge:     7,
+    MaxBackups: 5,
+    LocalTime:  false,
+    Compress:   false,
+    }, "")
 }
 ```
 在其他要记录日志的地方可以直接使用zap.L()写日志信息。
+
+## Gin框架参数验证
+接口接收参数，控制器使用参数绑定，gin框架自动通过binding标签对字段进行参数验证，使用系统自带验证器，也可以自定义验证器如validatePassword。
+```go
+// LoginForm 登录表单数据
+type LoginForm struct {
+	Username string `form:"username" json:"username" binding:"required,max=30"`
+	Password string `form:"password" json:"password" binding:"required,validatePassword"`
+}
+
+func (ctr *authController) Login(c *gin.Context) (int, gin.Negotiate) {
+    var paramData model.LoginForm
+    if err := c.ShouldBind(&paramData); err != nil {
+    return negotiate.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
+    }
+	// ...
+}
+```
+### 自定义验证器
+上面示例使用了validatePassword自定义验证器，需要对验证器进行定义并注册。
+定义验证器方法，在internal/meta目录下创建validator.go，内容如下：
+```go
+package meta
+
+import (
+	"github.com/dlclark/regexp2"
+	"github.com/go-playground/validator/v10"
+)
+
+// 正则匹配字符串验证器公共方法
+func regexpStringValidatorFunc(pattern string) validator.Func {
+	return func(fl validator.FieldLevel) bool {
+		value := fl.Field().String()
+		re := regexp2.MustCompile(pattern, 0)
+		isMatch, _ := re.MatchString(value)
+		return isMatch
+	}
+}
+
+// ValidatePhone 验证手机号
+var ValidatePhone = regexpStringValidatorFunc(`^1[3-9][0-9]{9}$`)
+
+// ValidatePassword 验证密码必须为6-16位字母+数字组合
+var ValidatePassword = regexpStringValidatorFunc(`^(?=.*[0-9])(?=.*[a-zA-Z])([0-9a-zA-Z]{6,16})$`)
+
+// ValidateUsername 验证注册用户名必须为6-30位字母或数字
+var ValidateUsername = regexpStringValidatorFunc(`^[0-9A-Za-z]{6,30}$`)
+
+// ValidateVerifyCode 验证码必须为6位数字
+var ValidateVerifyCode = regexpStringValidatorFunc(`^[0-9]{6}$`)
+
+```
+还需要将自定义验证器注册到gin框架中，修改cmd/root.go，改动如下：
+```go
+func init() {
+    // 初始化配置文件
+    cobra.OnInitialize(initConfig, initLog, initValidator)
+    
+    rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+// ...
+// 参数验证器
+func initValidator() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("validatePhone", meta.ValidatePhone)
+		v.RegisterValidation("validatePassword", meta.ValidatePassword)
+		v.RegisterValidation("validateUsername", meta.ValidateUsername)
+		v.RegisterValidation("validateVerifyCode", meta.ValidateVerifyCode)
+	}
+}
+```
+
+
+## Jenkins服务
+
