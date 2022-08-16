@@ -30,40 +30,40 @@ mysql:
     max_idle: 5
     max_lifetime: 10
     master:
-      dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+      dsn: "root:root@tcp(192.168.200.200:3306)/go_example?charset=utf8mb4"
     slaves:
-      - dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+      - dsn: "root:root@tcp(192.168.200.200:3306)/go_example?charset=utf8mb4"
   single:
-    dsn: "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+    dsn: "root:root@tcp(192.168.200.200:3306)/go_example?charset=utf8mb4"
     max_open: 20
     max_idle: 5
     max_lifetime: 10
 redis:
   single:
-    addr: "127.0.0.1:6379"
-    password: "redis"
+    addr: "192.168.200.200:6379"
+    password: ""
     db: 0
     pool_size: 20
   group:
     addrs:
-      - 127.0.0.1:7000
-      - 127.0.0.1:7001
-      - 127.0.0.1:7002
-      - 127.0.0.1:7003
-      - 127.0.0.1:7004
-      - 127.0.0.1:7005
+      - 192.168.200.200:7000
+      - 192.168.200.200:7001
+      - 192.168.200.200:7002
+      - 192.168.200.200:7003
+      - 192.168.200.200:7004
+      - 192.168.200.200:7005
     password: ""
     pool_size: 20
 mongodb:
   # 格式：mongodb://username:password@addr1:port2,addr2:port2
-  addr: "mongodb://127.0.0.1:27017"
+  addr: "mongodb://192.168.200.200:27017"
   max_open: 20
 consul:
-  addr: "127.0.0.1:8500"
+  addr: "192.168.200.200:8500"
 jenkins:
-  host: "http://127.0.0.1:8088/"
-  username: "admin"
-  password: "11a8c7f5ad7e4d9bcbbe08eceb415eb7ad"
+  host: "http://192.168.200.200:8088/"
+  username: "jenkins"
+  password: "1110ab88c3398a2d7ff470a7e9a8026d10"
 cacheKeys:
   userInfo: "user_info:%d"
 
