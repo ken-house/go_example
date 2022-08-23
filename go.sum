@@ -408,6 +408,14 @@ github.com/ken-house/go-contrib v1.0.11-0.20220811014215-75cd5e219036 h1:cLScR00
 github.com/ken-house/go-contrib v1.0.11-0.20220811014215-75cd5e219036/go.mod h1:c6V5sLJTxaW+3fsiOV+gJX+fj61Sq7pXr9EJFeBi+AU=
 github.com/ken-house/go-contrib v1.0.11-0.20220812140835-3b7d553ba99e h1:GCTh1uUn+kJsVc6Z7P6FmtYK3lTw3Y0PTJbXnIOrfVY=
 github.com/ken-house/go-contrib v1.0.11-0.20220812140835-3b7d553ba99e/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
+github.com/ken-house/go-contrib v1.0.12-0.20220819082006-41de4ccd4a12 h1:Mx4HyZiplbIRWvXOMuvcI6ujZopBBpPajneIzRGclOI=
+github.com/ken-house/go-contrib v1.0.12-0.20220819082006-41de4ccd4a12/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
+github.com/ken-house/go-contrib v1.0.12 h1:b5iJ3AUEecqu21zrSPX/I+H2sJEfsHnS1XBmyAG/OqQ=
+github.com/ken-house/go-contrib v1.0.12/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
+github.com/ken-house/go-contrib v1.0.13-0.20220823093547-07b1168f5c0b h1:fV6/Gdt5BqEZMuRgZGCXzGz0Isyb/YJmdzX+AxFYrsM=
+github.com/ken-house/go-contrib v1.0.13-0.20220823093547-07b1168f5c0b/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
+github.com/ken-house/go-contrib v1.0.13-0.20220823095121-a76dd386a6a7 h1:11t9iua2FZtF9PawqCgY0JjOdSQn8PwStvqMrZFH7ss=
+github.com/ken-house/go-contrib v1.0.13-0.20220823095121-a76dd386a6a7/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQxcgc=
