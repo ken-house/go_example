@@ -416,6 +416,8 @@ github.com/ken-house/go-contrib v1.0.13-0.20220823093547-07b1168f5c0b h1:fV6/Gdt
 github.com/ken-house/go-contrib v1.0.13-0.20220823093547-07b1168f5c0b/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
 github.com/ken-house/go-contrib v1.0.13-0.20220823095121-a76dd386a6a7 h1:11t9iua2FZtF9PawqCgY0JjOdSQn8PwStvqMrZFH7ss=
 github.com/ken-house/go-contrib v1.0.13-0.20220823095121-a76dd386a6a7/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
+github.com/ken-house/go-contrib v1.0.14 h1:99Jhsp6DoFdy0FiDNpPKgvfWt3Uo8RLy7HcGTOsOkic=
+github.com/ken-house/go-contrib v1.0.14/go.mod h1:H/ct8O0aKh85Udt8bLCLYEqMsFnCpNNmDMjT0oeyq9k=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.13.6 h1:P76CopJELS0TiO2mebmnzgWaajssP/EszplttgQxcgc=

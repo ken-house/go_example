@@ -40,7 +40,7 @@ type MysqlGroupClient mysqlClient.GroupClient
 type MysqlSingleClient mysqlClient.SingleClient
 
 // RedisSingleClient redis普通连接
-type RedisSingleClient redisClient.SingleClient
+type RedisSingleClient redisClient.RedisClient
 
 // RedisGroupClient redisCluster连接
 type RedisGroupClient redisClient.GroupClient

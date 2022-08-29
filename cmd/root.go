@@ -11,6 +11,7 @@ import (
 	"github.com/go_example/internal/meta"
 	"github.com/ken-house/go-contrib/prototype/zapLogger"
 	"github.com/ken-house/go-contrib/utils/env"
+	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -71,17 +72,17 @@ func initLog() {
 	}
 	// 普通日志记录
 	outputFile := fmt.Sprintf("./logs/log_%s.log", time.Now().Format("20060102"))
-	zapLogger.SimpleLogger([]string{outputFile}, extraFieldMap)
+	//zapLogger.SimpleLogger([]string{outputFile}, extraFieldMap)
 
 	// 支持日志文件切割
-	//zapLogger.CustomLogger(&lumberjack.Logger{
-	//	Filename:   outputFile,
-	//	MaxSize:    50,
-	//	MaxAge:     10,
-	//	MaxBackups: 5,
-	//	LocalTime:  false,
-	//	Compress:   false,
-	//}, "", extraFieldMap)
+	zapLogger.CustomLogger(&lumberjack.Logger{
+		Filename:   outputFile,
+		MaxSize:    50,
+		MaxAge:     10,
+		MaxBackups: 5,
+		LocalTime:  false,
+		Compress:   false,
+	}, "", extraFieldMap)
 }
 
 // 参数验证器

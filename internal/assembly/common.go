@@ -32,11 +32,11 @@ func NewMysqlGroupClient() (meta.MysqlGroupClient, func(), error) {
 
 // NewRedisSingleClient 连接Redis单机
 func NewRedisSingleClient() (meta.RedisSingleClient, func(), error) {
-	var cfg redisClient.SingleConfig
+	var cfg redisClient.RedisConfig
 	if err := viper.Sub("redis." + meta.RedisSingleDriverKey).Unmarshal(&cfg); err != nil {
 		return nil, nil, err
 	}
-	return redisClient.NewSingleClient(cfg)
+	return redisClient.NewClient(cfg)
 }
 
 // NewRedisGroupClient 连接RedisCluster集群
