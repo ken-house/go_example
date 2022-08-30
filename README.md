@@ -3041,4 +3041,327 @@ func initValidator() {
 
 
 ## Jenkins服务
+Jenkins 是最流行的开源持续集成系统。
+### 安装
+```shell
+go get github.com/bndr/gojenkins
+```
+### 使用
+controller目录下创建jenkins_controller.go，代码如下：
+```go
+package controller
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/service"
+	"github.com/go_example/internal/utils/negotiate"
+	"go.uber.org/zap"
+	"net/http"
+)
+
+type JenkinsController interface {
+	Index(c *gin.Context) (int, gin.Negotiate)
+}
+
+type jenkinsController struct {
+	jenkinsSvc service.JenkinsService
+}
+
+func NewJenkinsController(
+	jenkinsSvc service.JenkinsService,
+) JenkinsController {
+	return &jenkinsController{
+		jenkinsSvc: jenkinsSvc,
+	}
+}
+
+func (ctr *jenkinsController) Index(c *gin.Context) (int, gin.Negotiate) {
+	//taskList, err := ctr.jenkinsSvc.GetQueuePendingTaskList(c)
+	//if err != nil {
+	//	zap.L().Error("jenkinsSvc.GetQueuePendingTaskList", zap.Error(err))
+	//}
+	//for _, taskId := range taskList {
+	//	res, err := ctr.jenkinsSvc.CancelQueueTaskById(c, taskId)
+	//	if err != nil {
+	//		zap.L().Error("jenkinsSvc.CancelQueueTaskById", zap.Error(err))
+	//	}
+	//	fmt.Printf("停止队列中的任务%d,res:%v", taskId, res)
+	//}
+
+	//nextBuildNum, status, err := ctr.jenkinsSvc.GetJobLatestStatusAndNextBuildNumByName(c, "go-test")
+	//if err != nil {
+	//	zap.L().Error("jenkinsSvc.GetJobLatestStatusAndNextBuildNumByName", zap.Error(err))
+	//}
+	//fmt.Println(nextBuildNum, status)
+	log, err := ctr.jenkinsSvc.GetJobLastBuildLog(c, "go-test")
+	if err != nil {
+		zap.L().Error("jenkinsSvc.GetJobLastBuildLog", zap.Error(err))
+	}
+
+	//resMap, err := ctr.jenkinsSvc.GetAllJobLatestStatus(c)
+	//if err != nil {
+	//	zap.L().Error("jenkinsSvc.ValidateAllJobStatus", zap.Error(err))
+	//}
+	//err := ctr.jenkinsSvc.CreateJobFolder(c, "xudttest")
+	//fmt.Println(err)
+	//err := ctr.jenkinsSvc.CreateJobFolder(c, "folder1_test", "xudttest")
+	//fmt.Println(err)
+	//job, err := ctr.jenkinsSvc.CreateJobInFolder(c, "./assets/job.xml", "job_test", "xudttest", "folder1_test")
+	//fmt.Println(job, err)
+	//job := ctr.jenkinsSvc.RenameJob(c, "xudttest/job/folder1_test/job/job_test", "job_test1")
+	//fmt.Printf("%+v", job)
+	//taskId, err := ctr.jenkinsSvc.BuildJob(c, "go-test", nil)
+	//if err != nil {
+	//	zap.L().Error("jenkinsSvc.BuildJob", zap.Error(err))
+	//}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			//"taskNum": taskList,
+			//"status":  status,
+			"log": log,
+			//"resMap": resMap,
+			//"taskId": taskId,
+		},
+	})
+}
+```
+在service/目录下创建jenkins_service.go文件，该文件仅封装了常用服务：
+```go
+package service
+
+import (
+	"github.com/bndr/gojenkins"
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/meta"
+	"io/ioutil"
+)
+
+type JenkinsService interface {
+	GetQueuePendingTaskList(c *gin.Context) (taskIdList []int64, err error)
+	CancelQueueTaskById(c *gin.Context, taskId int64) (bool, error)
+	CancelQueueAllTask(c *gin.Context) error
+	GetJobLatestStatusAndNextBuildNumByName(c *gin.Context, jobName string) (int, int, error)
+	GetAllJobLatestStatus(c *gin.Context) (map[string]int, error)
+	GetJobLastBuildLog(c *gin.Context, jobName string) (string, error)
+	CreateJobFolder(c *gin.Context, folderName string, parents ...string) error
+	CreateJobInFolder(c *gin.Context, configPath string, jobName string, parentIDs ...string) (*gojenkins.Job, error)
+	RenameJob(c *gin.Context, oldName string, newName string) *gojenkins.Job
+	BuildJob(c *gin.Context, jobName string, params map[string]string) (int64, error)
+}
+
+type jenkinsService struct {
+	jenkinsClient meta.JenkinsClient
+}
+
+func NewJenkinsService(jenkinsClient meta.JenkinsClient) JenkinsService {
+	return &jenkinsService{
+		jenkinsClient: jenkinsClient,
+	}
+}
+
+// GetQueuePendingTaskList 获取队列中等待的任务列表
+func (svc *jenkinsService) GetQueuePendingTaskList(c *gin.Context) (taskIdList []int64, err error) {
+	taskIdList = make([]int64, 0, 100)
+	queue, err := svc.jenkinsClient.GetQueue(c)
+	if err != nil {
+		return taskIdList, err
+	}
+	for _, task := range queue.Raw.Items {
+		taskIdList = append(taskIdList, task.ID)
+	}
+	return taskIdList, nil
+}
+
+// CancelQueueAllTask 停止队列中所有等待任务
+func (svc *jenkinsService) CancelQueueAllTask(c *gin.Context) error {
+	queue, err := svc.jenkinsClient.GetQueue(c)
+	if err != nil {
+		return err
+	}
+	for _, task := range queue.Raw.Items {
+		if _, err = queue.CancelTask(c, task.ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CancelQueueTaskById 根据任务ID停止队列中的等待任务
+func (svc *jenkinsService) CancelQueueTaskById(c *gin.Context, taskId int64) (bool, error) {
+	queue, err := svc.jenkinsClient.GetQueue(c)
+	if err != nil {
+		return false, err
+	}
+	// todo 这里返回结果有问题 - 已反馈给作者
+	return queue.CancelTask(c, taskId)
+}
+
+// GetAllJobLatestStatus 获取所有job最近编译状态
+func (svc *jenkinsService) GetAllJobLatestStatus(c *gin.Context) (map[string]int, error) {
+	resMap := make(map[string]int, 0)
+	jobList, err := svc.jenkinsClient.GetAllJobs(c)
+	if err != nil {
+		return nil, err
+	}
+	for _, job := range jobList {
+		resMap[job.GetName()] = getJobStatus(job)
+	}
+	return resMap, nil
+}
+
+// GetJobLatestStatusByName 根据job的名称获取某个job最近一次的编译状态
+func (svc *jenkinsService) GetJobLatestStatusAndNextBuildNumByName(c *gin.Context, jobName string) (int, int, error) {
+	job, err := svc.jenkinsClient.GetJob(c, jobName)
+	if err != nil {
+		return 0, 0, err
+	}
+	return int(job.Raw.NextBuildNumber), getJobStatus(job), nil
+}
+
+// getJobStatus 根据job编译详情判断状态
+// 1 成功 2 失败 0 未编译或其他
+func getJobStatus(job *gojenkins.Job) int {
+	if job.Raw.LastBuild.Number == 0 { // 未编译
+		return 0
+	}
+	if job.Raw.LastBuild.Number == job.Raw.LastSuccessfulBuild.Number { // 编译成功
+		return 1
+	}
+	if job.Raw.LastBuild.Number == job.Raw.LastFailedBuild.Number { // 编译失败
+		return 2
+	}
+	return 0
+}
+
+// GetJobLastBuildLog 获取指定job最近一次编译日志
+func (svc *jenkinsService) GetJobLastBuildLog(c *gin.Context, jobName string) (string, error) {
+	job, err := svc.jenkinsClient.GetJob(c, jobName)
+	if err != nil {
+		return "", err
+	}
+	build, err := job.GetLastBuild(c)
+	if err != nil {
+		return "", err
+	}
+	// 实时日志
+	resp, err := build.GetConsoleOutputFromIndex(c, 0)
+	if err != nil {
+		return "", err
+	}
+	return resp.Content, nil
+}
+
+// CreateJobFolder 创建job的文件夹
+// 前提条件：安装Folders Plugin
+func (svc *jenkinsService) CreateJobFolder(c *gin.Context, folderName string, parents ...string) error {
+	_, err := svc.jenkinsClient.CreateFolder(c, folderName, parents...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CreateJobInFolder 创建一个job工程项目
+func (svc *jenkinsService) CreateJobInFolder(c *gin.Context, configPath string, jobName string, parentIDs ...string) (*gojenkins.Job, error) {
+	buf, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		panic(err)
+	}
+	config := string(buf)
+	return svc.jenkinsClient.CreateJobInFolder(c, config, jobName, parentIDs...)
+}
+
+// RenameJob 重命名job工程项目
+// oldName为job的完整路径（/job后面的完整路径），例如：xudttest/job/folder1_test/job/job_test
+// newName为新的job名称：例如job_test1
+func (svc *jenkinsService) RenameJob(c *gin.Context, oldName string, newName string) *gojenkins.Job {
+	return svc.jenkinsClient.RenameJob(c, oldName, newName)
+}
+
+// BuildJob 编译job，返回队列id
+func (svc *jenkinsService) BuildJob(c *gin.Context, jobName string, params map[string]string) (int64, error) {
+	return svc.jenkinsClient.BuildJob(c, jobName, params)
+}
+```
+jenkins_service.go文件依赖jenkinsClient，这个在assembly/common.go文件中定义：
+```go
+func NewJenkinsClient() (meta.JenkinsClient, error) {
+	var cfg jenkinsClient.JenkinsConfig
+	if err := viper.Sub("jenkins").Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+	return jenkinsClient.NewJenkinsClient(cfg)
+}
+```
+引入公共库prototype/jenkinsClient/jenkinsClient.go提供了一系列jenkins服务：
+```go
+package jenkinsClient
+
+import (
+	"context"
+	"github.com/bndr/gojenkins"
+)
+
+type JenkinsClient interface {
+	Info(ctx context.Context) (*gojenkins.ExecutorResponse, error)
+	SafeRestart(ctx context.Context) error
+	GetQueue(ctx context.Context) (*gojenkins.Queue, error)
+	GetQueueUrl() string
+	GetQueueItem(ctx context.Context, id int64) (*gojenkins.Task, error)
+	GetAllJobs(ctx context.Context) ([]*gojenkins.Job, error)
+	GetAllJobNames(ctx context.Context) ([]gojenkins.InnerJob, error)
+	GetJob(ctx context.Context, id string, parentIDs ...string) (*gojenkins.Job, error)
+	GetSubJob(ctx context.Context, parentId string, childId string) (*gojenkins.Job, error)
+	CreateJob(ctx context.Context, config string, options ...interface{}) (*gojenkins.Job, error)
+	UpdateJob(ctx context.Context, job string, config string) *gojenkins.Job
+	RenameJob(ctx context.Context, job string, name string) *gojenkins.Job
+	CopyJob(ctx context.Context, copyFrom string, newName string) (*gojenkins.Job, error)
+	DeleteJob(ctx context.Context, name string) (bool, error)
+	BuildJob(ctx context.Context, name string, params map[string]string) (int64, error)
+	GetBuildFromQueueID(ctx context.Context, queueid int64) (*gojenkins.Build, error)
+	GetAllNodes(ctx context.Context) ([]*gojenkins.Node, error)
+	GetNode(ctx context.Context, name string) (*gojenkins.Node, error)
+	CreateNode(ctx context.Context, name string, numExecutors int, description string, remoteFS string, label string, options ...interface{}) (*gojenkins.Node, error)
+	DeleteNode(ctx context.Context, name string) (bool, error)
+	GetFolder(ctx context.Context, id string, parents ...string) (*gojenkins.Folder, error)
+	CreateFolder(ctx context.Context, name string, parents ...string) (*gojenkins.Folder, error)
+	CreateJobInFolder(ctx context.Context, config string, jobName string, parentIDs ...string) (*gojenkins.Job, error)
+	GetLabel(ctx context.Context, name string) (*gojenkins.Label, error)
+	GetAllBuildIds(ctx context.Context, job string) ([]gojenkins.JobBuild, error)
+	GetBuild(ctx context.Context, jobName string, number int64) (*gojenkins.Build, error)
+	GetArtifactData(ctx context.Context, id string) (*gojenkins.FingerPrintResponse, error)
+	GetPlugins(ctx context.Context, depth int) (*gojenkins.Plugins, error)
+	UninstallPlugin(ctx context.Context, name string) error
+	HasPlugin(ctx context.Context, name string) (*gojenkins.Plugin, error)
+	InstallPlugin(ctx context.Context, name string, version string) error
+	ValidateFingerPrint(ctx context.Context, id string) (bool, error)
+	GetAllViews(ctx context.Context) ([]*gojenkins.View, error)
+	GetView(ctx context.Context, name string) (*gojenkins.View, error)
+	CreateView(ctx context.Context, name string, viewType string) (*gojenkins.View, error)
+	Poll(ctx context.Context) (int, error)
+}
+
+type jenkinsClient struct {
+	*gojenkins.Jenkins
+}
+
+// JenkinsConfig Jenkins连接配置
+type JenkinsConfig struct {
+	Host     string `json:"host" mapstructure:"host"`
+	Username string `json:"username" mapstructure:"username"`
+	Password string `json:"password" mapstructure:"password"`
+}
+
+func NewJenkinsClient(cfg JenkinsConfig) (JenkinsClient, error) {
+	ctx := context.Background()
+	client, err := gojenkins.CreateJenkins(nil, cfg.Host, cfg.Username, cfg.Password).Init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &jenkinsClient{
+		Jenkins: client,
+	}, nil
+}
+```
 
