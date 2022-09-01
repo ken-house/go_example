@@ -1,0 +1,100 @@
+package controller
+
+import (
+	"github.com/gin-gonic/gin"
+	"{{PROJECT_MODULE}}/internal/lib/errorAssets"
+	"{{PROJECT_MODULE}}/internal/model"
+	"{{PROJECT_MODULE}}/internal/service"
+	"{{PROJECT_MODULE}}/internal/utils/negotiate"
+	"net/http"
+)
+
+type {{CONTROLLER_NAME_UPPER}}Controller interface {
+	Create(ctx *gin.Context) (int, gin.Negotiate)
+	Update(ctx *gin.Context) (int, gin.Negotiate)
+	Delete(ctx *gin.Context) (int, gin.Negotiate)
+	Select(ctx *gin.Context) (int, gin.Negotiate)
+}
+
+type {{CONTROLLER_NAME_LITTER}}Controller struct {
+	{{CONTROLLER_NAME_LITTER}}Svc service.{{CONTROLLER_NAME_UPPER}}Service
+}
+
+func New{{CONTROLLER_NAME_UPPER}}Controller({{CONTROLLER_NAME_LITTER}}Svc service.{{CONTROLLER_NAME_UPPER}}Service) {{CONTROLLER_NAME_UPPER}}Controller {
+	return &{{CONTROLLER_NAME_LITTER}}Controller{
+		{{CONTROLLER_NAME_LITTER}}Svc: {{CONTROLLER_NAME_LITTER}}Svc,
+	}
+}
+
+func (ctr *{{CONTROLLER_NAME_LITTER}}Controller) Create(ctx *gin.Context) (int, gin.Negotiate) {
+	var params model.{{CONTROLLER_NAME_UPPER}}CreateForm
+	if err := ctx.ShouldBind(&params); err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
+	}
+
+	_, err := ctr.{{CONTROLLER_NAME_LITTER}}Svc.Create(ctx, params)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "创建成功",
+		},
+	})
+}
+
+func (ctr *{{CONTROLLER_NAME_LITTER}}Controller) Update(ctx *gin.Context) (int, gin.Negotiate) {
+	var params model.{{CONTROLLER_NAME_UPPER}}UpdateForm
+
+	if err := ctx.ShouldBind(&params); err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
+	}
+
+	_, err := ctr.{{CONTROLLER_NAME_LITTER}}Svc.Update(ctx, params)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_OPERATE.ToastError())
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "更新成功",
+		},
+	})
+}
+
+func (ctr *{{CONTROLLER_NAME_LITTER}}Controller) Delete(ctx *gin.Context) (int, gin.Negotiate) {
+	var params model.{{CONTROLLER_NAME_UPPER}}DeleteForm
+	if err := ctx.ShouldBind(&params); err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
+	}
+	_, err := ctr.{{CONTROLLER_NAME_LITTER}}Svc.Delete(ctx, params.Id)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_OPERATE.ToastError())
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "删除成功",
+		},
+	})
+}
+
+func (ctr *{{CONTROLLER_NAME_LITTER}}Controller) Select(ctx *gin.Context) (int, gin.Negotiate) {
+	var params model.{{CONTROLLER_NAME_UPPER}}SelectForm
+	if err := ctx.ShouldBind(&params); err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_PARAM.ToastError())
+	}
+
+	dataList, err := ctr.{{CONTROLLER_NAME_LITTER}}Svc.Select(ctx, params)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_OPERATE.ToastError())
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"dataList": dataList,
+		},
+	})
+}
+

@@ -1,0 +1,53 @@
+goModule = "github.com/go_example"
+name = user
+tableName = "user"
+# 模板文件目录
+templatePath = "./assets/templates/crud"
+# 对name进行处理为首字母大写和全小写
+nameLitter = `echo $(name) | awk '{print tolower($0)}'`
+nameUpper = `echo $(name) | awk '{print substr(toupper($0),1,1)substr(tolower($0),2)}'`
+# 目标文件目录
+targetControllerPath = "./internal/controller/$(nameLitter)_controller.go"
+targetServicePath = "./internal/service/$(nameLitter)_service.go"
+targetRepositoryPath = "./internal/repository/mysql/$(nameLitter)_repository.go"
+targetModelPath = "./internal/model/common.go"
+targetControllerWirePath = "./internal/assembly/controller.go"
+targetServiceWirePath = "./internal/assembly/service.go"
+
+.PHONY: crud
+crud:
+	# 生成controller
+	# 复制文件到指定位置，并改名
+	cp $(templatePath)/controller.template $(targetControllerPath)
+	# 替换文件中的宏
+	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetControllerPath)
+	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetControllerPath)
+	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetControllerPath)
+
+	# 生成service
+	# 复制文件到指定位置，并改名
+	cp $(templatePath)/service.template $(targetServicePath)
+	# 替换文件中的宏
+	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetServicePath)
+	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetServicePath)
+	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetServicePath)
+
+	# 生成repository
+	# 复制文件到指定位置，并改名
+	cp $(templatePath)/repository.template $(targetRepositoryPath)
+	# 替换文件中的宏
+	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetRepositoryPath)
+	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetRepositoryPath)
+	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetRepositoryPath)
+
+	# 生成请求model
+	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(targetModelPath)
+
+	# 生成数据库model
+	xorm reverse mysql "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4" ./internal/model/mysql/templates/goxorm ./internal/model/mysql $(tableName)
+
+	# 生成wire依赖文件
+	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(targetControllerWirePath)
+	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(targetServiceWirePath)
+
+

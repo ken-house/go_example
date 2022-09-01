@@ -9,6 +9,7 @@ var (
 	ERR_CERT          = errorAssets.NewError(10002, "证书错误")
 	ERR_CALL_FUNC     = errorAssets.NewError(10003, "调用方法出错")
 	ERR_DIAL          = errorAssets.NewError(10004, "连接错误")
+	ERR_OPERATE       = errorAssets.NewError(10005, "操作失败")
 	ERR_SMS_SEND_FAIL = errorAssets.NewError(10006, "短信发送失败")
 
 	// ERR_LOGIN 登录注册认证相关错误

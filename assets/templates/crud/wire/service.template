@@ -1,0 +1,8 @@
+
+func New{{CONTROLLER_NAME_UPPER}}Service() (service.{{CONTROLLER_NAME_UPPER}}Service, func(), error) {
+	panic(wire.Build(
+		NewMysqlSingleClient,
+		MysqlRepo.New{{CONTROLLER_NAME_UPPER}}Repository,
+		service.New{{CONTROLLER_NAME_UPPER}}Service,
+	))
+}

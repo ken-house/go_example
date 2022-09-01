@@ -1,0 +1,60 @@
+package service
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/model"
+	mysqlModel "github.com/go_example/internal/model/mysql"
+	MysqlRepo "github.com/go_example/internal/repository/mysql"
+	"github.com/spf13/cast"
+	"time"
+)
+
+type {{CONTROLLER_NAME_UPPER}}Service interface {
+	Create(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}CreateForm) (int64, error)
+	Update(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}UpdateForm) (int64, error)
+	Delete(ctx *gin.Context, id int) (int64, error)
+	Select(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}SelectForm) ([]mysqlModel.{{CONTROLLER_NAME_UPPER}}List, error)
+}
+
+type {{CONTROLLER_NAME_LITTER}}Service struct {
+	{{CONTROLLER_NAME_LITTER}}Repo MysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository
+}
+
+func New{{CONTROLLER_NAME_UPPER}}Service({{CONTROLLER_NAME_LITTER}}Repo MysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository) {{CONTROLLER_NAME_UPPER}}Service {
+	return &{{CONTROLLER_NAME_LITTER}}Service{
+		{{CONTROLLER_NAME_LITTER}}Repo: {{CONTROLLER_NAME_LITTER}}Repo,
+	}
+}
+
+// todo 需要修改字段
+func (svc *{{CONTROLLER_NAME_LITTER}}Service) Create(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}CreateForm) (int64, error) {
+	now := cast.ToInt(time.Now().Unix())
+	data := mysqlModel.{{CONTROLLER_NAME_UPPER}}List{
+		Name:      params.Name,
+		Age:      params.Age,
+		UpdatedAt: now,
+		CreatedAt: now,
+	}
+	return svc.{{CONTROLLER_NAME_LITTER}}Repo.InsertRow(ctx, data)
+}
+
+// todo 需要修改字段
+func (svc *{{CONTROLLER_NAME_LITTER}}Service) Update(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}UpdateForm) (int64, error) {
+	now := cast.ToInt(time.Now().Unix())
+	data := mysqlModel.{{CONTROLLER_NAME_UPPER}}List{
+		Id:        params.Id,
+		Name:      params.Name,
+        Age:       params.Age,
+        UpdatedAt: now,
+        CreatedAt: now,
+	}
+	return svc.{{CONTROLLER_NAME_LITTER}}Repo.UpdateById(ctx, data)
+}
+
+func (svc *{{CONTROLLER_NAME_LITTER}}Service) Delete(ctx *gin.Context, id int) (int64, error) {
+	return svc.{{CONTROLLER_NAME_LITTER}}Repo.DeleteById(ctx, id)
+}
+
+func (svc *{{CONTROLLER_NAME_LITTER}}Service) Select(ctx *gin.Context, params model.{{CONTROLLER_NAME_UPPER}}SelectForm) ([]mysqlModel.{{CONTROLLER_NAME_UPPER}}List, error) {
+	return svc.{{CONTROLLER_NAME_LITTER}}Repo.FindAll(ctx, params)
+}

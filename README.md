@@ -3109,7 +3109,7 @@ func (ctr *jenkinsController) Index(c *gin.Context) (int, gin.Negotiate) {
 	//fmt.Println(err)
 	//err := ctr.jenkinsSvc.CreateJobFolder(c, "folder1_test", "xudttest")
 	//fmt.Println(err)
-	//job, err := ctr.jenkinsSvc.CreateJobInFolder(c, "./assets/job.xml", "job_test", "xudttest", "folder1_test")
+	//job, err := ctr.jenkinsSvc.CreateJobInFolder(c, "./assets/jenkins/job.xml", "job_test", "xudttest", "folder1_test")
 	//fmt.Println(job, err)
 	//job := ctr.jenkinsSvc.RenameJob(c, "xudttest/job/folder1_test/job/job_test", "job_test1")
 	//fmt.Printf("%+v", job)
