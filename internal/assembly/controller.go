@@ -54,3 +54,10 @@ func NewGrpcClientController() (controller.GrpcClientController, func(), error) 
 		controller.NewGrpcClientController,
 	))
 }
+
+func NewSmsController() (controller.SmsController, func(), error) {
+	panic(wire.Build(
+		NewSmsService,
+		controller.NewSmsController,
+	))
+}

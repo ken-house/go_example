@@ -1,9 +1,11 @@
 package tools
 
 import (
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // IsContain 检查字符串是否在slice
@@ -56,4 +58,19 @@ func GetOutBoundIp() string {
 	defer conn.Close()
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 	return localAddr.IP.String()
+}
+
+// GetRandomString 随机生成指定长度的字符串
+// flag 0字母或数字 1 纯数字
+func GetRandomString(length int, flag int) string {
+	rand.Seed(time.Now().UnixNano())
+	letters := []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	if flag == 1 {
+		letters = []byte("0123456789")
+	}
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

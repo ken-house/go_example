@@ -20,6 +20,7 @@ type httpServer struct {
 	homeCtr       controller.HomeController
 	excelCtr      controller.ExcelController
 	jenkinsCtr    controller.JenkinsController
+	smsCtr        controller.SmsController
 	authService   service.AuthService
 }
 
@@ -30,6 +31,7 @@ func NewHttpServer(
 	homeCtr controller.HomeController,
 	excelCtr controller.ExcelController,
 	jenkinsCtr controller.JenkinsController,
+	smsCtr controller.SmsController,
 	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
@@ -39,6 +41,7 @@ func NewHttpServer(
 		homeCtr:       homeCtr,
 		excelCtr:      excelCtr,
 		jenkinsCtr:    jenkinsCtr,
+		smsCtr:        smsCtr,
 		authService:   authService,
 	}
 }
@@ -75,6 +78,8 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/grpc/hello", srv.HelloGrpc())
 	// Jenkins服务
 	router.GET("/jenkins/index", srv.Jenkins())
+	// 阿里短信服务
+	router.POST("/sms/send-code", srv.SmsSendCode())
 }
 
 func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
@@ -93,6 +98,12 @@ func (srv *httpServer) Hello() gin.HandlerFunc {
 func (srv *httpServer) Jenkins() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.jenkinsCtr.Index(c))
+	}
+}
+
+func (srv *httpServer) SmsSendCode() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.smsCtr.SendCode(c))
 	}
 }
 

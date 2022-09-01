@@ -87,6 +87,17 @@ func NewGrpcClientController() (controller.GrpcClientController, func(), error) 
 	}, nil
 }
 
+func NewSmsController() (controller.SmsController, func(), error) {
+	smsService, cleanup, err := NewSmsService()
+	if err != nil {
+		return nil, nil, err
+	}
+	smsController := controller.NewSmsController(smsService)
+	return smsController, func() {
+		cleanup()
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -129,7 +140,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup7, err := NewAuthService()
+	smsController, cleanup7, err := NewSmsController()
 	if err != nil {
 		cleanup6()
 		cleanup5()
@@ -139,8 +150,20 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, authService)
+	authService, cleanup8, err := NewAuthService()
+	if err != nil {
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, smsController, authService)
 	return httpServer, func() {
+		cleanup8()
 		cleanup7()
 		cleanup6()
 		cleanup5()
@@ -252,5 +275,15 @@ func NewExcelService() (service.ExcelUserService, func(), error) {
 	excelUserService := service.NewExcelUserService(excelExportHandler, excelImportHandler)
 	return excelUserService, func() {
 		cleanup()
+	}, nil
+}
+
+func NewSmsService() (service.SmsService, func(), error) {
+	alibabaSmsClient, err := NewAlibabaSmsClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	smsService := service.NewSmsService(alibabaSmsClient)
+	return smsService, func() {
 	}, nil
 }

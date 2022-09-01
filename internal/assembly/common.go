@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"github.com/go_example/internal/meta"
+	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -69,4 +70,13 @@ func NewJenkinsClient() (meta.JenkinsClient, error) {
 		return nil, err
 	}
 	return jenkinsClient.NewJenkinsClient(cfg)
+}
+
+// NewAlibabaSmsClient alibaba短信连接
+func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
+	var cfg alibabaSmsClient.ClientConfig
+	if err := viper.Sub("alibaba_sms").Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+	return alibabaSmsClient.CreateClient(cfg)
 }

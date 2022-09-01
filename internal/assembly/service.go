@@ -57,3 +57,10 @@ func NewExcelService() (service.ExcelUserService, func(), error) {
 		service.NewExcelUserService,
 	))
 }
+
+func NewSmsService() (service.SmsService, func(), error) {
+	panic(wire.Build(
+		NewAlibabaSmsClient,
+		service.NewSmsService,
+	))
+}

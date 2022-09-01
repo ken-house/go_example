@@ -73,6 +73,7 @@ var httpCmd = &cobra.Command{
 			Addr:    fmt.Sprintf("%s:%s", addr, port),
 			Handler: app,
 		}
+		fmt.Printf("Listen %s:%s\n", addr, port)
 
 		// 启动监听服务
 		go func() {
@@ -90,7 +91,7 @@ var httpCmd = &cobra.Command{
 		if err := srv.Shutdown(ctx); err != nil {
 			log.Fatal("Server Shutdown:", err)
 		}
-		log.Println("Server exiting")
+		fmt.Println("Server exiting")
 	},
 }
 

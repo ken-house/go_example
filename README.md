@@ -18,6 +18,7 @@
 + 增加zap高性能日志库；
 + 增加gin参数验证；
 + 增加jenkins服务；
++ 增加阿里云短信服务；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -39,6 +40,7 @@
 + https://github.com/go-playground/validator
 + https://github.com/dlclark/regexp2
 + https://github.com/bndr/gojenkins
++ https://github.com/alibabacloud-go
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -68,6 +70,7 @@
 + 版本v2.1.0增加zap高性能日志；
 + 版本v2.2.0增加gin参数验证；
 + 版本v2.3.0增加jenkins服务；
++ 版本v2.4.0增加阿里云短信服务；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -3364,4 +3367,47 @@ func NewJenkinsClient(cfg JenkinsConfig) (JenkinsClient, error) {
 	}, nil
 }
 ```
+## 阿里云短信服务
+使用阿里云短信服务接口，需要在阿里云短信服务商购买并获取到相应的配置。
+### 使用
+在internal/assembly/common.go中添加方法获取到阿里云短信客户端
+```go
+// NewAlibabaSmsClient alibaba短信连接
+func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
+	var cfg alibabaSmsClient.ClientConfig
+	if err := viper.Sub("alibaba_sms").Unmarshal(&cfg); err != nil {
+		return nil, err
+	}
+	return alibabaSmsClient.CreateClient(cfg)
+}
+```
+在internal/service下新增sms_service.go文件，实现发送短信验证码的功能，代码如下：
+```go
+// SendCode 发送短信验证码
+func (svc *smsService) SendCode(ctx *gin.Context, phone string) (code string, err error) {
+	var params alibabaSmsClient.SendSmsParams
+	if err := viper.Sub("alibaba_sms_code").Unmarshal(&params); err != nil {
+		return "", err
+	}
+	params.Phone = phone
+	code = tools.GetRandomString(6, 1)
+	templateParam := struct {
+		Code string `json:"code"`
+	}{
+		Code: code,
+	}
+	templateParamByte, err := json.Marshal(templateParam)
+	if err != nil {
+		return "", err
+	}
+	params.TemplateParam = string(templateParamByte)
+	err = svc.smsClient.SendCode(params)
+	if err != nil {
+		zap.L().Error("smsService.SendCode err", zap.Error(err), zap.String("phone", params.Phone))
+		return "", err
+	}
+	return code, nil
+}
+```
+控制器层可直接调用，实现短信发送。
 

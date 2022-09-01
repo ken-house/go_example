@@ -15,6 +15,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		NewHomeController,
 		NewExcelController,
 		NewJenkinsController,
+		NewSmsController,
 		NewAuthService,
 		server.NewHttpServer,
 	))

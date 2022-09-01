@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"time"
 
@@ -53,3 +54,6 @@ type ConsulClient consulClient.ConsulClient
 
 // JenkinsClient jenkins连接
 type JenkinsClient jenkinsClient.JenkinsClient
+
+// AlibabaSmsClient alibaba短信连接
+type AlibabaSmsClient alibabaSmsClient.AlibabaSmsClient

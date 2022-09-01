@@ -64,6 +64,13 @@ jenkins:
   host: "http://127.0.0.1:8088/"
   username: "admin"
   password: "11a8c7f5ad7e4d9bcbbe08eceb415eb7ad"
+alibaba_sms:
+  end_point: "dysmsapi.aliyuncs.com"
+  access_key_id: "LTAI4GFM5Sqw5AiWwAPq4che"
+  access_key_secret: "QfaWjC3BJkOJRP0v3ewntdOQi8nKVZ"
+alibaba_sms_code:
+  template_code: "SMS_204125567"
+  sign_name: "小区闲置物品信息交流平台" # 短信签名
 cacheKeys:
   userInfo: "user_info:%d"
 

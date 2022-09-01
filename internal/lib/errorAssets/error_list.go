@@ -4,11 +4,12 @@ import "github.com/ken-house/go-contrib/prototype/errorAssets"
 
 var (
 	// ERR_PARAM 公共错误
-	ERR_PARAM     = errorAssets.NewError(10000, "参数错误")
-	ERR_SYSTEM    = errorAssets.NewError(10001, "系统错误")
-	ERR_CERT      = errorAssets.NewError(10002, "证书错误")
-	ERR_CALL_FUNC = errorAssets.NewError(10003, "调用方法出错")
-	ERR_DIAL      = errorAssets.NewError(10004, "连接错误")
+	ERR_PARAM         = errorAssets.NewError(10000, "参数错误")
+	ERR_SYSTEM        = errorAssets.NewError(10001, "系统错误")
+	ERR_CERT          = errorAssets.NewError(10002, "证书错误")
+	ERR_CALL_FUNC     = errorAssets.NewError(10003, "调用方法出错")
+	ERR_DIAL          = errorAssets.NewError(10004, "连接错误")
+	ERR_SMS_SEND_FAIL = errorAssets.NewError(10006, "短信发送失败")
 
 	// ERR_LOGIN 登录注册认证相关错误
 	ERR_LOGIN         = errorAssets.NewError(20000, "用户名或密码不正确")
