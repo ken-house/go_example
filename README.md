@@ -19,6 +19,7 @@
 + 增加gin参数验证；
 + 增加jenkins服务；
 + 增加阿里云短信服务；
++ 支持自动生成CRUD代码；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -71,6 +72,7 @@
 + 版本v2.2.0增加gin参数验证；
 + 版本v2.3.0增加jenkins服务；
 + 版本v2.4.0增加阿里云短信服务；
++ 版本v2.5.0支持自动生成CRUD代码；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -3497,4 +3499,139 @@ func (cli *alibabaSmsClient) SendCode(params SendSmsParams) (err error) {
 	}
 	return err
 }
+```
+## CRUD代码自动生成
+### Makefile
+编写Crud_Makefile文件，其中相关变量需要根据项目实际情况进行修改，代码如下：
+```makefile
+goModule = github.com/go_example
+name = test
+tableName = test
+tableModel = Test
+# 数据库连接
+db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+# 模板文件目录
+templatePath = "./assets/templates/crud"
+# 对name进行处理为首字母大写和全小写
+nameLitter = `echo $(name) | awk '{print tolower($0)}'`
+nameUpper = `echo $(name) | awk '{print substr(toupper($0),1,1)substr(tolower($0),2)}'`
+# 目标文件目录
+targetControllerPath = "./internal/controller/$(nameLitter)_controller.go"
+targetServicePath = "./internal/service/$(nameLitter)_service.go"
+targetRepositoryPath = "./internal/repository/mysql/$(nameLitter)_repository.go"
+targetModelPath = "./internal/model/common.go"
+targetControllerWirePath = "./internal/assembly/controller.go"
+targetServiceWirePath = "./internal/assembly/service.go"
+cleanTemplatePath = "./assets/templates/crud/clean.template"
+
+.PHONY: crud
+all: controller service repository model model_db wire wire_tmp
+	@echo "请手动添加$(templatePath)/wire/http.tmp文件内容到以下三个文件："
+	@echo "./internal/assembly/server.go"
+	@echo "./internal/server/http.go"
+	@echo "手动添加完代码后，请切换到项目internal/assembly/目录，执行wire命令"
+
+.PHONY: controller
+controller:
+	@# 生成controller
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/controller.template $(targetControllerPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetControllerPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetControllerPath)
+	@echo "generate controller success"
+
+.PHONY: service
+service:
+	@# 生成service
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/service.template $(targetServicePath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetServicePath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetServicePath)
+	@echo "generate service success"
+
+.PHONY: repository
+repository:
+	@# 生成repository
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/repository.template $(targetRepositoryPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_NAME}}#'$(tableName)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetRepositoryPath)
+	@echo "generate repository success"
+
+.PHONY: model
+model:
+	@# 生成请求model
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(targetModelPath)
+	@echo "generate model success"
+
+.PHONY: model_db
+model_db:
+	@# 生成数据库model
+	@xorm reverse mysql $(db) ./internal/model/mysql/templates/goxorm ./internal/model/mysql $(tableName)
+	@echo "generate model_db success"
+
+.PHONY: wire
+wire:
+	@# 生成wire依赖文件
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(targetControllerWirePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(targetServiceWirePath)
+	@echo "generate wire success"
+
+.PHONY: wire_tmp
+wire_tmp:
+	@# 请手动复制以下http.tmp文件内容到对应文件下
+	@cp $(templatePath)/wire/http.template $(templatePath)/wire/http.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/http.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/http.tmp
+	@echo "generate wire_tmp success"
+
+.PHONY: clean
+clean:
+	@# 删除controller
+	@rm -f $(targetControllerPath)
+	@echo "delete controller success"
+	@# 删除service
+	@rm -f $(targetServicePath)
+	@echo "delete service success"
+	@# 删除repository
+	@rm -f $(targetRepositoryPath)
+	@echo "delete repository success"
+	@# 删除数据库表模型
+	@rm ./internal/model/mysql/$(tableName).go
+	@echo "delete db_model success"
+	@# 请手动删除./assets/templates/crud/clean.template对应的内容
+	@rm -f $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(cleanTemplatePath)
+	@echo "请手动删除项目中./assets/templates/crud/clean.template文件内容对应以下文件："
+	@echo "./internal/model/common.go"
+	@echo "./internal/assembly/controller.go"
+	@echo "./internal/assembly/service.go"
+	@echo "若手动添加过其他代码，请删除，例如以下两个文件："
+	@echo "./internal/assembly/server.go"
+	@echo "./internal/server/http.go"
+```
+### Makefile执行命令
+生成CRUD代码，根据输出提示进行操作。
+```shell
+# name：控制器的名称，一般为业务名，例如：user、department等；
+# tableName：对应数据库表名；
+# tableModel：数据库表生成表模型名，需要对应tableName，例如tableName为user_data，那么tableModel为UserData；
+# -f Crud_Makefile：表示指定Crud_Makefile文件；
+make all name=user tableName=user_data tableModel=UserData -f Crud_Makefile
+```
+删除CRUD代码，根据输出提示进行操作。
+```shell
+make clean name=user tableName=user_data tableModel=UserData -f Crud_Makefile
 ```

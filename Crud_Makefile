@@ -1,6 +1,9 @@
-goModule = "github.com/go_example"
-name = user
-tableName = "user"
+goModule = github.com/go_example
+name = test
+tableName = test
+tableModel = Test
+# 数据库连接
+db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
 # 模板文件目录
 templatePath = "./assets/templates/crud"
 # 对name进行处理为首字母大写和全小写
@@ -13,41 +16,103 @@ targetRepositoryPath = "./internal/repository/mysql/$(nameLitter)_repository.go"
 targetModelPath = "./internal/model/common.go"
 targetControllerWirePath = "./internal/assembly/controller.go"
 targetServiceWirePath = "./internal/assembly/service.go"
+cleanTemplatePath = "./assets/templates/crud/clean.template"
 
 .PHONY: crud
-crud:
-	# 生成controller
-	# 复制文件到指定位置，并改名
-	cp $(templatePath)/controller.template $(targetControllerPath)
-	# 替换文件中的宏
-	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetControllerPath)
-	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetControllerPath)
-	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetControllerPath)
+all: controller service repository model model_db wire wire_tmp
+	@echo "请手动添加$(templatePath)/wire/http.tmp文件内容到以下三个文件："
+	@echo "./internal/assembly/server.go"
+	@echo "./internal/server/http.go"
+	@echo "手动添加完代码后，请切换到项目internal/assembly/目录，执行wire命令"
 
-	# 生成service
-	# 复制文件到指定位置，并改名
-	cp $(templatePath)/service.template $(targetServicePath)
-	# 替换文件中的宏
-	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetServicePath)
-	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetServicePath)
-	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetServicePath)
+.PHONY: controller
+controller:
+	@# 生成controller
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/controller.template $(targetControllerPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetControllerPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetControllerPath)
+	@echo "generate controller success"
 
-	# 生成repository
-	# 复制文件到指定位置，并改名
-	cp $(templatePath)/repository.template $(targetRepositoryPath)
-	# 替换文件中的宏
-	sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetRepositoryPath)
-	sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetRepositoryPath)
-	sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetRepositoryPath)
+.PHONY: service
+service:
+	@# 生成service
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/service.template $(targetServicePath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetServicePath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetServicePath)
+	@echo "generate service success"
 
-	# 生成请求model
-	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(targetModelPath)
+.PHONY: repository
+repository:
+	@# 生成repository
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/repository.template $(targetRepositoryPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_NAME}}#'$(tableName)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetRepositoryPath)
+	@echo "generate repository success"
 
-	# 生成数据库model
-	xorm reverse mysql "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4" ./internal/model/mysql/templates/goxorm ./internal/model/mysql $(tableName)
+.PHONY: model
+model:
+	@# 生成请求model
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(targetModelPath)
+	@echo "generate model success"
 
-	# 生成wire依赖文件
-	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(targetControllerWirePath)
-	sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(targetServiceWirePath)
+.PHONY: model_db
+model_db:
+	@# 生成数据库model
+	@xorm reverse mysql $(db) ./internal/model/mysql/templates/goxorm ./internal/model/mysql $(tableName)
+	@echo "generate model_db success"
 
+.PHONY: wire
+wire:
+	@# 生成wire依赖文件
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(targetControllerWirePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(targetServiceWirePath)
+	@echo "generate wire success"
+
+.PHONY: wire_tmp
+wire_tmp:
+	@# 请手动复制以下http.tmp文件内容到对应文件下
+	@cp $(templatePath)/wire/http.template $(templatePath)/wire/http.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/http.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/http.tmp
+	@echo "generate wire_tmp success"
+
+.PHONY: clean
+clean:
+	@# 删除controller
+	@rm -f $(targetControllerPath)
+	@echo "delete controller success"
+	@# 删除service
+	@rm -f $(targetServicePath)
+	@echo "delete service success"
+	@# 删除repository
+	@rm -f $(targetRepositoryPath)
+	@echo "delete repository success"
+	@# 删除数据库表模型
+	@rm ./internal/model/mysql/$(tableName).go
+	@echo "delete db_model success"
+	@# 请手动删除./assets/templates/crud/clean.template对应的内容
+	@rm -f $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(cleanTemplatePath)
+	@echo "请手动删除项目中./assets/templates/crud/clean.template文件内容对应以下文件："
+	@echo "./internal/model/common.go"
+	@echo "./internal/assembly/controller.go"
+	@echo "./internal/assembly/service.go"
+	@echo "若手动添加过其他代码，请删除，例如以下两个文件："
+	@echo "./internal/assembly/server.go"
+	@echo "./internal/server/http.go"
 

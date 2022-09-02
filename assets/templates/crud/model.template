@@ -1,8 +1,7 @@
 
+// generate by crud ./internal/model/model.go
 // todo 需要修改字段
 type {{CONTROLLER_NAME_UPPER}}CreateForm struct {
-	Name      string `json:"name" form:"name" binding:"required,max=30"`
-	Age       int    `json:"age" form:"age" binding:"omitempty,gt=0"`
 }
 
 // todo 需要修改字段
@@ -17,5 +16,4 @@ type {{CONTROLLER_NAME_UPPER}}UpdateForm struct {
 
 // todo 需要修改字段
 type {{CONTROLLER_NAME_UPPER}}SelectForm struct {
-	Name string `json:"name" form:"name" binding:"required,max=30"`
 }

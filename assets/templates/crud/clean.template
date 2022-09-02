@@ -1,0 +1,37 @@
+
+// generate by crud ./internal/model/model.go
+// todo 需要修改字段
+type DataCreateForm struct {
+}
+
+// todo 需要修改字段
+type DataDeleteForm struct {
+	Id int `json:"id" form:"id" binding:"required,gt=0"`
+}
+
+type DataUpdateForm struct {
+	DataCreateForm
+	DataDeleteForm
+}
+
+// todo 需要修改字段
+type DataSelectForm struct {
+}
+
+
+// generate by crud ./internal/assembly/controller.go
+func NewDataController() (controller.DataController, func(), error) {
+	panic(wire.Build(
+		NewDataService,
+		controller.NewDataController,
+	))
+}
+
+// generate by crud ./internal/assembly/service.go
+func NewDataService() (service.DataService, func(), error) {
+	panic(wire.Build(
+		NewMysqlSingleClient,
+		MysqlRepo.NewDataRepository,
+		service.NewDataService,
+	))
+}

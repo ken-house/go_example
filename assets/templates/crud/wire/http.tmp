@@ -1,0 +1,59 @@
+
+// 请手动复制到internal/assembly/server.go文件中
+func NewHttpServer() (server.HttpServer, func(), error) {
+    // ...
+    NewDataController,
+}
+
+// 请手动复制到internal/server/http.go文件中
+type httpServer struct {
+    // ...
+    dataCtr       controller.DataController
+}
+
+
+func NewHttpServer(
+    // ...
+    dataCtr controller.DataController,
+) HttpServer {
+    return &httpServer{
+        // ...
+        dataCtr:       dataCtr,
+    }
+}
+
+func (srv *httpServer) Register(router *gin.Engine) {
+    // ...
+    dataRouter := v1Router.Group("/data")
+    {
+        dataRouter.POST("/create", srv.DataCreate())
+        dataRouter.POST("/update", srv.DataUpdate())
+        dataRouter.POST("/delete", srv.DataDelete())
+        dataRouter.GET("/select", srv.DataSelect())
+    }
+}
+
+// 以下代码生成到http.go下方
+func (srv *httpServer) DataCreate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.dataCtr.Create(c))
+	}
+}
+
+func (srv *httpServer) DataUpdate() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.dataCtr.Update(c))
+	}
+}
+
+func (srv *httpServer) DataDelete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.dataCtr.Delete(c))
+	}
+}
+
+func (srv *httpServer) DataSelect() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.dataCtr.Select(c))
+	}
+}

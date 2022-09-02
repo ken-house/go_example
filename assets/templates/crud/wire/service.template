@@ -1,4 +1,6 @@
 
+
+// generate by crud ./internal/assembly/service.go
 func New{{CONTROLLER_NAME_UPPER}}Service() (service.{{CONTROLLER_NAME_UPPER}}Service, func(), error) {
 	panic(wire.Build(
 		NewMysqlSingleClient,

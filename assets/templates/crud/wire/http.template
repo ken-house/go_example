@@ -1,0 +1,59 @@
+
+// 请手动复制到internal/assembly/server.go文件中
+func NewHttpServer() (server.HttpServer, func(), error) {
+    // ...
+    New{{CONTROLLER_NAME_UPPER}}Controller,
+}
+
+// 请手动复制到internal/server/http.go文件中
+type httpServer struct {
+    // ...
+    {{CONTROLLER_NAME_LITTER}}Ctr       controller.{{CONTROLLER_NAME_UPPER}}Controller
+}
+
+
+func NewHttpServer(
+    // ...
+    {{CONTROLLER_NAME_LITTER}}Ctr controller.{{CONTROLLER_NAME_UPPER}}Controller,
+) HttpServer {
+    return &httpServer{
+        // ...
+        {{CONTROLLER_NAME_LITTER}}Ctr:       {{CONTROLLER_NAME_LITTER}}Ctr,
+    }
+}
+
+func (srv *httpServer) Register(router *gin.Engine) {
+    // ...
+    {{CONTROLLER_NAME_LITTER}}Router := v1Router.Group("/{{CONTROLLER_NAME_LITTER}}")
+    {
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/create", srv.{{CONTROLLER_NAME_UPPER}}Create())
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/update", srv.{{CONTROLLER_NAME_UPPER}}Update())
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/delete", srv.{{CONTROLLER_NAME_UPPER}}Delete())
+        {{CONTROLLER_NAME_LITTER}}Router.GET("/select", srv.{{CONTROLLER_NAME_UPPER}}Select())
+    }
+}
+
+// 以下代码生成到http.go下方
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Create() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Create(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Update() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Update(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Delete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Delete(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Select() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Select(c))
+	}
+}

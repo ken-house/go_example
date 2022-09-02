@@ -1,4 +1,6 @@
 
+
+// generate by crud ./internal/assembly/controller.go
 func New{{CONTROLLER_NAME_UPPER}}Controller() (controller.{{CONTROLLER_NAME_UPPER}}Controller, func(), error) {
 	panic(wire.Build(
 		New{{CONTROLLER_NAME_UPPER}}Service,
