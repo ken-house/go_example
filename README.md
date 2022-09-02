@@ -113,7 +113,7 @@ CREATE TABLE `user` (
   `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '密码',
   `gender` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT '性别 1男 2女 0未知',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
 ```
 2. Redis服务；
 ```shell
@@ -3502,7 +3502,7 @@ func (cli *alibabaSmsClient) SendCode(params SendSmsParams) (err error) {
 ```
 ## CRUD代码自动生成
 ### Makefile
-编写Crud_Makefile文件，其中相关变量需要根据项目实际情况进行修改，代码如下：
+编写Crud_Makefile文件，其中相关变量需要根据项目实际情况进行修改，目前仅支持单个单词的控制器，并要求表名遵循相应规则，若有更高需求，可生成后再做相应修改，代码如下：
 ```makefile
 goModule = github.com/go_example
 name = test

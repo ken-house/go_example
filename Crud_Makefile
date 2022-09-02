@@ -103,6 +103,7 @@ clean:
 	@# 删除数据库表模型
 	@rm ./internal/model/mysql/$(tableName).go
 	@echo "delete db_model success"
+	@rm -f $(templatePath)/wire/http.tmp
 	@# 请手动删除./assets/templates/crud/clean.template对应的内容
 	@rm -f $(cleanTemplatePath)
 	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(cleanTemplatePath)
