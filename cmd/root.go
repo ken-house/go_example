@@ -75,9 +75,8 @@ func initConfig() {
 		}
 		defer clean()
 		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
-			DataId:   cfg.DataId,
-			Group:    cfg.Group,
-			OnChange: nil,
+			DataId: cfg.DataId,
+			Group:  cfg.Group,
 		})
 		if err != nil {
 			log.Fatalln(err)
@@ -92,7 +91,6 @@ func initConfig() {
 	if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(meta.GlobalConfig.Certs.CurKey)
 }
 
 // 初始化日志
