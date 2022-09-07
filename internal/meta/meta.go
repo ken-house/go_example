@@ -21,7 +21,7 @@ var EnvMode string
 const CfgFile = "./configs"
 
 // DebugUseConfigCenter 本地调试是否使用配置中心
-const DebugUseConfigCenter = false
+const DebugUseConfigCenter = true
 
 // GlobalConfig 全局配置
 var GlobalConfig model.GlobalConfig

@@ -1,14 +1,15 @@
 package service
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/meta"
 	CacheRepo "github.com/go_example/internal/repository/cache"
 	MongoRepo "github.com/go_example/internal/repository/mongodb"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 type HelloService interface {
@@ -58,7 +59,8 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
 
 	// 测试
-	zap.L().Debug("this is test")
+	//zap.L().Debug("this is test")
+	fmt.Println(meta.GlobalConfig.Redis.Single.PoolSize)
 
 	return map[string]string{
 		"hello":          "world，golang",

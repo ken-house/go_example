@@ -58,6 +58,9 @@ func initConfig() {
 		if err := viper.ReadInConfig(); err != nil {
 			log.Fatalln(err)
 		}
+		if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
+			log.Fatalln(err)
+		}
 	} else { // 测试环境、生产环境从配置中心读取
 		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/config_center.yaml")
 		if err := viper.ReadInConfig(); err != nil {
@@ -82,13 +85,28 @@ func initConfig() {
 			log.Fatalln(err)
 		}
 		// 将读取到的配置信息转为全局配置
-		viper.SetConfigType("yaml")
-		err = viper.ReadConfig(bytes.NewBuffer([]byte(globalConfigStr)))
-		if err != nil {
-			log.Fatalln(err)
-		}
+		setGlobalConfigFromData(globalConfigStr)
+
+		// 监听实现自动感知
+		configCenterClient.ListenConfig(vo.ConfigParam{
+			DataId: cfg.DataId,
+			Group:  cfg.Group,
+			OnChange: func(namespace, group, dataId, data string) {
+				setGlobalConfigFromData(data)
+			},
+		})
 	}
-	if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
+}
+
+// 从文本读取到全局配置
+func setGlobalConfigFromData(data string) {
+	// 将读取到的配置信息转为全局配置
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err = viper.Unmarshal(&meta.GlobalConfig); err != nil {
 		log.Fatalln(err)
 	}
 }
