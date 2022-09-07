@@ -7,14 +7,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/go_example/internal/meta"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/assembly"
@@ -39,8 +38,8 @@ var socketCmd = &cobra.Command{
 		app := gin.Default()
 		socketSrv.Register(app)
 
-		addr := viper.GetString("server.socket.addr")
-		port := viper.GetString("server.socket.port")
+		addr := meta.GlobalConfig.Server.Socket.Addr
+		port := meta.GlobalConfig.Server.Socket.Port
 		srv := http.Server{
 			Addr:    fmt.Sprintf("%s:%s", addr, port),
 			Handler: app,

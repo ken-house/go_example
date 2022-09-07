@@ -5,12 +5,15 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/go_example/internal/meta"
+	"github.com/ken-house/go-contrib/prototype/nacosClient"
 	"github.com/ken-house/go-contrib/prototype/zapLogger"
 	"github.com/ken-house/go-contrib/utils/env"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/natefinch/lumberjack"
 	"github.com/spf13/viper"
 	"log"
@@ -50,18 +53,46 @@ func init() {
 func initConfig() {
 	// 从系统环境变量中读取运行环境
 	meta.EnvMode = env.Mode()
-
-	// viper目前仅支持单文件
-	viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("找不到配置文件..")
-		} else {
-			fmt.Println("配置文件出错..")
+	if env.IsDebugging() && !meta.DebugUseConfigCenter { // 本地调试若不使用配置中心则直接读取common.yaml文件
+		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalln(err)
 		}
-		log.Fatal(err)
+	} else { // 测试环境、生产环境从配置中心读取
+		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/config_center.yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalln(err)
+		}
+
+		// 从配置中心读取项目配置
+		var cfg nacosClient.Config
+		if err := viper.Sub("config_center").Unmarshal(&cfg); err != nil {
+			log.Fatalln(err)
+		}
+		configCenterClient, clean, err := nacosClient.NewClient(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer clean()
+		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
+			DataId:   cfg.DataId,
+			Group:    cfg.Group,
+			OnChange: nil,
+		})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		// 将读取到的配置信息转为全局配置
+		viper.SetConfigType("yaml")
+		err = viper.ReadConfig(bytes.NewBuffer([]byte(globalConfigStr)))
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
+	if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(meta.GlobalConfig.Certs.CurKey)
 }
 
 // 初始化日志

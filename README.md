@@ -20,6 +20,7 @@
 + 增加jenkins服务；
 + 增加阿里云短信服务；
 + 支持自动生成CRUD代码；
++ 支持nacos配置中心；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -42,6 +43,7 @@
 + https://github.com/dlclark/regexp2
 + https://github.com/bndr/gojenkins
 + https://github.com/alibabacloud-go
++ https://github.com/nacos-group/nacos-sdk-go
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -73,6 +75,7 @@
 + 版本v2.3.0增加jenkins服务；
 + 版本v2.4.0增加阿里云短信服务；
 + 版本v2.5.0支持自动生成CRUD代码；
++ 版本v2.6.0支持Nacos配置中心；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -141,7 +144,25 @@ docker run -itd -p 8088:8080 -p 50000:50000 \
            -v /var/run/docker.sock:/var/run/docker.sock \
            --name jenkins jenkins/jenkins
 ```
+6. Nacos服务；
+```shell
+docker image pull nacos/nacos-server
+docker run -itd 
+      -p 8848:8848 \ # 用于nacos管理界面；
+      -p 9848:9848 \ # Nacos2.0版本增加gRPC通信方式，用于客户端gRPC向服务端发起连接和请求；
+      -p 9849:9849 \ # Nacos2.0用于服务间通信同步数据，若集群模式必须要开启；
+      -e MODE=standalone \ 
+      -v /data/nacos/logs:/home/nacos/logs \ 
+      -v /data/nacos/data:/home/nacos/data \  
+      --name nacos \
+      nacos/nacos-server
+```
+访问http://127.0.0.1:8848/nacos/index.html进入管理界面，需做如下操作：
+1. 命名空间创建debug、test、release；
+2. 配置管理 - 配置列表在相应的命名空间创建Data-id配置，以生产环境为例，其中Group为go_example，Data Id为release-go_example-common.yaml；
 
+如下图所示：
+![image](assets/images/nacos.png)
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
 
@@ -3634,4 +3655,280 @@ make all name=user tableName=user_data tableModel=UserData -f Crud_Makefile
 删除CRUD代码，根据输出提示进行操作。
 ```shell
 make clean name=user tableName=user_data tableModel=UserData -f Crud_Makefile
+```
+## Nacos配置中心
+Nacos 是阿里巴巴推出来的一个新开源项目。一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台。
+### 配置文件修改
+configs/debug新增config_center.yaml配置文件，定义了连接nacos配置中心相关的配置信息：
+```yaml
+config_center:
+  server_ip_list:
+    - "127.0.0.1"
+  server_http_port: 8848
+  server_grpc_port: 9848
+  namespace_id: "debug"
+  timeout: 5000
+  log_level: "debug"
+  log_path: "./nacos/logs"
+  cache_path: "./nacos/cache"
+  group: "go_example"
+  data_id: "debug-go_example-common.yaml"
+```
+### root.go初始化项目配置
+支持本地调试可选择本地配置文件或配置中心获取项目配置，生产及测试环境使用配置中心配置。将配置信息解析到meta.GlobalConfig全局变量。
+```go
+// 初始化配置文件
+func initConfig() {
+	// 从系统环境变量中读取运行环境
+	meta.EnvMode = env.Mode()
+	if env.IsDebugging() && !meta.DebugUseConfigCenter { // 本地调试若不使用配置中心则直接读取common.yaml文件
+		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalln(err)
+		}
+	} else { // 测试环境、生产环境从配置中心读取
+		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/config_center.yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalln(err)
+		}
+
+		// 从配置中心读取项目配置
+		var cfg nacosClient.Config
+		if err := viper.Sub("config_center").Unmarshal(&cfg); err != nil {
+			log.Fatalln(err)
+		}
+		configCenterClient, clean, err := nacosClient.NewClient(cfg)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer clean()
+		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
+			DataId:   cfg.DataId,
+			Group:    cfg.Group,
+			OnChange: nil,
+		})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		// 将读取到的配置信息转为全局配置
+		viper.SetConfigType("yaml")
+		err = viper.ReadConfig(bytes.NewBuffer([]byte(globalConfigStr)))
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+	if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
+		log.Fatalln(err)
+	}
+}
+```
+### 从全局变量中读取配置信息
+新增全局变量结构体，对应文件为：internal/model/global_config.go，并在meta.go中定义全局变量。
+```go
+package model
+
+// GlobalConfig 项目全局配置
+type GlobalConfig struct {
+	Server struct {
+		Http      ServerInfo `json:"http"`
+		HttpPprof ServerInfo `json:"http_pprof"`
+		Socket    ServerInfo `json:"socket"`
+		Grpc      ServerInfo `json:"grpc"`
+	} `json:"server" mapstructure:"server"`
+
+	Certs CertInfo `json:"certs" mapstructure:"certs"`
+
+	Mysql struct {
+		Group  MysqlGroup  `json:"group" mapstructure:"group"`
+		Single MysqlSingle `json:"single" mapstructure:"single"`
+	} `json:"mysql" mapstructure:"mysql"`
+
+	Redis struct {
+		Group  RedisGroup  `json:"group" mapstructure:"group"`
+		Single RedisSingle `json:"single" mapstructure:"single"`
+	} `json:"redis" mapstructure:"redis"`
+
+	Mongodb Mongo `json:"mongodb" mapstructure:"mongodb"`
+
+	Consul Consul `json:"consul" mapstructure:"consul"`
+
+	Jenkins Jenkins `json:"jenkins" mapstructure:"jenkins"`
+
+	AlibabaSms AlibabaSms `json:"alibaba_sms" mapstructure:"alibaba_sms"`
+
+	AlibabaSmsCode AlibabaSmsCode `json:"alibaba_sms_code" mapstructure:"alibaba_sms_code"`
+}
+
+// ServerInfo 服务信息
+type ServerInfo struct {
+	Name string `json:"name" mapstructure:"name"`
+	Addr string `json:"addr" mapstructure:"addr"`
+	Port string `json:"port" mapstructure:"port"`
+}
+
+// CertInfo 证书信息
+type CertInfo struct {
+	CurKey string   `json:"cur_key" mapstructure:"cur_key"`
+	Keys   []string `json:"keys" mapstructure:"keys"`
+}
+
+// MysqlGroup Mysql主从配置
+type MysqlGroup struct {
+	MaxIdle     int `json:"max_idle" mapstructure:"max_idle"`
+	MaxOpen     int `json:"max_open" mapstructure:"max_open"`
+	MaxLifetime int `json:"max_lifetime" mapstructure:"max_lifetime"`
+	Master      struct {
+		Dsn string `json:"dsn" mapstructure:"dsn"`
+	} `json:"master" mapstructure:"master"`
+	Slaves []struct {
+		Dsn string `json:"dsn" mapstructure:"dsn"`
+	} `json:"slaves" mapstructure:"slaves"`
+}
+
+// MysqlSingle Mysql单机
+type MysqlSingle struct {
+	MaxIdle     int    `json:"max_idle" mapstructure:"max_idle"`
+	MaxOpen     int    `json:"max_open" mapstructure:"max_open"`
+	MaxLifetime int    `json:"max_lifetime" mapstructure:"max_lifetime"`
+	Dsn         string `json:"dsn" mapstructure:"dsn"`
+	IsDebug     bool   `json:"is_debug" mapstructure:"is_debug"`
+}
+
+// RedisSingle Redis单机
+type RedisSingle struct {
+	Addr     string `json:"addr" mapstructure:"addr"`
+	Password string `json:"password" mapstructure:"password"`
+	DB       int    `json:"db" mapstructure:"db"`
+	PoolSize int    `json:"pool_size" mapstructure:"pool_size"`
+}
+
+// RedisGroup Redis集群
+type RedisGroup struct {
+	Addrs    []string `json:"addrs" mapstructure:"addrs"`
+	Password string   `json:"password" mapstructure:"password"`
+	PoolSize int      `json:"pool_size" mapstructure:"pool_size"`
+}
+
+// Mongo mongo配置
+type Mongo struct {
+	Addr     string `json:"addr" mapstructure:"addr"`
+	Username string `json:"username" mapstructure:"username"`
+	Password string `json:"password" mapstructure:"password"`
+	MaxOpen  uint64 `json:"max_open" mapstructure:"max_open"`
+}
+
+// Consul consul服务
+type Consul struct {
+	Addr string `json:"addr" mapstructure:"addr"`
+}
+
+// Jenkins jenkins服务
+type Jenkins struct {
+	Host     string `json:"host" mapstructure:"host"`
+	Username string `json:"username" mapstructure:"username"`
+	Password string `json:"password" mapstructure:"password"`
+}
+
+// AlibabaSms 阿里巴巴短信服务
+type AlibabaSms struct {
+	EndPoint        string `json:"end_point" mapstructure:"end_point"`
+	AccessKeyId     string `json:"access_key_id" mapstructure:"access_key_id"`
+	AccessKeySecret string `json:"access_key_secret" mapstructure:"access_key_secret"`
+}
+
+// AlibabaSmsCode 阿里巴巴短信格式
+type AlibabaSmsCode struct {
+	SignName     string `json:"sign_name" mapstructure:"sign_name"`
+	TemplateCode string `json:"template_code" mapstructure:"template_code"`
+}
+
+```
+将从viper全局变量中读取改为从meta.GlobalConfig全局变量。如下示例：
+```go
+// NewMysqlSingleClient 单机数据库连接
+func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
+	cfg := mysqlClient.SingleConfig{
+		MaxIdle:     meta.GlobalConfig.Mysql.Single.MaxIdle,
+		MaxOpen:     meta.GlobalConfig.Mysql.Single.MaxOpen,
+		MaxLifetime: meta.GlobalConfig.Mysql.Single.MaxLifetime,
+		Dsn:         meta.GlobalConfig.Mysql.Single.Dsn,
+		IsDebug:     !env.IsReleasing(),
+	}
+	return mysqlClient.NewSingleClient(cfg)
+}
+```
+### Nacos配置中心服务
+```go
+package nacosClient
+
+import (
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+)
+
+type ConfigCenterClient interface {
+	config_client.IConfigClient
+}
+
+type configCenterClient struct {
+	config_client.IConfigClient
+}
+
+// Config Nacos连接配置
+type Config struct {
+	ServerIpList   []string `json:"server_ip_list" mapstructure:"server_ip_list"`
+	ServerHttpPort uint64   `json:"server_http_port" mapstructure:"server_http_port"`
+	ServerGrpcPort uint64   `json:"server_grpc_port" mapstructure:"server_grpc_port"`
+	NamespaceId    string   `json:"namespace_id" mapstructure:"namespace_id"`
+	Timeout        uint64   `json:"timeout" mapstructure:"timeout"`
+	LogLevel       string   `json:"log_level" mapstructure:"log_level"`
+	LogPath        string   `json:"log_path" mapstructure:"log_path"`
+	CachePath      string   `json:"cache_path" mapstructure:"cache_path"`
+	Group          string   `json:"group" mapstructure:"group"`
+	DataId         string   `json:"data_id" mapstructure:"data_id"`
+}
+
+func NewClient(cfg Config) (ConfigCenterClient, func(), error) {
+	// Nacos服务端配置
+	serverConfigList := getServerConfig(cfg)
+	// Nacos客户端配置
+	clientConfig := getClientConfig(cfg)
+
+	client, err := clients.NewConfigClient(vo.NacosClientParam{
+		ServerConfigs: serverConfigList,
+		ClientConfig:  &clientConfig,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return &configCenterClient{client}, func() {
+		client.CloseClient()
+	}, nil
+}
+
+// 获取服务端配置
+func getServerConfig(cfg Config) []constant.ServerConfig {
+	serverConfigList := make([]constant.ServerConfig, 0, 10)
+	for _, ip := range cfg.ServerIpList {
+		serverConfigList = append(serverConfigList, *constant.NewServerConfig(ip, cfg.ServerHttpPort, constant.WithGrpcPort(cfg.ServerGrpcPort)))
+	}
+	return serverConfigList
+}
+
+// 获取客户端配置
+func getClientConfig(cfg Config) constant.ClientConfig {
+	clientConfig := *constant.NewClientConfig(
+		constant.WithNamespaceId(cfg.NamespaceId),
+		constant.WithTimeoutMs(cfg.Timeout),
+		constant.WithNotLoadCacheAtStart(true),
+		constant.WithLogDir(cfg.LogPath),
+		constant.WithCacheDir(cfg.CachePath),
+		constant.WithLogLevel(cfg.LogLevel),
+	)
+	return clientConfig
+}
 ```

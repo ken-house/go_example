@@ -1,0 +1,12 @@
+config_center:
+  server_ip_list:
+    - "127.0.0.1"
+  server_http_port: 8848
+  server_grpc_port: 9848
+  namespace_id: "release"
+  timeout: 5000
+  log_level: "info"
+  log_path: "./nacos/logs"
+  cache_path: "./nacos/cache"
+  group: "go_example"
+  data_id: "release-go_example-common.yaml"

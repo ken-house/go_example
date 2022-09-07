@@ -6,7 +6,6 @@ import (
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/utils/tools"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -28,11 +27,11 @@ func NewSmsService(
 
 // SendCode 发送短信验证码
 func (svc *smsService) SendCode(ctx *gin.Context, phone string) (code string, err error) {
-	var params alibabaSmsClient.SendSmsParams
-	if err := viper.Sub("alibaba_sms_code").Unmarshal(&params); err != nil {
-		return "", err
+	params := alibabaSmsClient.SendSmsParams{
+		Phone:        phone,
+		SignName:     meta.GlobalConfig.AlibabaSmsCode.SignName,
+		TemplateCode: meta.GlobalConfig.AlibabaSmsCode.TemplateCode,
 	}
-	params.Phone = phone
 	code = tools.GetRandomString(6, 1)
 	templateParam := struct {
 		Code string `json:"code"`

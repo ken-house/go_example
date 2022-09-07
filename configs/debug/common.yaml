@@ -17,12 +17,8 @@ server:
     port: "9090"
 
 certs:
-  curKey: 1652421664
+  cur_key: 1652421664
   keys: [1652421664]
-
-common:
-  username: "小明"
-  pwd: 123456
 
 mysql:
   group:
@@ -71,7 +67,5 @@ alibaba_sms:
 alibaba_sms_code:
   template_code: "SMS_204125567"
   sign_name: "小区闲置物品信息交流平台" # 短信签名
-cacheKeys:
-  userInfo: "user_info:%d"
 
 

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"github.com/go_example/internal/meta"
 	"io/ioutil"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 
 	MysqlModel "github.com/go_example/internal/model/mysql"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/spf13/viper"
 )
 
 type CustomClaims struct {
@@ -38,14 +38,11 @@ func SetCerts() {
 		CurKey string
 		Keys   []string
 	}
-	err := viper.Sub("certs").Unmarshal(&certKeyConfig)
-	if err != nil {
-		panic(err)
-	}
-	var privateKey []byte
+	certKeyConfig.CurKey = meta.GlobalConfig.Certs.CurKey
+	certKeyConfig.Keys = meta.GlobalConfig.Certs.Keys
 	var publicKey []byte
 	for _, key := range certKeyConfig.Keys {
-		privateKey, err = ioutil.ReadFile("assets/certs/" + key + "/rsa_private_key.pem")
+		privateKey, err := ioutil.ReadFile("assets/certs/" + key + "/rsa_private_key.pem")
 		if err != nil {
 			panic(err)
 		}
@@ -60,7 +57,7 @@ func SetCerts() {
 	}
 
 	// 读取当前的使用的证书key
-	curKey = viper.GetString("certs.curKey")
+	curKey = meta.GlobalConfig.Certs.CurKey
 }
 
 // GenToken 生成token

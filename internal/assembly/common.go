@@ -9,74 +9,97 @@ import (
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
 	"github.com/ken-house/go-contrib/utils/env"
-	"github.com/spf13/viper"
 )
 
 // NewMysqlSingleClient 单机数据库连接
 func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
-	var cfg mysqlClient.SingleConfig
-	if err := viper.Sub("mysql." + meta.MysqlSingleDriverKey).Unmarshal(&cfg); err != nil {
-		return nil, nil, err
+	cfg := mysqlClient.SingleConfig{
+		MaxIdle:     meta.GlobalConfig.Mysql.Single.MaxIdle,
+		MaxOpen:     meta.GlobalConfig.Mysql.Single.MaxOpen,
+		MaxLifetime: meta.GlobalConfig.Mysql.Single.MaxLifetime,
+		Dsn:         meta.GlobalConfig.Mysql.Single.Dsn,
+		IsDebug:     !env.IsReleasing(),
 	}
 	return mysqlClient.NewSingleClient(cfg)
 }
 
 // NewMysqlGroupClient 主从数据库连接
 func NewMysqlGroupClient() (meta.MysqlGroupClient, func(), error) {
-	var cfg mysqlClient.GroupConfig
-	if err := viper.Sub("mysql." + meta.MysqlGroupDriverKey).Unmarshal(&cfg); err != nil {
-		return nil, nil, err
+	cfg := mysqlClient.GroupConfig{
+		MaxIdle:     meta.GlobalConfig.Mysql.Group.MaxIdle,
+		MaxOpen:     meta.GlobalConfig.Mysql.Group.MaxOpen,
+		MaxLifetime: meta.GlobalConfig.Mysql.Group.MaxLifetime,
+		IsDebug:     !env.IsReleasing(),
+		Slaves:      nil,
 	}
-	cfg.IsDebug = !env.IsReleasing()
+	cfg.Master.Dsn = meta.GlobalConfig.Mysql.Group.Master.Dsn
+	slaveList := make([]struct {
+		Dsn string `json:"dsn" mapstructure:"dsn"`
+	}, 0, 10)
+	var dsn struct {
+		Dsn string `json:"dsn" mapstructure:"dsn"`
+	}
+	for _, v := range meta.GlobalConfig.Mysql.Group.Slaves {
+		dsn.Dsn = v.Dsn
+		slaveList = append(slaveList, dsn)
+	}
+	cfg.Slaves = slaveList
 	return mysqlClient.NewGroupClient(cfg)
 }
 
 // NewRedisSingleClient 连接Redis单机
 func NewRedisSingleClient() (meta.RedisSingleClient, func(), error) {
-	var cfg redisClient.RedisConfig
-	if err := viper.Sub("redis." + meta.RedisSingleDriverKey).Unmarshal(&cfg); err != nil {
-		return nil, nil, err
+	cfg := redisClient.RedisConfig{
+		Addr:     meta.GlobalConfig.Redis.Single.Addr,
+		Password: meta.GlobalConfig.Redis.Single.Password,
+		DB:       meta.GlobalConfig.Redis.Single.DB,
+		PoolSize: meta.GlobalConfig.Redis.Single.PoolSize,
 	}
 	return redisClient.NewClient(cfg)
 }
 
 // NewRedisGroupClient 连接RedisCluster集群
 func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
-	var cfg redisClient.GroupConfig
-	if err := viper.Sub("redis." + meta.RedisGroupDriverKey).Unmarshal(&cfg); err != nil {
-		return nil, nil, err
+	cfg := redisClient.GroupConfig{
+		Addrs:    meta.GlobalConfig.Redis.Group.Addrs,
+		Password: meta.GlobalConfig.Redis.Group.Password,
+		PoolSize: meta.GlobalConfig.Redis.Group.PoolSize,
 	}
 	return redisClient.NewGroupClient(cfg)
 }
 
 // NewMongoClient 连接mongodb单机
 func NewMongoClient() (meta.MongoClient, func(), error) {
-	var cfg mongoClient.MongoConfig
-	if err := viper.Sub("mongodb").Unmarshal(&cfg); err != nil {
-		return nil, nil, err
+	cfg := mongoClient.MongoConfig{
+		Addr:     meta.GlobalConfig.Mongodb.Addr,
+		Username: meta.GlobalConfig.Mongodb.Username,
+		Password: meta.GlobalConfig.Mongodb.Password,
+		MaxOpen:  meta.GlobalConfig.Mongodb.MaxOpen,
 	}
 	return mongoClient.NewMongoClient(cfg)
 }
 
 // NewConsulClient 连接consul单机
 func NewConsulClient() (meta.ConsulClient, error) {
-	addr := viper.GetString("consul.addr")
+	addr := meta.GlobalConfig.Consul.Addr
 	return consulClient.NewClient(addr)
 }
 
 func NewJenkinsClient() (meta.JenkinsClient, error) {
-	var cfg jenkinsClient.JenkinsConfig
-	if err := viper.Sub("jenkins").Unmarshal(&cfg); err != nil {
-		return nil, err
+	cfg := jenkinsClient.JenkinsConfig{
+		Host:     meta.GlobalConfig.Jenkins.Host,
+		Username: meta.GlobalConfig.Jenkins.Username,
+		Password: meta.GlobalConfig.Jenkins.Password,
 	}
 	return jenkinsClient.NewJenkinsClient(cfg)
 }
 
 // NewAlibabaSmsClient alibaba短信连接
 func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
-	var cfg alibabaSmsClient.ClientConfig
-	if err := viper.Sub("alibaba_sms").Unmarshal(&cfg); err != nil {
-		return nil, err
+	cfg := alibabaSmsClient.ClientConfig{
+		EndPoint:        meta.GlobalConfig.AlibabaSms.EndPoint,
+		AccessKeyId:     meta.GlobalConfig.AlibabaSms.AccessKeyId,
+		AccessKeySecret: meta.GlobalConfig.AlibabaSms.AccessKeySecret,
 	}
 	return alibabaSmsClient.CreateClient(cfg)
 }

@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"github.com/go_example/internal/model"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"time"
@@ -18,6 +19,12 @@ var EnvMode string
 
 // CfgFile 配置文件所在路径
 const CfgFile = "./configs"
+
+// DebugUseConfigCenter 本地调试是否使用配置中心
+const DebugUseConfigCenter = false
+
+// GlobalConfig 全局配置
+var GlobalConfig model.GlobalConfig
 
 const (
 	MysqlSingleDriverKey = "single" // 单机数据库

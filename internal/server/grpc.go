@@ -6,13 +6,11 @@ import (
 
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 
+	"github.com/go_example/internal/lib/auth"
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/utils/tools"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
-	"github.com/spf13/viper"
-
-	"github.com/go_example/internal/lib/auth"
 
 	pb "github.com/ken-house/go-contrib/prototype/protobuf/hello"
 	"google.golang.org/grpc"
@@ -51,7 +49,7 @@ func (srv *grpcServer) RegisterConsul() (consulClient.ConsulClient, []string, er
 	if ip == "" {
 		return nil, nil, errors.New("GetOutBoundIp fail")
 	}
-	port := viper.GetString("server.grpc.port")
+	port := meta.GlobalConfig.Server.Grpc.Port
 	serviceIdArr := make([]string, 0, len(serviceNameArr))
 	for serviceName, _ := range serviceNameArr {
 		if err := srv.consulClient.RegisterService(serviceName, ip, cast.ToInt(port)); err != nil {

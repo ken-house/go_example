@@ -13,7 +13,6 @@ import (
 
 	"github.com/afex/hystrix-go/hystrix"
 
-	"github.com/spf13/viper"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/go_example/internal/meta"
@@ -100,7 +99,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	})
 
 	grpcAuth := auth.NewAuthentication("root", "root123")
-	consulAddr := viper.GetString("consul.addr")
+	consulAddr := meta.GlobalConfig.Consul.Addr
 	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
 	conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
 	if err != nil {

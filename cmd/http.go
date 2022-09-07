@@ -19,8 +19,6 @@ import (
 
 	"github.com/go_example/internal/lib/auth"
 
-	"github.com/spf13/viper"
-
 	"github.com/gin-gonic/gin"
 
 	_ "net/http/pprof"
@@ -39,8 +37,8 @@ var httpCmd = &cobra.Command{
 		// pprof性能分析
 		if !env.IsReleasing() {
 			http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
-			pprofAddr := viper.GetString("server.http_pprof.addr")
-			pprofPort := viper.GetString("server.http_pprof.port")
+			pprofAddr := meta.GlobalConfig.Server.HttpPprof.Addr
+			pprofPort := meta.GlobalConfig.Server.HttpPprof.Port
 			go func() {
 				log.Println(http.ListenAndServe(fmt.Sprintf("%s:%s", pprofAddr, pprofPort), nil))
 			}()
@@ -65,8 +63,8 @@ var httpCmd = &cobra.Command{
 		// 注册路由
 		httpSrv.Register(app)
 
-		addr := viper.GetString("server.http.addr")
-		port := viper.GetString("server.http.port")
+		addr := meta.GlobalConfig.Server.Http.Addr
+		port := meta.GlobalConfig.Server.Http.Port
 
 		// 自定义server
 		srv := &http.Server{

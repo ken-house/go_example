@@ -21,19 +21,13 @@ func NewUserRepository() UserRepository {
 }
 
 func (repo *userRepository) SetUserInfo(uid int, userInfo MysqlModel.User) error {
-	cacheKey, err := GetCacheKey("userInfo", uid)
-	if err != nil {
-		return err
-	}
+	cacheKey := GetCacheKey(UserInfoKey, uid)
 	meta.CacheDriver.Set(cacheKey, userInfo, time.Hour)
 	return nil
 }
 
 func (repo *userRepository) GetUserInfo(uid int) (MysqlModel.User, error) {
-	cacheKey, err := GetCacheKey("userInfo", uid)
-	if err != nil {
-		return MysqlModel.User{}, err
-	}
+	cacheKey := GetCacheKey(UserInfoKey, uid)
 	data, isExist := meta.CacheDriver.Get(cacheKey)
 	if !isExist {
 		return MysqlModel.User{}, errors.New("key不存在")

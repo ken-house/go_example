@@ -22,8 +22,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/spf13/viper"
-
 	"github.com/go_example/internal/assembly"
 	"github.com/spf13/cobra"
 )
@@ -41,8 +39,8 @@ var grpcCmd = &cobra.Command{
 		defer cleanup()
 
 		// 1.监听端口
-		addr := viper.GetString("server.grpc.addr")
-		port := viper.GetString("server.grpc.port")
+		addr := meta.GlobalConfig.Server.Grpc.Addr
+		port := meta.GlobalConfig.Server.Grpc.Port
 		listen, err := net.Listen("tcp", fmt.Sprintf("%s:%s", addr, port))
 		if err != nil {
 			log.Fatalf("Listen err:%+v\n", err)
