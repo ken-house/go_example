@@ -76,6 +76,7 @@
 + 版本v2.4.0增加阿里云短信服务；
 + 版本v2.5.0支持自动生成CRUD代码；
 + 版本v2.6.0支持Nacos配置中心；
++ 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -3675,15 +3676,17 @@ config_center:
   data_id: "debug-go_example-common.yaml"
 ```
 ### root.go初始化项目配置
-支持本地调试可选择本地配置文件或配置中心获取项目配置，生产及测试环境使用配置中心配置。将配置信息解析到meta.GlobalConfig全局变量。
+支持本地调试可选择本地配置文件或配置中心获取项目配置，生产及测试环境使用配置中心配置。将配置信息解析到meta.GlobalConfig全局变量，并实现客户端监听，当配置发生变化，客户端通过OnChange回调修改meta.GlobalConfig全局变量。
 ```go
-// 初始化配置文件
 func initConfig() {
 	// 从系统环境变量中读取运行环境
 	meta.EnvMode = env.Mode()
 	if env.IsDebugging() && !meta.DebugUseConfigCenter { // 本地调试若不使用配置中心则直接读取common.yaml文件
 		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
 		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalln(err)
+		}
+		if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
 			log.Fatalln(err)
 		}
 	} else { // 测试环境、生产环境从配置中心读取
@@ -3703,23 +3706,37 @@ func initConfig() {
 		}
 		defer clean()
 		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
-			DataId:   cfg.DataId,
-			Group:    cfg.Group,
-			OnChange: nil,
+			DataId: cfg.DataId,
+			Group:  cfg.Group,
 		})
 		if err != nil {
 			log.Fatalln(err)
 		}
 		// 将读取到的配置信息转为全局配置
-		viper.SetConfigType("yaml")
-		err = viper.ReadConfig(bytes.NewBuffer([]byte(globalConfigStr)))
-		if err != nil {
-			log.Fatalln(err)
-		}
+		setGlobalConfigFromData(globalConfigStr)
+
+		// 监听实现自动感知
+		configCenterClient.ListenConfig(vo.ConfigParam{
+			DataId: cfg.DataId,
+			Group:  cfg.Group,
+			OnChange: func(namespace, group, dataId, data string) {
+				setGlobalConfigFromData(data)
+			},
+		})
 	}
-	if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
-		log.Fatalln(err)
-	}
+}
+
+// 从文本读取到全局配置
+func setGlobalConfigFromData(data string) {
+    // 将读取到的配置信息转为全局配置
+    viper.SetConfigType("yaml")
+    err := viper.ReadConfig(bytes.NewBuffer([]byte(data)))
+    if err != nil {
+        log.Fatalln(err)
+    }
+    if err = viper.Unmarshal(&meta.GlobalConfig); err != nil {
+        log.Fatalln(err)
+    }
 }
 ```
 ### 从全局变量中读取配置信息
