@@ -68,18 +68,18 @@ func initConfig() {
 		}
 
 		// 从配置中心读取项目配置
-		var cfg nacosClient.Config
-		if err := viper.Sub("config_center").Unmarshal(&cfg); err != nil {
+		if err := viper.Sub("config_center").Unmarshal(&meta.NacosConfig); err != nil {
 			log.Fatalln(err)
 		}
-		configCenterClient, clean, err := nacosClient.NewClient(cfg)
+		configCenterClient, clean, err := nacosClient.NewConfigClient(meta.NacosConfig)
 		if err != nil {
 			log.Fatalln(err)
 		}
+		fmt.Println(meta.NacosConfig)
 		defer clean()
 		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
-			DataId: cfg.DataId,
-			Group:  cfg.Group,
+			DataId: meta.NacosConfig.DataId,
+			Group:  meta.NacosConfig.Group,
 		})
 		if err != nil {
 			log.Fatalln(err)
@@ -89,8 +89,8 @@ func initConfig() {
 
 		// 监听实现自动感知
 		configCenterClient.ListenConfig(vo.ConfigParam{
-			DataId: cfg.DataId,
-			Group:  cfg.Group,
+			DataId: meta.NacosConfig.DataId,
+			Group:  meta.NacosConfig.Group,
 			OnChange: func(namespace, group, dataId, data string) {
 				setGlobalConfigFromData(data)
 			},

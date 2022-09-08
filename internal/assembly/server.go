@@ -31,6 +31,7 @@ func NewSocketServer() (server.SocketServer, func(), error) {
 func NewGrpcServer() (server.GrpcServer, func(), error) {
 	panic(wire.Build(
 		NewConsulClient,
+		NewNacosServiceClient,
 		server.NewGrpcServer,
 	))
 }

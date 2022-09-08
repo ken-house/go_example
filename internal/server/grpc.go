@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 
@@ -25,15 +27,21 @@ type GrpcServer interface {
 	SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error)
 	Register(server *grpc.Server)
 	RegisterConsul() (consulClient.ConsulClient, []string, error)
+	RegisterNacos() (nacosClient.ServiceClient, []vo.RegisterInstanceParam, error)
 }
 type grpcServer struct {
 	pb.UnimplementedHelloServiceServer
-	consulClient meta.ConsulClient
+	consulClient       meta.ConsulClient
+	nacosServiceClient meta.NacosServiceClient
 }
 
-func NewGrpcServer(consulClient meta.ConsulClient) GrpcServer {
+func NewGrpcServer(
+	consulClient meta.ConsulClient,
+	nacosServiceClient meta.NacosServiceClient,
+) GrpcServer {
 	return &grpcServer{
-		consulClient: consulClient,
+		consulClient:       consulClient,
+		nacosServiceClient: nacosServiceClient,
 	}
 }
 
@@ -58,6 +66,34 @@ func (srv *grpcServer) RegisterConsul() (consulClient.ConsulClient, []string, er
 		serviceIdArr = append(serviceIdArr, fmt.Sprintf("%s-%s-%s", serviceName, ip, port))
 	}
 	return srv.consulClient, serviceIdArr, nil
+}
+
+func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.RegisterInstanceParam, error) {
+	ip := tools.GetOutBoundIp()
+	if ip == "" {
+		return nil, nil, errors.New("GetOutBoundIp fail")
+	}
+	port := meta.GlobalConfig.Server.Grpc.Port
+	serviceArr := make([]vo.RegisterInstanceParam, 0, 10)
+	for serviceName, _ := range serviceNameArr {
+		param := vo.RegisterInstanceParam{
+			Ip:          ip,
+			Port:        cast.ToUint64(port),
+			Weight:      10,
+			Enable:      true,
+			Healthy:     true,
+			Metadata:    map[string]string{"appname": "go_example"},
+			ServiceName: serviceName,
+			GroupName:   "go_example",
+			Ephemeral:   true,
+		}
+		_, err := srv.nacosServiceClient.RegisterInstance(param)
+		if err != nil {
+			return nil, nil, err
+		}
+		serviceArr = append(serviceArr, param)
+	}
+	return srv.nacosServiceClient, serviceArr, nil
 }
 
 // SayHello grpc服务

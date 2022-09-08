@@ -82,8 +82,17 @@ func NewSocketController() (controller.SocketController, func(), error) {
 }
 
 func NewGrpcClientController() (controller.GrpcClientController, func(), error) {
-	grpcClientController := controller.NewGrpcClientController()
+	consulClient, err := NewConsulClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	nacosServiceClient, cleanup, err := NewNacosServiceClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	grpcClientController := controller.NewGrpcClientController(consulClient, nacosServiceClient)
 	return grpcClientController, func() {
+		cleanup()
 	}, nil
 }
 
@@ -190,8 +199,13 @@ func NewGrpcServer() (server.GrpcServer, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	grpcServer := server.NewGrpcServer(consulClient)
+	nacosServiceClient, cleanup, err := NewNacosServiceClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	grpcServer := server.NewGrpcServer(consulClient, nacosServiceClient)
 	return grpcServer, func() {
+		cleanup()
 	}, nil
 }
 

@@ -10,7 +10,7 @@
 + Excel文件（.xlsx）导入导出；
 + 提供WebSocket服务；
 + 提供gRPC服务；
-+ Consul服务注册与服务发现；
++ 支持Consul服务注册与服务发现、配置中心；
 + 增加go-cache内存缓存使用；
 + 连接MongoDB单机及集群；
 + 增加PProf性能分析；
@@ -20,7 +20,7 @@
 + 增加jenkins服务；
 + 增加阿里云短信服务；
 + 支持自动生成CRUD代码；
-+ 支持nacos配置中心；
++ 支持nacos服务注册与发现、配置中心；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -77,6 +77,7 @@
 + 版本v2.5.0支持自动生成CRUD代码；
 + 版本v2.6.0支持Nacos配置中心；
 + 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
++ 版本v2.6.2增加consul配置中心，nacos服务注册与服务发现；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -3948,4 +3949,109 @@ func getClientConfig(cfg Config) constant.ClientConfig {
 	)
 	return clientConfig
 }
+```
+## Nacos服务注册与服务发现
+在Nacos配置中心的基础上，对Nacos提供的服务进行拆分为两个服务，配置中心与服务注册：
++ 公共配置对应github.com/ken-house/go-contrib/prototype/nacosClient/common.go
++ 配置中心对应github.com/ken-house/go-contrib/prototype/nacosClient/configCenterClient.go
++ 服务注册对应github.com/ken-house/go-contrib/prototype/nacosClient/serviceClient.go
+### 服务注册与服务发现
+获得服务注册与发现的客户端连接，代码如下：
+```go
+package nacosClient
+
+import (
+	"fmt"
+
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+)
+
+type ServiceClient interface {
+	naming_client.INamingClient
+	FindHealthInstanceAddress(clusters []string, serviceName string, groupName string) (string, error)
+}
+
+type serviceClient struct {
+	naming_client.INamingClient
+}
+
+func NewServiceClient(cfg Config) (ServiceClient, func(), error) {
+	// Nacos服务端配置
+	serverConfigList := getServerConfig(cfg)
+	// Nacos客户端配置
+	clientConfig := getClientConfig(cfg)
+
+	client, err := clients.NewNamingClient(vo.NacosClientParam{
+		ServerConfigs: serverConfigList,
+		ClientConfig:  &clientConfig,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return &serviceClient{client}, func() {
+		client.CloseClient()
+	}, nil
+}
+
+// FindHealthInstanceAddress 根据serviceId查找到一个健康的服务实例，获取其地址
+func (cli *serviceClient) FindHealthInstanceAddress(clusters []string, serviceName string, groupName string) (string, error) {
+	serviceInfo, err := cli.INamingClient.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
+		Clusters:    clusters,
+		ServiceName: serviceName,
+		GroupName:   groupName,
+	})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s:%d", serviceInfo.Ip, serviceInfo.Port), nil
+}
+```
+### 服务注册
+在cmd/grpc.go文件中调用RegisterNacos()方法，将服务注册到nacos。
+```go
+func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.RegisterInstanceParam, error) {
+	ip := tools.GetOutBoundIp()
+	if ip == "" {
+		return nil, nil, errors.New("GetOutBoundIp fail")
+	}
+	port := meta.GlobalConfig.Server.Grpc.Port
+	serviceArr := make([]vo.RegisterInstanceParam, 0, 10)
+	for serviceName, _ := range serviceNameArr {
+		param := vo.RegisterInstanceParam{
+			Ip:          ip,
+			Port:        cast.ToUint64(port),
+			Weight:      10,
+			Enable:      true,
+			Healthy:     true,
+			Metadata:    map[string]string{"appname": "go_example"},
+			ServiceName: serviceName,
+			GroupName:   "go_example",
+			Ephemeral:   true,
+		}
+		_, err := srv.nacosServiceClient.RegisterInstance(param)
+		if err != nil {
+			return nil, nil, err
+		}
+		serviceArr = append(serviceArr, param)
+	}
+	return srv.nacosServiceClient, serviceArr, nil
+}
+```
+### 服务发现
+通过健康检查获取到一个健康的Nacos服务节点，连接Nacos创建grpc客户端。
+```go
+	// nacos 服务发现
+	nacosAddr, err := ctr.nacosServiceClient.FindHealthInstanceAddress(nil, "hello", "go_example")
+	if err != nil {
+		zap.L().Panic("nacosServiceClient.FindHealthInstanceAddress err", zap.Error(err))
+	}
+	conn, err := grpc.Dial(nacosAddr, grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+	if err != nil {
+		log.Printf("Dial err:%+v", err)
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
+	}
 ```

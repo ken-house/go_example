@@ -51,6 +51,8 @@ func NewSocketController() (controller.SocketController, func(), error) {
 
 func NewGrpcClientController() (controller.GrpcClientController, func(), error) {
 	panic(wire.Build(
+		NewConsulClient,
+		NewNacosServiceClient,
 		controller.NewGrpcClientController,
 	))
 }

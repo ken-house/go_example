@@ -4,6 +4,7 @@ import (
 	"github.com/go_example/internal/model"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
+	"github.com/ken-house/go-contrib/prototype/nacosClient"
 	"time"
 
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -22,6 +23,9 @@ const CfgFile = "./configs"
 
 // DebugUseConfigCenter 本地调试是否使用配置中心
 const DebugUseConfigCenter = true
+
+// NacosConfig Nacos配置
+var NacosConfig nacosClient.Config
 
 // GlobalConfig 全局配置
 var GlobalConfig model.GlobalConfig
@@ -64,3 +68,6 @@ type JenkinsClient jenkinsClient.JenkinsClient
 
 // AlibabaSmsClient alibaba短信连接
 type AlibabaSmsClient alibabaSmsClient.AlibabaSmsClient
+
+// NacosServiceClient nacos服务注册与发现
+type NacosServiceClient nacosClient.ServiceClient

@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"io/ioutil"
 	"log"
 	"net"
@@ -90,6 +91,12 @@ var grpcCmd = &cobra.Command{
 			log.Fatalf("RegisterConsul err%+v\n", err)
 		}
 
+		// 注册服务到nacos
+		nacosServiceClient, serviceArr, err := grpcSrv.RegisterNacos()
+		if err != nil {
+			log.Fatalf("RegisterNacos err%+v\n", err)
+		}
+
 		// 4.启动服务
 		go func() {
 			err = app.Serve(listen)
@@ -110,6 +117,17 @@ var grpcCmd = &cobra.Command{
 			if err := consulClient.DeregisterService(serviceId); err != nil {
 				log.Fatalf("consulClient.DeregisterService err:%+v", err)
 			}
+		}
+
+		// 注销nacos服务
+		for _, param := range serviceArr {
+			nacosServiceClient.DeregisterInstance(vo.DeregisterInstanceParam{
+				Ip:          param.Ip,
+				Port:        param.Port,
+				ServiceName: param.ServiceName,
+				GroupName:   param.GroupName,
+				Ephemeral:   param.Ephemeral,
+			})
 		}
 	},
 }

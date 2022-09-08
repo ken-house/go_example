@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,10 +35,18 @@ type GrpcClientController interface {
 }
 
 type grpcClientController struct {
+	consulClient       meta.ConsulClient
+	nacosServiceClient meta.NacosServiceClient
 }
 
-func NewGrpcClientController() GrpcClientController {
-	return &grpcClientController{}
+func NewGrpcClientController(
+	consulClient meta.ConsulClient,
+	nacosServiceClient meta.NacosServiceClient,
+) GrpcClientController {
+	return &grpcClientController{
+		consulClient:       consulClient,
+		nacosServiceClient: nacosServiceClient,
+	}
 }
 
 // UnaryClientInterceptor grpc拦截器
@@ -99,9 +108,21 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	})
 
 	grpcAuth := auth.NewAuthentication("root", "root123")
-	consulAddr := meta.GlobalConfig.Consul.Addr
-	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
-	conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+
+	// 直连grpc
+	// conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
+	// consul服务发现
+	//consulAddr, err := ctr.consulClient.FindHealthInstanceAddress("hello")
+	//if err != nil {
+	//	zap.L().Panic("consulClient.FindHealthInstanceAddress err", zap.Error(err))
+	//}
+	//conn, err := grpc.Dial("consul://"+fmt.Sprintf("%s:%d", consulAddr, meta.GlobalConfig.Consul.Port)+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+	// nacos 服务发现
+	nacosAddr, err := ctr.nacosServiceClient.FindHealthInstanceAddress(nil, "hello", "go_example")
+	if err != nil {
+		zap.L().Panic("nacosServiceClient.FindHealthInstanceAddress err", zap.Error(err))
+	}
+	conn, err := grpc.Dial(nacosAddr, grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
 	if err != nil {
 		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
@@ -116,6 +137,7 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 		log.Printf("client.SayHello err:%+v", err)
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CALL_FUNC.ToastError())
 	}
+
 	return negotiate.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"name": resp.Name,

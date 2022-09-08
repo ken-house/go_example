@@ -55,7 +55,8 @@ mongodb:
   addr: "mongodb://192.168.200.200:27017"
   max_open: 20
 consul:
-  addr: "192.168.200.200:8500"
+  host: "127.0.0.1"
+  port: "8500"
 jenkins:
   host: "http://192.168.200.200:8088/"
   username: "jenkins"
