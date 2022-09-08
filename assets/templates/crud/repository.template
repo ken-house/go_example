@@ -57,6 +57,9 @@ func (repo *{{CONTROLLER_NAME_LITTER}}Repository) FindAll(ctx *gin.Context, para
 	dataList := make([]mysqlModel.{{TABLE_MODEL}}, 0, 100)
 	engine := repo.engine.Table(repo.table)
 	err := engine.Find(&dataList)
+    if err != nil {
+        zap.L().Error("{{CONTROLLER_NAME_LITTER}}Repository.FindAll err", zap.Error(err))
+    }
 	return dataList, err
 }
 
