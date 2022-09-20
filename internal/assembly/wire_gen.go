@@ -107,6 +107,30 @@ func NewSmsController() (controller.SmsController, func(), error) {
 	}, nil
 }
 
+func NewKafkaController() (controller.KafkaController, func(), error) {
+	kafkaProducerSyncClient, cleanup, err := NewProducerSyncClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	kafkaProducerAsyncClient, cleanup2, err := NewProducerAsyncClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	kafkaConsumerClient, cleanup3, err := NewConsumerClient()
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	kafkaController := controller.NewKafkaController(kafkaProducerSyncClient, kafkaProducerAsyncClient, kafkaConsumerClient)
+	return kafkaController, func() {
+		cleanup3()
+		cleanup2()
+		cleanup()
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -159,7 +183,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup8, err := NewAuthService()
+	kafkaController, cleanup8, err := NewKafkaController()
 	if err != nil {
 		cleanup7()
 		cleanup6()
@@ -170,8 +194,21 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, smsController, authService)
+	authService, cleanup9, err := NewAuthService()
+	if err != nil {
+		cleanup8()
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, smsController, kafkaController, authService)
 	return httpServer, func() {
+		cleanup9()
 		cleanup8()
 		cleanup7()
 		cleanup6()

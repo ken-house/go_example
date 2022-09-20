@@ -4,6 +4,7 @@ import (
 	"github.com/go_example/internal/model"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
+	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
 	"time"
 
@@ -22,7 +23,7 @@ var EnvMode string
 const CfgFile = "./configs"
 
 // DebugUseConfigCenter 本地调试是否使用配置中心
-const DebugUseConfigCenter = true
+const DebugUseConfigCenter = false
 
 // NacosConfig Nacos配置
 var NacosConfig nacosClient.Config
@@ -71,3 +72,12 @@ type AlibabaSmsClient alibabaSmsClient.AlibabaSmsClient
 
 // NacosServiceClient nacos服务注册与发现
 type NacosServiceClient nacosClient.ServiceClient
+
+// KafkaProducerSyncClient kafka同步生产者
+type KafkaProducerSyncClient kafkaClient.ProducerSyncClient
+
+// KafkaProducerAsyncClient kafka同步生产者
+type KafkaProducerAsyncClient kafkaClient.ProducerAsyncClient
+
+// KafkaConsumerClient kafka消费者
+type KafkaConsumerClient kafkaClient.ConsumerClient

@@ -68,5 +68,14 @@ alibaba_sms:
 alibaba_sms_code:
   template_code: "SMS_204125567"
   sign_name: "小区闲置物品信息交流平台" # 短信签名
-
+kafka:
+  server_addr_list:
+    - "127.0.0.1:9092"
+    - "127.0.0.1:9093"
+    - "127.0.0.1:9094"
+  producer_config:
+    ack: -1
+    partitioner_type: 0
+    flush_message_num: 0
+    flush_message_frequency: 0
 

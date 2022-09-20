@@ -4,6 +4,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
+	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
@@ -39,6 +40,8 @@ type GlobalConfig struct {
 	AlibabaSms alibabaSmsClient.ClientConfig `json:"alibaba_sms" mapstructure:"alibaba_sms"`
 
 	AlibabaSmsCode AlibabaSmsCode `json:"alibaba_sms_code" mapstructure:"alibaba_sms_code"`
+
+	Kafka kafkaClient.Config `json:"kafka" mapstructure:"kafka"`
 }
 
 // ServerInfo 服务信息

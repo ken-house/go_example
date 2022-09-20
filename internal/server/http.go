@@ -21,6 +21,7 @@ type httpServer struct {
 	excelCtr      controller.ExcelController
 	jenkinsCtr    controller.JenkinsController
 	smsCtr        controller.SmsController
+	kafkaCtr      controller.KafkaController
 	authService   service.AuthService
 }
 
@@ -32,6 +33,7 @@ func NewHttpServer(
 	excelCtr controller.ExcelController,
 	jenkinsCtr controller.JenkinsController,
 	smsCtr controller.SmsController,
+	kafkaCtr controller.KafkaController,
 	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
@@ -42,6 +44,7 @@ func NewHttpServer(
 		excelCtr:      excelCtr,
 		jenkinsCtr:    jenkinsCtr,
 		smsCtr:        smsCtr,
+		kafkaCtr:      kafkaCtr,
 		authService:   authService,
 	}
 }
@@ -80,6 +83,12 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/jenkins/index", srv.Jenkins())
 	// 阿里短信服务
 	router.POST("/sms/send-code", srv.SmsSendCode())
+	// kafka同步生产者
+	router.GET("/kafka/producer-sync", srv.KafkaProducerSync())
+	// kafka异步生产者
+	router.GET("/kafka/producer-async", srv.KafkaProducerAsync())
+	// kafka消费者
+	router.GET("/kafka/consumer", srv.KafkaConsumer())
 }
 
 func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
@@ -134,5 +143,23 @@ func (srv *httpServer) Export() gin.HandlerFunc {
 func (srv *httpServer) Import() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.excelCtr.Import(c))
+	}
+}
+
+func (srv *httpServer) KafkaProducerSync() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.kafkaCtr.ProducerSync(c))
+	}
+}
+
+func (srv *httpServer) KafkaProducerAsync() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.kafkaCtr.ProducerAsync(c))
+	}
+}
+
+func (srv *httpServer) KafkaConsumer() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.kafkaCtr.Consumer(c))
 	}
 }

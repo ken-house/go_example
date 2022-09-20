@@ -5,6 +5,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
+	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
@@ -46,6 +47,7 @@ func NewConsulClient() (meta.ConsulClient, error) {
 	return consulClient.NewClient(meta.GlobalConfig.Consul)
 }
 
+// NewJenkinsClient 连接jenkins
 func NewJenkinsClient() (meta.JenkinsClient, error) {
 	return jenkinsClient.NewJenkinsClient(meta.GlobalConfig.Jenkins)
 }
@@ -55,6 +57,22 @@ func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
 	return alibabaSmsClient.CreateClient(meta.GlobalConfig.AlibabaSms)
 }
 
+// NewNacosServiceClient nacos服务注册与服务发现
 func NewNacosServiceClient() (meta.NacosServiceClient, func(), error) {
 	return nacosClient.NewServiceClient(meta.NacosConfig)
+}
+
+// NewProducerSyncClient kafka同步生产者
+func NewProducerSyncClient() (meta.KafkaProducerSyncClient, func(), error) {
+	return kafkaClient.NewProducerSyncClient(meta.GlobalConfig.Kafka)
+}
+
+// NewProducerAsyncClient kafka异步生产者
+func NewProducerAsyncClient() (meta.KafkaProducerAsyncClient, func(), error) {
+	return kafkaClient.NewProducerAsyncClient(meta.GlobalConfig.Kafka)
+}
+
+// NewConsumerClient kafka消费者
+func NewConsumerClient() (meta.KafkaConsumerClient, func(), error) {
+	return kafkaClient.NewConsumerClient(meta.GlobalConfig.Kafka)
 }

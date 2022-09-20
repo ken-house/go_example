@@ -63,3 +63,12 @@ func NewSmsController() (controller.SmsController, func(), error) {
 		controller.NewSmsController,
 	))
 }
+
+func NewKafkaController() (controller.KafkaController, func(), error) {
+	panic(wire.Build(
+		NewProducerSyncClient,
+		NewProducerAsyncClient,
+		NewConsumerClient,
+		controller.NewKafkaController,
+	))
+}

@@ -21,6 +21,7 @@
 + 增加阿里云短信服务；
 + 支持自动生成CRUD代码；
 + 支持nacos服务注册与发现、配置中心；
++ 支持kafka生产消费；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -44,6 +45,7 @@
 + https://github.com/bndr/gojenkins
 + https://github.com/alibabacloud-go
 + https://github.com/nacos-group/nacos-sdk-go
++ https://github.com/Shopify/sarama
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -78,6 +80,7 @@
 + 版本v2.6.0支持Nacos配置中心；
 + 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
 + 版本v2.6.2增加consul配置中心，nacos服务注册与服务发现；
++ 版本v2.7.0增加kafka生产消费服务；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -165,6 +168,22 @@ docker run -itd
 
 如下图所示：
 ![image](assets/images/nacos.png)
+7. Kafka服务
+```shell
+# 运行zookeeper
+docker pull wurstmeister/zookeeper
+
+# 运行容器
+docker run -d -p 2181:2181 \
+-v /etc/localtime:/etc/localtime \
+-v ~/dockerVolumes/zookeeperVolume/data:/opt/zookeeper-3.4.13/data \
+--name zookeeper wurstmeister/zookeeper
+
+# 配置kafka集群，这里创建三个broker节点，宿主机IP：10.0.98.159
+docker run -d -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -v ~/dockerVolumes/kafkaVolume/kafka/0:/kafka -v /etc/localtime:/etc/localtime --name kafka-0 wurstmeister/kafka
+docker run -d -p 9093:9093 -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9093 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093 -v ~/dockerVolumes/kafkaVolume/kafka/1:/kafka -v /etc/localtime:/etc/localtime --name kafka-1 wurstmeister/kafka
+docker run -d -p 9094:9094 -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9094 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094 -v ~/dockerVolumes/kafkaVolume/kafka/2:/kafka -v /etc/localtime:/etc/localtime --name kafka-2 wurstmeister/kafka
+```
 ## 使用
 要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
 
@@ -4054,4 +4073,313 @@ func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.Register
 		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
 	}
+```
+
+## Kafka服务
+Kafka是一个开源的分布式事件流平台，在大数据场景主要采用 Kafka 作为消息队列。
+### 安装
+```shell
+go get github.com/Shopify/sarama
+```
+### 生产者
+kafka生产者分为同步和异步，同步需要等待broker节点根据acks响应所有步骤完成返回；异步则将消息推送到队列后即返回。
+
+common.go文件整理了kafka相关配置及公共方法。
+```go
+package kafkaClient
+
+import "github.com/Shopify/sarama"
+
+// Config kafka连接及配置信息
+type Config struct {
+	ServerAddrList []string       `json:"server_addr_list" mapstructure:"server_addr_list"` // kafka地址
+	ProducerConfig ProducerConfig `json:"producer_config"  mapstructure:"producer_config"`  // 生产者配置
+	ConsumerConfig ConsumerConfig `json:"consumer_config" mapstructure:"consumer_config"`   // 消费者配置
+}
+
+// ProducerConfig kafka生产者配置参数
+type ProducerConfig struct {
+	Ack                   int `json:"acks" mapstructure:"acks"`                                       // 应答类型 0  1 -1
+	PartitionerType       int `json:"partitioner_type" mapstructure:"partitioner_type"`               // 分区算法
+	FlushMessageNum       int `json:"flush_message_num" mapstructure:"flush_message_num"`             // 达到多少条消息才发送
+	FlushMessageFrequency int `json:"flush_message_frequency" mapstructure:"flush_message_frequency"` // 达到多少秒消息才发送
+}
+
+// ConsumerConfig kafka消费者配置参数
+type ConsumerConfig struct {
+}
+
+// 指定分区算法
+func setPartition(config *sarama.Config, partitionerType int) {
+	switch partitionerType {
+	case 1: // 随机算法
+		config.Producer.Partitioner = sarama.NewRandomPartitioner
+	case 2: // robin算法
+		config.Producer.Partitioner = sarama.NewRoundRobinPartitioner
+	case 3: // 按消息内容计算分区
+		config.Producer.Partitioner = sarama.NewManualPartitioner
+	default: // 按key计算分区
+		config.Producer.Partitioner = sarama.NewHashPartitioner
+	}
+}
+```
+#### 同步生产者
+默认提供了发送单个消息和多个消息的方法，这里对这两个方法进行封装。
+```go
+package kafkaClient
+
+import (
+	"time"
+
+	"github.com/Shopify/sarama"
+)
+
+type ProducerSyncClient interface {
+	sarama.SyncProducer
+	SendOne(topic string, key string, message string, partition int32) (int32, int64, error)
+	SendMany(topic string, key string, messageList []string, partition int32) error
+}
+
+type producerSyncClient struct {
+	sarama.SyncProducer
+}
+
+// NewProducerSyncClient 同步生产者
+func NewProducerSyncClient(cfg Config) (ProducerSyncClient, func(), error) {
+	config := sarama.NewConfig()
+	// 指定应答方式
+	config.Producer.RequiredAcks = sarama.RequiredAcks(cfg.ProducerConfig.Ack)
+	// 设置达到多少条消息才发送到kafka
+	config.Producer.Flush.Messages = cfg.ProducerConfig.FlushMessageNum
+	// 设置间隔多少秒才发送到kafka
+	if cfg.ProducerConfig.FlushMessageFrequency > 0 {
+		config.Producer.Flush.Frequency = time.Duration(cfg.ProducerConfig.FlushMessageFrequency) * time.Second
+	}
+	// 成功交付的消息将在success channel返回 必须指定为true
+	config.Producer.Return.Successes = true
+	// 指定分区算法
+	setPartition(config, cfg.ProducerConfig.PartitionerType)
+	// 建立同步生产者连接
+	productClient, err := sarama.NewSyncProducer(cfg.ServerAddrList, config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &producerSyncClient{productClient}, func() {
+		defer productClient.Close()
+	}, nil
+}
+
+// SendOne 单条消息发送
+func (cli *producerSyncClient) SendOne(topic string, key string, message string, partition int32) (int32, int64, error) {
+	msg := &sarama.ProducerMessage{
+		Topic:     topic,
+		Value:     sarama.StringEncoder(message),
+		Partition: partition,
+	}
+	if key != "" {
+		msg.Key = sarama.StringEncoder(key)
+	}
+	return cli.SendMessage(msg)
+}
+
+// SendMany 多条消息发送
+func (cli *producerSyncClient) SendMany(topic string, key string, messageList []string, partition int32) error {
+	msgList := make([]*sarama.ProducerMessage, 0, 100)
+	for _, message := range messageList {
+		msg := &sarama.ProducerMessage{
+			Topic:     topic,
+			Value:     sarama.StringEncoder(message),
+			Partition: partition,
+		}
+		if key != "" {
+			msg.Key = sarama.StringEncoder(key)
+		}
+		msgList = append(msgList, msg)
+	}
+	return cli.SendMessages(msgList)
+}
+```
+在controller层，通过如下代码进行调用：
+```go
+// ProducerSync 同步发送
+func (ctr kafkaController) ProducerSync(ctx *gin.Context) (int, gin.Negotiate) {
+	message := "hello one message"
+	msg := &sarama.ProducerMessage{
+		Topic: "first",
+		Value: sarama.StringEncoder(message),
+	}
+	// 单条消息发送
+	partition, offset, err := ctr.kafkaProducerSyncClient.SendMessage(msg)
+	fmt.Println(partition, offset)
+	// 单条消息发送
+	partition, offset, err = ctr.kafkaProducerSyncClient.SendOne("first", "", message, 0)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+	}
+	fmt.Println(partition, offset)
+	messageList := []string{
+		"hello world sync",
+		"hi",
+	}
+	// 多条消息发送
+	err = ctr.kafkaProducerSyncClient.SendMany("first", "", messageList, 0)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+	}
+
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "OK",
+		},
+	})
+}
+```
+#### 异步生产者
+异步生产者为单独的对象连接，并封装了发送消息方法。
+```go
+package kafkaClient
+
+import (
+	"time"
+
+	"github.com/Shopify/sarama"
+)
+
+type ProducerAsyncClient interface {
+	sarama.AsyncProducer
+	SendOne(topic string, key string, message string, partition int32)
+}
+
+type producerAsyncClient struct {
+	sarama.AsyncProducer
+}
+
+// NewProducerAsyncClient 异步生产者
+func NewProducerAsyncClient(cfg Config) (ProducerAsyncClient, func(), error) {
+	config := sarama.NewConfig()
+	// 指定应答方式
+	config.Producer.RequiredAcks = sarama.RequiredAcks(cfg.ProducerConfig.Ack)
+	// 设置达到多少条消息才发送到kafka
+	config.Producer.Flush.Messages = cfg.ProducerConfig.FlushMessageNum
+	// 设置间隔多少秒才发送到kafka
+	if cfg.ProducerConfig.FlushMessageFrequency > 0 {
+		config.Producer.Flush.Frequency = time.Duration(cfg.ProducerConfig.FlushMessageFrequency) * time.Second
+	}
+	// 成功交付的消息将在success channel返回 必须指定为true
+	config.Producer.Return.Successes = true
+	// 指定分区算法
+	setPartition(config, cfg.ProducerConfig.PartitionerType)
+	// 建立同步生产者连接
+	productClient, err := sarama.NewAsyncProducer(cfg.ServerAddrList, config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &producerAsyncClient{productClient}, func() {
+		defer productClient.Close()
+	}, nil
+}
+
+// SendOne 单条消息发送
+func (cli *producerAsyncClient) SendOne(topic string, key string, message string, partition int32) {
+	msg := &sarama.ProducerMessage{
+		Topic:     topic,
+		Value:     sarama.StringEncoder(message),
+		Partition: partition,
+	}
+	if key != "" {
+		msg.Key = sarama.StringEncoder(key)
+	}
+	cli.Input() <- msg
+}
+```
+在controller层调用：
+```go
+// ProducerAsync 异步发送
+func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) {
+	message := "hello world async cc"
+	ctr.kafkaProducerAsyncClient.SendOne("first", "", message, 0)
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "OK",
+		},
+	})
+}
+```
+### 消费
+kafka提供消费者，这里封装消费一个topic的方法：
+```go
+package kafkaClient
+
+import (
+	"sync"
+
+	"github.com/Shopify/sarama"
+)
+
+type ConsumerClient interface {
+	sarama.Consumer
+	ConsumeTopic(topic string, isNew int64, ConsumerFunc func(message *sarama.ConsumerMessage)) error
+}
+
+type consumerClient struct {
+	sarama.Consumer
+}
+
+func NewConsumerClient(cfg Config) (ConsumerClient, func(), error) {
+	config := sarama.NewConfig()
+	client, err := sarama.NewConsumer(cfg.ServerAddrList, config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &consumerClient{client}, func() {
+		defer client.Close()
+	}, nil
+}
+
+// ConsumeTopic 消费整个Topic
+func (cli *consumerClient) ConsumeTopic(topic string, isNew int64, ConsumerFunc func(message *sarama.ConsumerMessage)) error {
+	partitionList, err := cli.Partitions(topic) // 通过topic获取到所有的分区
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	for _, partition := range partitionList {
+		partitionConsumer, err := cli.ConsumePartition(topic, partition, isNew)
+		if err != nil {
+			return err
+		}
+		defer partitionConsumer.AsyncClose()
+
+		wg.Add(1)
+		go func(partitionConsumer sarama.PartitionConsumer) {
+			for msg := range partitionConsumer.Messages() {
+				defer wg.Done()
+				ConsumerFunc(msg)
+			}
+		}(partitionConsumer)
+	}
+	wg.Wait()
+	return nil
+}
+```
+在controller层调用：
+```go
+// Consumer 启动消费
+func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
+	var ConsumerFunc = func(msg *sarama.ConsumerMessage) {
+		fmt.Printf("Partition:%d, Offset:%d, key:%s, value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
+	}
+	err := ctr.kafkaConsumerClient.ConsumeTopic("first", sarama.OffsetOldest, ConsumerFunc)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+	}
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "OK",
+		},
+	})
+}
 ```

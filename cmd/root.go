@@ -53,6 +53,9 @@ func init() {
 func initConfig() {
 	// 从系统环境变量中读取运行环境
 	meta.EnvMode = env.Mode()
+	// 获取Nacos配置
+	getNacosConfig()
+
 	if env.IsDebugging() && !meta.DebugUseConfigCenter { // 本地调试若不使用配置中心则直接读取common.yaml文件
 		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
 		if err := viper.ReadInConfig(); err != nil {
@@ -62,20 +65,10 @@ func initConfig() {
 			log.Fatalln(err)
 		}
 	} else { // 测试环境、生产环境从配置中心读取
-		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/config_center.yaml")
-		if err := viper.ReadInConfig(); err != nil {
-			log.Fatalln(err)
-		}
-
-		// 从配置中心读取项目配置
-		if err := viper.Sub("config_center").Unmarshal(&meta.NacosConfig); err != nil {
-			log.Fatalln(err)
-		}
 		configCenterClient, clean, err := nacosClient.NewConfigClient(meta.NacosConfig)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Println(meta.NacosConfig)
 		defer clean()
 		globalConfigStr, err := configCenterClient.GetConfig(vo.ConfigParam{
 			DataId: meta.NacosConfig.DataId,
@@ -107,6 +100,19 @@ func setGlobalConfigFromData(data string) {
 		log.Fatalln(err)
 	}
 	if err = viper.Unmarshal(&meta.GlobalConfig); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// 读取nacos配置
+func getNacosConfig() {
+	viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/config_center.yaml")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalln(err)
+	}
+
+	// 从配置中心读取项目配置
+	if err := viper.Sub("config_center").Unmarshal(&meta.NacosConfig); err != nil {
 		log.Fatalln(err)
 	}
 }
