@@ -1,7 +1,7 @@
 # go_example
 ## 简介
 本项目为基础的web开发架构设计，主要采用gin框架，使用cobra生成应用和命令文件的脚手架，使用wire解决依赖注入问题，
-最终实现一个高性能、可扩展、多应用的web框架。 除HTTP服务外，还包含Socket服务、GRPC服务、Consul服务注册与服务发现等功能。
+最终实现一个高性能、可扩展、多应用的web框架。 除HTTP服务外，还包含Socket服务、GRPC服务、Consul/Nacos服务注册与服务发现、配置中心、Kafka等功能。
 
 ## 功能
 + 连接MySQL单机及主从数据库；
@@ -21,7 +21,7 @@
 + 增加阿里云短信服务；
 + 支持自动生成CRUD代码；
 + 支持nacos服务注册与发现、配置中心；
-+ 支持kafka生产消费；
++ 支持kafka服务；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -170,22 +170,21 @@ docker run -itd
 ![image](assets/images/nacos.png)
 7. Kafka服务
 ```shell
+# 创建自定义网络
+docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 mynet
 # 运行zookeeper
 docker pull wurstmeister/zookeeper
 
 # 运行容器
-docker run -d -p 2181:2181 \
--v /etc/localtime:/etc/localtime \
--v ~/dockerVolumes/zookeeperVolume/data:/opt/zookeeper-3.4.13/data \
---name zookeeper wurstmeister/zookeeper
+docker run -d -p 2181:2181 --net mynet -v /etc/localtime:/etc/localtime -v ~/dockerVolumes/zookeeperVolume/data:/opt/zookeeper-3.4.13/data --name zookeeper wurstmeister/zookeeper
 
-# 配置kafka集群，这里创建三个broker节点，宿主机IP：10.0.98.159
-docker run -d -p 9092:9092 -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -v ~/dockerVolumes/kafkaVolume/kafka/0:/kafka -v /etc/localtime:/etc/localtime --name kafka-0 wurstmeister/kafka
-docker run -d -p 9093:9093 -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9093 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093 -v ~/dockerVolumes/kafkaVolume/kafka/1:/kafka -v /etc/localtime:/etc/localtime --name kafka-1 wurstmeister/kafka
-docker run -d -p 9094:9094 -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_CONNECT=10.0.98.159:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://10.0.98.159:9094 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094 -v ~/dockerVolumes/kafkaVolume/kafka/2:/kafka -v /etc/localtime:/etc/localtime --name kafka-2 wurstmeister/kafka
+# 配置kafka集群，这里创建三个broker节点
+docker run -d -p 9092:9092 --net mynet -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-0:9092 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 -v ~/dockerVolumes/kafkaVolume/kafka/0:/kafka -v /etc/localtime:/etc/localtime --name kafka-0 wurstmeister/kafka
+docker run -d -p 9093:9093 --net mynet -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9093 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093 -v ~/dockerVolumes/kafkaVolume/kafka/1:/kafka -v /etc/localtime:/etc/localtime --name kafka-1 wurstmeister/kafka
+docker run -d -p 9094:9094 --net mynet -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9094 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094 -v ~/dockerVolumes/kafkaVolume/kafka/2:/kafka -v /etc/localtime:/etc/localtime --name kafka-2 wurstmeister/kafka
 ```
 ## 使用
-要求golang版本必须支持Go Modules，建议版本在1.14以上。本系统使用1.18.2版本。
+要求golang版本必须支持Go Modules，本系统使用1.18.3版本。
 
 克隆到本地目录
 ```shell
