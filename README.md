@@ -183,6 +183,10 @@ docker run -d -p 9092:9092 --net mynet -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_C
 docker run -d -p 9093:9093 --net mynet -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9093 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093 -v ~/dockerVolumes/kafkaVolume/kafka/1:/kafka -v /etc/localtime:/etc/localtime --name kafka-1 wurstmeister/kafka
 docker run -d -p 9094:9094 --net mynet -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9094 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094 -v ~/dockerVolumes/kafkaVolume/kafka/2:/kafka -v /etc/localtime:/etc/localtime --name kafka-2 wurstmeister/kafka
 ```
+除此之外，在使用还需要修改hosts文件
+```shell
+127.0.0.1 kafka-0 kafka-1 kafka-2
+```
 ## 使用
 要求golang版本必须支持Go Modules，本系统使用1.18.3版本。
 
