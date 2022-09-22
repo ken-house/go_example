@@ -75,7 +75,9 @@ kafka:
     - "127.0.0.1:9094"
   producer_config:
     ack: -1
-    partitioner_type: 0
-    flush_message_num: 0
-    flush_message_frequency: 0
+    partitioner_policy: 0
+    batch_message_num: 5
+    linger_ms: 0
+    compression_type: 0
+    record_accumulator: 0
 

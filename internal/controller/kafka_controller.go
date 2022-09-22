@@ -7,7 +7,9 @@ import (
 	"github.com/go_example/internal/lib/errorAssets"
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/utils/negotiate"
+	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type KafkaController interface {
@@ -43,13 +45,13 @@ func (ctr kafkaController) ProducerSync(ctx *gin.Context) (int, gin.Negotiate) {
 	}
 	// 单条消息发送
 	partition, offset, err := ctr.kafkaProducerSyncClient.SendMessage(msg)
-	fmt.Println(partition, offset)
+	fmt.Println(partition, offset, err)
 	// 单条消息发送
 	partition, offset, err = ctr.kafkaProducerSyncClient.SendOne("first", "", message, 0)
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
 	}
-	fmt.Println(partition, offset)
+	fmt.Println(partition, offset, err)
 	messageList := []string{
 		"hello world sync",
 		"hi",
@@ -69,8 +71,16 @@ func (ctr kafkaController) ProducerSync(ctx *gin.Context) (int, gin.Negotiate) {
 
 // ProducerAsync 异步发送
 func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) {
-	message := "hello world async cc"
-	ctr.kafkaProducerAsyncClient.SendOne("first", "", message, 0)
+	for i := 0; i <= 20; i++ {
+		message := "hello world async cc"
+		err := ctr.kafkaProducerAsyncClient.SendOne("first", "", message, 0)
+		if err != nil {
+			zap.L().Error("kafkaController.ProducerAsync err", zap.Error(err))
+			return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+		}
+		time.Sleep(time.Second)
+	}
+
 	return negotiate.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"message": "OK",
