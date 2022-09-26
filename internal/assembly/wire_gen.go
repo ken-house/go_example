@@ -117,15 +117,8 @@ func NewKafkaController() (controller.KafkaController, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	kafkaConsumerClient, cleanup3, err := NewConsumerClient()
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
-	kafkaController := controller.NewKafkaController(kafkaProducerSyncClient, kafkaProducerAsyncClient, kafkaConsumerClient)
+	kafkaController := controller.NewKafkaController(kafkaProducerSyncClient, kafkaProducerAsyncClient)
 	return kafkaController, func() {
-		cleanup3()
 		cleanup2()
 		cleanup()
 	}, nil
@@ -336,5 +329,16 @@ func NewSmsService() (service.SmsService, func(), error) {
 	}
 	smsService := service.NewSmsService(alibabaSmsClient)
 	return smsService, func() {
+	}, nil
+}
+
+func NewKafkaService() (service.KafkaService, func(), error) {
+	kafkaConsumerClient, cleanup, err := NewConsumerClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	kafkaService := service.NewKafkaService(kafkaConsumerClient)
+	return kafkaService, func() {
+		cleanup()
 	}, nil
 }

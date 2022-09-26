@@ -76,7 +76,7 @@ kafka:
   producer_config:
     ack: -1
     partitioner_policy: 0
-    batch_message_num: 5
+    batch_message_num: 0
     linger_ms: 0
     compression_type: 0
     record_accumulator: 0

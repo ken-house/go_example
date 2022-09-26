@@ -87,8 +87,6 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/kafka/producer-sync", srv.KafkaProducerSync())
 	// kafka异步生产者
 	router.GET("/kafka/producer-async", srv.KafkaProducerAsync())
-	// kafka消费者
-	router.GET("/kafka/consumer", srv.KafkaConsumer())
 }
 
 func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
@@ -155,11 +153,5 @@ func (srv *httpServer) KafkaProducerSync() gin.HandlerFunc {
 func (srv *httpServer) KafkaProducerAsync() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.kafkaCtr.ProducerAsync(c))
-	}
-}
-
-func (srv *httpServer) KafkaConsumer() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Negotiate(srv.kafkaCtr.Consumer(c))
 	}
 }

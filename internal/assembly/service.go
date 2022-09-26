@@ -64,3 +64,10 @@ func NewSmsService() (service.SmsService, func(), error) {
 		service.NewSmsService,
 	))
 }
+
+func NewKafkaService() (service.KafkaService, func(), error) {
+	panic(wire.Build(
+		NewConsumerClient,
+		service.NewKafkaService,
+	))
+}

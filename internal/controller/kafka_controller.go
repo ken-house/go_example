@@ -15,7 +15,6 @@ import (
 type KafkaController interface {
 	ProducerSync(ctx *gin.Context) (int, gin.Negotiate)
 	ProducerAsync(ctx *gin.Context) (int, gin.Negotiate)
-	Consumer(ctx *gin.Context) (int, gin.Negotiate)
 }
 
 type kafkaController struct {
@@ -27,12 +26,10 @@ type kafkaController struct {
 func NewKafkaController(
 	kafkaProducerSyncClient meta.KafkaProducerSyncClient,
 	kafkaProducerAsyncClient meta.KafkaProducerAsyncClient,
-	kafkaConsumerClient meta.KafkaConsumerClient,
 ) KafkaController {
 	return &kafkaController{
 		kafkaProducerSyncClient:  kafkaProducerSyncClient,
 		kafkaProducerAsyncClient: kafkaProducerAsyncClient,
-		kafkaConsumerClient:      kafkaConsumerClient,
 	}
 }
 
@@ -81,22 +78,6 @@ func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) 
 		time.Sleep(time.Second)
 	}
 
-	return negotiate.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"message": "OK",
-		},
-	})
-}
-
-// Consumer 启动消费
-func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
-	var ConsumerFunc = func(msg *sarama.ConsumerMessage) {
-		fmt.Printf("Partition:%d, Offset:%d, key:%s, value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
-	}
-	err := ctr.kafkaConsumerClient.ConsumeTopic("first", sarama.OffsetOldest, ConsumerFunc)
-	if err != nil {
-		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
-	}
 	return negotiate.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"message": "OK",
