@@ -12,14 +12,17 @@ type KafkaService interface {
 }
 
 type kafkaService struct {
-	kafkaConsumerClient meta.KafkaConsumerClient
+	kafkaConsumerClient      meta.KafkaConsumerClient
+	kafkaConsumerGroupClient meta.KafkaConsumerGroupClient
 }
 
 func NewKafkaService(
 	kafkaConsumerClient meta.KafkaConsumerClient,
+	kafkaConsumerGroupClient meta.KafkaConsumerGroupClient,
 ) KafkaService {
 	return &kafkaService{
-		kafkaConsumerClient: kafkaConsumerClient,
+		kafkaConsumerClient:      kafkaConsumerClient,
+		kafkaConsumerGroupClient: kafkaConsumerGroupClient,
 	}
 }
 
@@ -27,5 +30,8 @@ func (svc *kafkaService) Process(ctx context.Context) error {
 	var ConsumerFunc = func(msg *sarama.ConsumerMessage) {
 		fmt.Printf("Partition:%d, Offset:%d, key:%s, value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
 	}
-	return svc.kafkaConsumerClient.ConsumeTopic("first", sarama.OffsetOldest, ConsumerFunc)
+	// 单个消费者
+	//return svc.kafkaConsumerClient.ConsumeTopic("first", sarama.OffsetOldest, ConsumerFunc)
+	// 消费者组
+	return svc.kafkaConsumerGroupClient.ConsumeTopic(ctx, []string{"first"}, ConsumerFunc)
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/go_example/internal/utils/negotiate"
 	"go.uber.org/zap"
 	"net/http"
-	"time"
 )
 
 type KafkaController interface {
@@ -75,7 +74,7 @@ func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) 
 			zap.L().Error("kafkaController.ProducerAsync err", zap.Error(err))
 			return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
 		}
-		time.Sleep(time.Second)
+		//time.Sleep(time.Second)
 	}
 
 	return negotiate.JSON(http.StatusOK, gin.H{

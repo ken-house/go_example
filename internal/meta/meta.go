@@ -81,3 +81,6 @@ type KafkaProducerAsyncClient kafkaClient.ProducerAsyncClient
 
 // KafkaConsumerClient kafka消费者
 type KafkaConsumerClient kafkaClient.ConsumerClient
+
+// KafkaConsumerGroupClient kafka消费者组
+type KafkaConsumerGroupClient kafkaClient.ConsumerGroupClient

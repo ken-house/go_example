@@ -68,6 +68,7 @@ func NewSmsService() (service.SmsService, func(), error) {
 func NewKafkaService() (service.KafkaService, func(), error) {
 	panic(wire.Build(
 		NewConsumerClient,
+		NewConsumerGroupClient,
 		service.NewKafkaService,
 	))
 }

@@ -76,3 +76,8 @@ func NewProducerAsyncClient() (meta.KafkaProducerAsyncClient, func(), error) {
 func NewConsumerClient() (meta.KafkaConsumerClient, func(), error) {
 	return kafkaClient.NewConsumerClient(meta.GlobalConfig.Kafka)
 }
+
+// NewConsumerGroupClient kafka消费者组
+func NewConsumerGroupClient() (meta.KafkaConsumerGroupClient, func(), error) {
+	return kafkaClient.NewConsumerGroupClient(meta.GlobalConfig.Kafka)
+}

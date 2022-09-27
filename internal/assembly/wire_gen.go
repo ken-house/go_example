@@ -337,8 +337,14 @@ func NewKafkaService() (service.KafkaService, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	kafkaService := service.NewKafkaService(kafkaConsumerClient)
+	kafkaConsumerGroupClient, cleanup2, err := NewConsumerGroupClient()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	kafkaService := service.NewKafkaService(kafkaConsumerClient, kafkaConsumerGroupClient)
 	return kafkaService, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

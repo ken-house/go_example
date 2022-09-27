@@ -75,9 +75,17 @@ kafka:
     - "127.0.0.1:9094"
   producer_config:
     ack: -1
-    partitioner_policy: 0
+    partitioner_policy: "hash"
     batch_message_num: 0
     linger_ms: 0
     compression_type: 0
     record_accumulator: 0
-
+  consumer_config:
+    group_id: "test"
+    balance_strategy: "range"
+    fetch_min_bytes: 1
+    fetch_max_bytes: 0
+    max_wait_time_ms: 500
+    from_beginning: true
+    offset_auto_commit_enabled: true
+    offset_auto_commit_interval: 0
