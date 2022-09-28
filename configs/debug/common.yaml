@@ -84,7 +84,7 @@ kafka:
     max_open_requests: 1 # 若开启幂等，这里要求设置为1（该包存在的问题暂未解决）
     retry_max: 3 # 发送失败重试次数
   consumer_config:
-    group_id: "test3" # 消费者组id
+    group_id: "test10" # 消费者组id
     balance_strategy: "range" # 消费者组分区再平衡策略 range、roundrobin、sticky
     fetch_min_bytes: 1 # 每批次抓取数据最小字节数
     fetch_max_bytes: 0 # 每批次抓取数据最大字节数
