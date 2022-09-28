@@ -14,7 +14,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/wire v0.5.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/ken-house/go-contrib v1.0.19
+	github.com/ken-house/go-contrib v1.0.20-0.20220928081629-2840342325f3
 	github.com/mbobakov/grpc-consul-resolver v1.4.4
 	github.com/nacos-group/nacos-sdk-go/v2 v2.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -96,7 +96,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
-	github.com/panjf2000/ants/v2 v2.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect

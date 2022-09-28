@@ -74,10 +74,35 @@ kafka:
     - "127.0.0.1:9093"
     - "127.0.0.1:9094"
   producer_config:
-    ack: -1
-    partitioner_policy: 0
-    batch_message_num: 5
-    linger_ms: 0
-    compression_type: 0
-    record_accumulator: 0
+    ack: -1 # 0 不需要应答 1 leader应答 -1 leader和follower都需要应答
+    partitioner_policy: # "hash" # hash、random、robin、manual；若为consum需要完善go-contrib包中的自定义分区器方法
+    batch_message_num: 0 # 累计多少条消息打包发送
+    linger_ms: 0 # 打包发送间隔时间
+    message_max_bytes: 0 # 一条消息最大字节数，默认为1000000，约等于1M
+    compression_type: 0 # 压缩方式 0 不压缩 1 zip压缩 2 Snappy压缩 3 LZ4压缩 4 ZSTD压缩
+    idempotent_enabled: true # 是否开启幂等 要求ack=-1,max_open_requests=1,retry_max>0
+    max_open_requests: 1 # 若开启幂等，这里要求设置为1（该包存在的问题暂未解决）
+    retry_max: 3 # 发送失败重试次数
+  consumer_config:
+    group_id: "test3" # 消费者组id
+    balance_strategy: "range" # 消费者组分区再平衡策略 range、roundrobin、sticky
+    fetch_min_bytes: 1 # 每批次抓取数据最小字节数
+    fetch_max_bytes: 0 # 每批次抓取数据最大字节数
+    max_wait_time_ms: 500 # 每批次数据达到的超时时间（毫秒）
+    from_beginning: true # 是否从0开始消费
+    offset_auto_commit_enabled: true # offset是否设置为自动提交
+    offset_auto_commit_interval: 0 # offset自动提交的时间间隔
+    max_poll_records: 500 # 一次拉取返回消息的最大条数
+  consumer_reset_offset_config: # 指定offset消费
+    enabled: false
+    list:
+      - topic: "first"
+        partition: 1
+        offset: 443
+      - topic: "first"
+        partition: 0
+        offset: 477
+      - topic: "first"
+        partition: 2
+        offset: 424
 
