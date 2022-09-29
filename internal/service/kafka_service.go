@@ -35,9 +35,9 @@ func (svc *kafkaService) Process(ctx context.Context) error {
 		fmt.Printf("from Partition:%d, Offset:%d, key:%s, value:%s\n", msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
 	}
 	// 单个消费者
-	//return svc.kafkaConsumerClient.ConsumeTopic("first", sarama.OffsetOldest, consumerFunc)
+	//return svc.kafkaConsumerClient.ConsumeTopic("second", sarama.OffsetOldest, consumerFunc)
 	// 消费者组
-	return svc.kafkaConsumerGroupClient.ConsumeTopic(ctx, []string{"first"}, consumerFunc)
+	return svc.kafkaConsumerGroupClient.ConsumeTopic(ctx, []string{"second"}, consumerFunc)
 }
 
 func (svc *kafkaService) ProcessBatch(ctx context.Context) {
@@ -52,7 +52,7 @@ func (svc *kafkaService) ProcessBatch(ctx context.Context) {
 	pool, _ := ants.NewPool(3)
 	defer pool.Release()
 	pool.Submit(func() {
-		svc.kafkaConsumerGroupClient.ConsumeTopic(ctx, []string{"first"}, consumerFunc)
+		svc.kafkaConsumerGroupClient.ConsumeTopic(ctx, []string{"second"}, consumerFunc)
 	})
 
 	// 启动一个goroutine读取channel，每50个消息处理一次

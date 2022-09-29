@@ -33,13 +33,13 @@ var kafkaConsumerCmd = &cobra.Command{
 		defer cancel()
 
 		// 简单处理
-		//err = kafkaService.Process(ctx)
-		//if err != nil {
-		//	log.Fatalln(err)
-		//}
+		err = kafkaService.Process(ctx)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
 		// 批量处理
-		kafkaService.ProcessBatch(ctx)
+		//kafkaService.ProcessBatch(ctx)
 
 		// 优雅关闭
 		quit := make(chan os.Signal)
