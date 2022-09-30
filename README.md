@@ -22,6 +22,7 @@
 + 支持自动生成CRUD代码；
 + 支持nacos服务注册与发现、配置中心；
 + 支持kafka服务；
++ 支持容器化部署；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -46,6 +47,7 @@
 + https://github.com/alibabacloud-go
 + https://github.com/nacos-group/nacos-sdk-go
 + https://github.com/Shopify/sarama
++ https://github.com/panjf2000/ants
 
 ## 版本
 + 版本v1.0.0实现了cobra+gin框架的结合；
@@ -81,6 +83,7 @@
 + 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
 + 版本v2.6.2增加consul配置中心，nacos服务注册与服务发现；
 + 版本v2.7.0增加kafka生产消费服务；
++ 版本v3.0.0支持容器化部署；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -4386,3 +4389,61 @@ func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
 	})
 }
 ```
+
+### 容器化部署服务
+#### 编写Dockerfile文件
+在项目目录下新建Dockerfile文件，文件内容如下：
+```dockerfile
+FROM golang:1.18-alpine3.16
+
+# 维护者
+MAINTAINER Ken
+
+# 设置环境变量
+ENV GO111MODULE=on CGO_ENABLE=0 GOOS=linux GO_ARCH=amd64 GOPROXY=https://goproxy.cn,direct
+
+# 将本地项目文件拷贝到容器当前目录
+COPY . /build
+
+# 切换容器的目录到
+WORKDIR /build
+
+# 执行go build生成可执行文件example-http-server
+RUN go build -o example-http-server main.go
+
+
+# 切换到容器下的目标目录
+WORKDIR /dist
+
+# 将需要加载的本地配置文件copy到容器下的/dist目录
+COPY ./configs ./configs
+COPY ./assets  ./assets
+COPY ./views   ./views
+
+# 向容器添加卷
+VOLUME ["/dist/configs","/dist/nacos","/dist/logs"]
+
+# 将容器内的可执行文件拷贝到容器的当前目录
+RUN cp /build/example-http-server .
+
+# 暴露端口
+EXPOSE 6060
+EXPOSE 8080
+
+
+# 启动容器时运行项目，并指定参数http
+ENTRYPOINT ["/dist/example-http-server","http"]
+
+```
+#### 构建镜像
+生成的镜像会放在docker本地镜像仓库
+```shell
+docker build . -t example-http-server:latest
+```
+
+### 运行容器
+需要在挂在的配置目录下，创建配置文件，配置文件中的IP地址要改为可访问地址。
+```dockerfile
+docker run -d -p 8888:8080 -p 6666:6060 -v ~/dockerVolumes/exampleVolume/http/logs:/dist/logs -v ~/dockerVolumes/exampleVolume/http/nacos:/dist/nacos -v ~/dockerVolumes/exampleVolume/http/configs:/dist/configs --name example-http-server example-http-server
+```
+打开浏览器，访问：http://127.0.0.1:8888/hello接口访问。

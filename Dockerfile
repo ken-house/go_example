@@ -32,6 +32,7 @@ RUN cp /build/example-http-server .
 
 # 暴露端口
 EXPOSE 8080
+EXPOSE 6060
 
 # 启动容器时运行项目，并指定参数http
 ENTRYPOINT ["/dist/example-http-server","http"]
