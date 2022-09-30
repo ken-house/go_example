@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment # 类型为deployment
+metadata: # deployment的详细信息
+  name: example-http-server-deploy
+  namespace: dev
+spec: # deployment描述
+  replicas: 3 # 每个pod生成3个副本
+  selector: # 对标签为app=example-http-server-pod的pod进行操作
+    matchLabels:
+      app: example-http-server-pod
+  template: # pod的模板设置
+    metadata: # pod的详细信息
+      labels: # 给pod打上标签app=example-http-server-pod
+        app: example-http-server-pod
+    spec: # pod描述
+      containers: # 容器信息
+        - name: example-http-server
+          image: xudengtang/example-http-server:1.0
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /dist/configs
+            - name: logs-volume
+              mountPath: /dist/logs
+            - name: nacos-volume
+              mountPath: /dist/nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/configs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
+
+
+

@@ -22,7 +22,8 @@
 + 支持自动生成CRUD代码；
 + 支持nacos服务注册与发现、配置中心；
 + 支持kafka服务；
-+ 支持容器化部署；
++ 支持Docker容器化部署；
++ 支持K8s容器编排部署；
 
 ## 主要贡献
 + https://github.com/gin-gonic/gin
@@ -83,7 +84,8 @@
 + 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
 + 版本v2.6.2增加consul配置中心，nacos服务注册与服务发现；
 + 版本v2.7.0增加kafka生产消费服务；
-+ 版本v3.0.0支持容器化部署；
++ 版本v3.0.0支持Docker容器化部署；
++ 版本v3.1.0支持K8s容器编排部署；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -190,6 +192,18 @@ docker run -d -p 9094:9094 --net mynet -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_C
 ```shell
 127.0.0.1 kafka-0 kafka-1 kafka-2
 ```
+8. Kubernets部署
+安装Docker Desktop，通过Docker Desktop安装kubernets单点集群，操作步骤如下：
+![image](assets/images/k8s.png)
+
+安装完成后，通过如下命令查看集群情况
+```shell
+# 查看集群情况
+kubectl cluster-info
+# 查看集群节点列表
+kubectl get nodes
+```
+
 ## 使用
 要求golang版本必须支持Go Modules，本系统使用1.18.3版本。
 
@@ -4390,7 +4404,7 @@ func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
 }
 ```
 
-### 容器化部署服务
+### Docker容器化部署服务
 #### 编写Dockerfile文件
 在项目目录下新建Dockerfile文件，文件内容如下：
 ```dockerfile
@@ -4441,9 +4455,94 @@ ENTRYPOINT ["/dist/example-http-server","http"]
 docker build . -t example-http-server:latest
 ```
 
-### 运行容器
+#### 运行容器
 需要在挂在的配置目录下，创建配置文件，配置文件中的IP地址要改为可访问地址。
 ```dockerfile
 docker run -d -p 8888:8080 -p 6666:6060 -v ~/dockerVolumes/exampleVolume/http/logs:/dist/logs -v ~/dockerVolumes/exampleVolume/http/nacos:/dist/nacos -v ~/dockerVolumes/exampleVolume/http/configs:/dist/configs --name example-http-server example-http-server
 ```
 打开浏览器，访问：http://127.0.0.1:8888/hello接口访问。
+
+### K8s容器编排部署
+#### 推送镜像到Docker Hub
+在上一节，我们将项目打包成镜像，并可启动容器运行。接下来，我们将镜像推送到Docker Hub。
+```shell
+# 对镜像打标签
+docker tag example-http-server xudengtang/example-http-server:1.0
+
+# 登陆Docker Hub，若未注册，需先注册。
+docker login
+
+# 推送镜像
+docker push xudengtang/example-http-server:1.0
+```
+这样镜像就推送到Docker Hub，并且是Public。
+
+#### Pod部署
+这里通过Deployment控制器对Pod进行创建。在项目目录下创建/deploy/debug/example-http-server-deployment.yaml,代码如下：
+```yaml
+apiVersion: apps/v1
+kind: Deployment # 类型为deployment
+metadata: # deployment的详细信息
+  name: example-http-server-deploy
+  namespace: dev
+spec: # deployment描述
+  replicas: 3 # 每个pod生成3个副本
+  selector: # 对标签为app=example-http-server-pod的pod进行操作
+    matchLabels:
+      app: example-http-server-pod
+  template: # pod的模板设置
+    metadata: # pod的详细信息
+      labels: # 给pod打上标签app=example-http-server-pod
+        app: example-http-server-pod
+    spec: # pod描述
+      containers: # 容器信息
+        - name: example-http-server
+          image: xudengtang/example-http-server:1.0
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /dist/configs
+            - name: logs-volume
+              mountPath: /dist/logs
+            - name: nacos-volume
+              mountPath: /dist/nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/configs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
+```
+执行创建命令：
+```shell
+kubectl apply -f ./deploy/debug/example-http-server-deployment.yaml
+# 查看pod列表
+kubectl get pods -n dev
+```
+到这里，项目在Pod下的容器中运行成功，但外部还无法访问。
+
+### Service服务
+K8s提供Service服务对Pod端口进行代理，这里使用NodePort，以便外部可以通过节点IP进行访问；创建example-http-server-service.yaml，代码如下：
+```yaml
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-http-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-http-server-pod的pod进行代理
+    app: example-http-server-pod
+  type: NodePort # 指定service类型为NodePort
+  ports: # 端口映射
+    - port: 8080 # 端口名称
+      nodePort: 30000 # service的NodePort端口（范围为30000-32767）
+      targetPort: 8080 # pod节点暴露的端口
+```
+执行如下命令创建Service:
+```shell
+kubectl apply -f ./deploy/debug/example-http-server-service.yaml
+```
+此时，可以通过127.0.0.1:30000/hello访问服务；

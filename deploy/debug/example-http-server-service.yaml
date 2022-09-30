@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-http-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-http-server-pod的pod进行代理
+    app: example-http-server-pod
+  type: NodePort # 指定service类型为NodePort
+  ports: # 端口映射
+    - port: 8080 # 端口名称
+      nodePort: 30000 # service的NodePort端口（范围为30000-32767）
+      targetPort: 8080 # pod节点暴露的端口
