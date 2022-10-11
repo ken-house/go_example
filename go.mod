@@ -24,6 +24,7 @@ require (
 	github.com/spf13/cast v1.4.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.11.0
+	github.com/stretchr/testify v1.8.0
 	go.mongodb.org/mongo-driver v1.10.0
 	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.48.0
@@ -100,6 +101,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.16 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.2 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
