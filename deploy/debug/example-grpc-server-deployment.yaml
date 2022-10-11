@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-grpc-server-deploy
+  namespace: dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: example-grpc-server-pod
+  template:
+    metadata:
+      labels:
+        app: example-grpc-server-pod
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: example-grpc-server
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always
+          env:
+            - name: RUN_MODE
+              value: "debug"
+          command: ["./go-example", "grpc"]
+          ports:
+            - name: grpc-port
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: jwt-certs-volume
+              mountPath: /assets/certs/1652421664
+            - name: grpc-certs-volume
+              mountPath: /assets/certs/grpc_tls
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: jwt-certs-volume
+          secret:
+            secretName: example-server-secret-jwt-certs
+        - name: grpc-certs-volume
+          secret:
+            secretName: example-server-secret-grpc-certs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/grpc
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/grpc

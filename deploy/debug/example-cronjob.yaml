@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: example-cronjob
+  namespace: dev
+  labels:
+    controller: cronjob
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: example-cronjob-test
+              image: xudengtang/go-example:latest
+              imagePullPolicy: Always # 设置镜像拉取策略
+              env:
+                - name: RUN_MODE
+                  value: "debug"
+              command: ["/go-example", "cronjob"]
+              volumeMounts: # 挂载目录
+                - name: configs-volume
+                  mountPath: /configs/debug
+                - name: logs-volume
+                  mountPath: /logs
+                - name: nacos-volume
+                  mountPath: /nacos
+          volumes: # 定义存储卷
+            - name: configs-volume
+              configMap:
+                name: example-server-configmap
+            - name: logs-volume
+              hostPath:
+                path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/cronjob
+            - name: nacos-volume
+              hostPath:
+                path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/cronjob

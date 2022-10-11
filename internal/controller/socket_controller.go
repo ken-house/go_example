@@ -20,8 +20,9 @@ import (
 var upGrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		clientIp := tools.GetClientIp(r)
-		if len(meta.SocketWhiteIpList) > 0 {
-			for _, ip := range meta.SocketWhiteIpList {
+		socketWhiteIpList := meta.GlobalConfig.Common.SocketWhiteIpList
+		if len(socketWhiteIpList) > 0 {
+			for _, ip := range socketWhiteIpList {
 				pattern := strings.ReplaceAll(strings.ReplaceAll(ip, ".", "\\."), "*", ".*")
 				match, _ := regexp.MatchString(pattern, clientIp)
 				if match {

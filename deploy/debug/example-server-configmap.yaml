@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-server-configmap
+  namespace: dev
+data:
+  config_center.yaml: |-
+    config_center:
+      server_ip_list:
+        - "10.0.98.64"
+      server_http_port: 8848
+      server_grpc_port: 9848
+      namespace_id: "debug"
+      timeout: 5000
+      log_level: "debug"
+      log_path: "./nacos/logs"
+      cache_path: "./nacos/cache"
+      group: "go_example"
+      data_id: "debug-go_example-common.yaml"
+  common.yaml: |-
+    server:
+      http:
+        name: "http"
+        addr: ""
+        port: "8080"
+      http_pprof:
+        name: "http_pprof"
+        addr: ""
+        port: "6060"
+      socket:
+        name: "socket"
+        addr: ""
+        port: "30000"
+      grpc:
+        name: "grpc"
+        addr: ""
+        port: "9090"
+
+    certs:
+      cur_key: 1652421664
+      keys: [1652421664]
+    
+    common:
+      socket_white_ip_list:
+        - "127.0.0.1"
+        - "192.168.163.*"
+        - "10.0.98.*"
+        - "10.1.0.1"
+    
+    mysql:
+      group:
+        max_open: 20
+        max_idle: 5
+        max_lifetime: 10
+        master:
+          dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+        slaves:
+          - dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+      single:
+        dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+        max_open: 20
+        max_idle: 5
+        max_lifetime: 10
+    redis:
+      single:
+        addr: "10.0.98.64:6379"
+        password: "redis"
+        db: 0
+        pool_size: 20
+      group:
+        addrs:
+          - 10.0.98.64:7000
+          - 10.0.98.64:7001
+          - 10.0.98.64:7002
+          - 10.0.98.64:7003
+          - 10.0.98.64:7004
+          - 10.0.98.64:7005
+        password: ""
+        pool_size: 20
+    mongodb:
+      # 格式：mongodb://username:password@addr1:port2,addr2:port2
+      addr: "mongodb://10.0.98.64:27017"
+      max_open: 20
+    consul:
+      host: "10.0.98.64"
+      port: "8500"
+    jenkins:
+      host: "http://10.0.98.64:8088/"
+      username: "admin"
+      password: "11a8c7f5ad7e4d9bcbbe08eceb415eb7ad"
+    alibaba_sms:
+      end_point: "dysmsapi.aliyuncs.com"
+      access_key_id: "LTAI4GFM5Sqw5AiWwAPq4che"
+      access_key_secret: "QfaWjC3BJkOJRP0v3ewntdOQi8nKVZ"
+    alibaba_sms_code:
+      template_code: "SMS_204125567"
+      sign_name: "小区闲置物品信息交流平台" # 短信签名
+    kafka:
+      server_addr_list:
+        - "10.0.98.64:9092"
+        - "10.0.98.64:9093"
+        - "10.0.98.64:9094"
+      producer_config:
+        ack: -1 # 0 不需要应答 1 leader应答 -1 leader和follower都需要应答
+        partitioner_policy: # "hash" # hash、random、robin、manual；若为consum需要完善go-contrib包中的自定义分区器方法
+        batch_message_num: 0 # 累计多少条消息打包发送
+        linger_ms: 0 # 打包发送间隔时间
+        message_max_bytes: 0 # 一条消息最大字节数，默认为1000000，约等于1M
+        compression_type: 0 # 压缩方式 0 不压缩 1 zip压缩 2 Snappy压缩 3 LZ4压缩 4 ZSTD压缩
+        idempotent_enabled: true # 是否开启幂等 要求ack=-1,max_open_requests=1,retry_max>0
+        max_open_requests: 1 # 若开启幂等，这里要求设置为1（该包存在的问题暂未解决）
+        retry_max: 3 # 发送失败重试次数
+      consumer_config:
+        group_id: "test12" # 消费者组id
+        balance_strategy: "range" # 消费者组分区再平衡策略 range、roundrobin、sticky
+        fetch_min_bytes: 1 # 每批次抓取数据最小字节数
+        fetch_max_bytes: 0 # 每批次抓取数据最大字节数
+        max_wait_time_ms: 500 # 每批次数据达到的超时时间（毫秒）
+        from_beginning: true # 是否从0开始消费（貌似不起作用）
+        offset_auto_commit_enabled: true # offset是否设置为自动提交
+        offset_auto_commit_interval: 0 # offset自动提交的时间间隔
+        max_poll_records: 500 # 一次拉取返回消息的最大条数
+      consumer_reset_offset_config: # 指定offset消费
+        enabled: false
+        list:
+          - topic: "second"
+            partition: 0
+            offset: 10

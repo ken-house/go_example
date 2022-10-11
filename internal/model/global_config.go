@@ -21,6 +21,8 @@ type GlobalConfig struct {
 
 	Certs CertInfo `json:"certs" mapstructure:"certs"`
 
+	Common Common `json:"common" mapstructure:"common"`
+
 	Mysql struct {
 		Group  mysqlClient.GroupConfig  `json:"group" mapstructure:"group"`
 		Single mysqlClient.SingleConfig `json:"single" mapstructure:"single"`
@@ -55,6 +57,11 @@ type ServerInfo struct {
 type CertInfo struct {
 	CurKey string   `json:"cur_key" mapstructure:"cur_key"`
 	Keys   []string `json:"keys" mapstructure:"keys"`
+}
+
+// Common 项目配置信息
+type Common struct {
+	SocketWhiteIpList []string `json:"socket_white_ip_list" mapstructure:"socket_white_ip_list"`
 }
 
 // AlibabaSmsCode 阿里巴巴短信格式

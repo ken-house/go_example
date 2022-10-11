@@ -20,6 +20,13 @@ certs:
   cur_key: 1652421664
   keys: [1652421664]
 
+common:
+  socket_white_ip_list:
+    - "127.0.0.1"
+    - "192.168.163.*"
+    - "10.0.98.*"
+    - "10.1.0.1"
+
 mysql:
   group:
     max_open: 20

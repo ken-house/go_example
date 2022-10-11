@@ -2,6 +2,7 @@
 ## 简介
 本项目为基础的web开发架构设计，主要采用gin框架，使用cobra生成应用和命令文件的脚手架，使用wire解决依赖注入问题，
 最终实现一个高性能、可扩展、多应用的web框架。 除HTTP服务外，还包含Socket服务、GRPC服务、Consul/Nacos服务注册与服务发现、配置中心、Kafka等功能。
+支持Docker容器化部署、K8s部署；
 
 ## 功能
 + 连接MySQL单机及主从数据库；
@@ -86,6 +87,7 @@
 + 版本v2.7.0增加kafka生产消费服务；
 + 版本v3.0.0支持Docker容器化部署；
 + 版本v3.1.0支持K8s容器编排部署；
++ 版本v3.1.1实现K8s容器编排部署全面升级；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -4546,3 +4548,1042 @@ spec: # service描述
 kubectl apply -f ./deploy/debug/example-http-server-service.yaml
 ```
 此时，可以通过127.0.0.1:30000/hello访问服务；
+
+### K8s容器化部署全面升级
+这里以go_example项目为例。由于go_example项目使用cobra做项目脚手架，支持一个项目多个服务。在前面构建镜像时，仅实现了一个http服务，因此需要对代码进行如下调整。
+
+### Makefile文件
+
+```Makefile
+.PHONY: build
+build:
+  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -ldflags "-s -w" -o ./bin/go-example main.go
+
+.PHONY: push
+push:
+  docker build . -t xudengtang/go-example:latest
+  docker push xudengtang/go-example:latest
+
+.PHONY: clean
+clean:
+  rm -f ./bin/go-example
+  docker image rm xudengtang/go-example:latest
+```
+
+本地执行命令生成可执行文件到项目目录下的bin/go_example
+
+```Bash
+make build
+```
+
+### Dockerfile文件
+
+上面通过make build已经生成了可执行文件，修改Dockerfile文件，基于alpine基础镜像（最小化的Liunx镜像），将可执行文件COPY到镜像中，同时加载一些所需静态文件，添加卷等。
+
+```Docker
+FROM alpine:latest
+
+# 维护者
+MAINTAINER Ken
+
+# 切换到容器下的目标目录
+WORKDIR /
+
+# 将本地编译好的可执行文件复制到容器中
+COPY ./bin/go-example go-example
+
+# 将需要加载的本地配置文件copy到容器下的/dist目录
+COPY ./views   ./views
+COPY ./assets/jenkins ./assets/jenkins
+
+# 向容器添加卷
+VOLUME ["/logs", "/nacos"]
+
+# 容器运行时执行命令
+ENTRYPOINT ["/go-example"]
+```
+
+本地执行如下命令，将打包镜像并推送到Docker Hub。
+
+```Bash
+make push
+```
+
+### ConfigMap创建配置
+
+创建example-server-configmap.yaml文件将原configs/debug/common.yaml及config_center.yaml配置文件内容，通过k8s提供的ConfigMap配置存储到容器中。
+
+```YAML
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-server-configmap
+  namespace: dev
+data:
+  config_center.yaml: |-
+    config_center:
+      server_ip_list:
+        - "10.0.98.64"
+      server_http_port: 8848
+      server_grpc_port: 9848
+      namespace_id: "debug"
+      timeout: 5000
+      log_level: "debug"
+      log_path: "./nacos/logs"
+      cache_path: "./nacos/cache"
+      group: "go_example"
+      data_id: "debug-go_example-common.yaml"
+  common.yaml: |-
+    server:
+      http:
+        name: "http"
+        addr: ""
+        port: "8080"
+      http_pprof:
+        name: "http_pprof"
+        addr: ""
+        port: "6060"
+      socket:
+        name: "socket"
+        addr: ""
+        port: "30000"
+      grpc:
+        name: "grpc"
+        addr: ""
+        port: "9090"
+
+    certs:
+      cur_key: 1652421664
+      keys: [1652421664]
+
+    mysql:
+      group:
+        max_open: 20
+        max_idle: 5
+        max_lifetime: 10
+        master:
+          dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+        slaves:
+          - dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+      single:
+        dsn: "root:root@tcp(10.0.98.64:3306)/go_example?charset=utf8mb4"
+        max_open: 20
+        max_idle: 5
+        max_lifetime: 10
+    redis:
+      single:
+        addr: "10.0.98.64:6379"
+        password: "redis"
+        db: 0
+        pool_size: 20
+      group:
+        addrs:
+          - 10.0.98.64:7000
+          - 10.0.98.64:7001
+          - 10.0.98.64:7002
+          - 10.0.98.64:7003
+          - 10.0.98.64:7004
+          - 10.0.98.64:7005
+        password: ""
+        pool_size: 20
+    mongodb:
+      # 格式：mongodb://username:password@addr1:port2,addr2:port2
+      addr: "mongodb://10.0.98.64:27017"
+      max_open: 20
+    consul:
+      host: "10.0.98.64"
+      port: "8500"
+    jenkins:
+      host: "http://10.0.98.64:8088/"
+      username: "admin"
+      password: "11a8c7f5ad7e4d9bcbbe08eceb415eb7ad"
+    alibaba_sms:
+      end_point: "dysmsapi.aliyuncs.com"
+      access_key_id: "LTAI4GFM5Sqw5AiWwAPq4che"
+      access_key_secret: "QfaWjC3BJkOJRP0v3ewntdOQi8nKVZ"
+    alibaba_sms_code:
+      template_code: "SMS_204125567"
+      sign_name: "小区闲置物品信息交流平台" # 短信签名
+    kafka:
+      server_addr_list:
+        - "10.0.98.64:9092"
+        - "10.0.98.64:9093"
+        - "10.0.98.64:9094"
+      producer_config:
+        ack: -1 # 0 不需要应答 1 leader应答 -1 leader和follower都需要应答
+        partitioner_policy: # "hash" # hash、random、robin、manual；若为consum需要完善go-contrib包中的自定义分区器方法
+        batch_message_num: 0 # 累计多少条消息打包发送
+        linger_ms: 0 # 打包发送间隔时间
+        message_max_bytes: 0 # 一条消息最大字节数，默认为1000000，约等于1M
+        compression_type: 0 # 压缩方式 0 不压缩 1 zip压缩 2 Snappy压缩 3 LZ4压缩 4 ZSTD压缩
+        idempotent_enabled: true # 是否开启幂等 要求ack=-1,max_open_requests=1,retry_max>0
+        max_open_requests: 1 # 若开启幂等，这里要求设置为1（该包存在的问题暂未解决）
+        retry_max: 3 # 发送失败重试次数
+      consumer_config:
+        group_id: "test12" # 消费者组id
+        balance_strategy: "range" # 消费者组分区再平衡策略 range、roundrobin、sticky
+        fetch_min_bytes: 1 # 每批次抓取数据最小字节数
+        fetch_max_bytes: 0 # 每批次抓取数据最大字节数
+        max_wait_time_ms: 500 # 每批次数据达到的超时时间（毫秒）
+        from_beginning: true # 是否从0开始消费（貌似不起作用）
+        offset_auto_commit_enabled: true # offset是否设置为自动提交
+        offset_auto_commit_interval: 0 # offset自动提交的时间间隔
+        max_poll_records: 500 # 一次拉取返回消息的最大条数
+      consumer_reset_offset_config: # 指定offset消费
+        enabled: false
+        list:
+          - topic: "second"
+            partition: 0
+            offset: 10
+
+```
+
+执行如下命令，生成项目配置：
+
+```YAML
+kubectl apply -f ./deploy/debug/example-server-configmap.yaml
+
+# 可通过命令查看
+kubectl get configmap -n dev
+```
+
+### Secret创建密钥配置
+
+对于一些比较敏感信息，如密码、密钥等。k8s提供了Secret来实现配置，创建example-server-secret.yaml文件，代码如下：
+
+```YAML
+apiVersion: v1
+kind: Secret
+metadata:
+  name: example-server-secret-jwt-certs
+  namespace: dev
+type: Opaque
+stringData:
+  rsa_private_key.pem: |-
+    -----BEGIN RSA PRIVATE KEY-----
+    MIICXQIBAAKBgQC2mn74yFAoDo40HGB88hp4PK3Y1CKsGiKtZDnF5E0atp3l3dWx
+    c7tEdqioh9wO2EkSkvPrEvD4ToSTuDopCCkpZOVfkOWEvCkvVfWT4ygWERq8d9tX
+    ua1DrXmOS/k/iseJGS57ZMrjPWMk/NQNkWBx8F7Koy1BtFaR5c9vtaBLUQIDAQAB
+    AoGANk3n6NCZlfAONk0iHMZbPNq+0Lb1wLzdBzfBPqrQi1s3xf6c6HMEhC3NpqEQ
+    vpFv2cg+JfCyHQYsw0mMclts8dPoIEjm5uLcxsUBr2rF4fjhqOgSKgo3XGGIO7Fh
+    FMtElCzTke6x2vBSUZtgqUMnvljm56X1lfeSD4SHOQ0vF+kCQQDZHHlxxe44En+Y
+    VDnP4dDY8Rw2/KW/G0QOt5WqQQOIS/uRpa8dH87LCZRodfB+ApcQY283C+BZCWWT
+    gpc1coYzAkEA10+v6c5j+c7ywhBc4VGBDVj3k/lHZZoHfUgkRWWqeE+wgKD0z5do
+    ljfPFGCTFRZUINNktegCAg/zM/maGrj8awJABDhze+y3Fsv1QwbQIORo5O66966t
+    oitrhUW4WRjucqXXfBtWbiCCKpxDEEzKogh221CzhsRqVhDCsr1lJxrU1QJBAMrB
+    NMP04nq04i/TntNjoCaEmCgVf6Fy6giVLerX8S74xBps9/yg9RE4nt3uj7M04qZC
+    yzztrS5p/Lj+HJt7hd8CQQCymJCfdwu+yMqcYX8DbKsFOJWdM7Hmuw9IwdcCCAnf
+    M2pG06S0jIaVieHKZF80Pnns4ZUXnIg0Idla02nIQbP/
+    -----END RSA PRIVATE KEY-----
+  rsa_public_key.pem: |-
+    -----BEGIN PUBLIC KEY-----
+    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC2mn74yFAoDo40HGB88hp4PK3Y
+    1CKsGiKtZDnF5E0atp3l3dWxc7tEdqioh9wO2EkSkvPrEvD4ToSTuDopCCkpZOVf
+    kOWEvCkvVfWT4ygWERq8d9tXua1DrXmOS/k/iseJGS57ZMrjPWMk/NQNkWBx8F7K
+    oy1BtFaR5c9vtaBLUQIDAQAB
+    -----END PUBLIC KEY-----
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: example-server-secret-grpc-certs
+  namespace: dev
+type: Opaque
+stringData:
+  ca.crt: |-
+    -----BEGIN CERTIFICATE-----
+    MIIC+jCCAeICCQCwvuN/60JlaTANBgkqhkiG9w0BAQsFADA/MQswCQYDVQQGEwJj
+    bjEOMAwGA1UECwwFbXlvcmcxDzANBgNVBAoMBm15dGVzdDEPMA0GA1UEAwwGbXlu
+    YW1lMB4XDTIyMDYwNjA4NDcyNloXDTMyMDYwMzA4NDcyNlowPzELMAkGA1UEBhMC
+    Y24xDjAMBgNVBAsMBW15b3JnMQ8wDQYDVQQKDAZteXRlc3QxDzANBgNVBAMMBm15
+    bmFtZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPgyGuSEWjNw77j4
+    ZX+eF6cmt/OYuwFLTo+iIAzueZMi2HEu/tcLHU1qcd38fG8Kq9smvJlwVo7TiO6L
+    4ZlRb6FOMZURZ9DgcSek/COqLn7lXejLxQAT0NpKqvsKYwz7Rz0zvyB/KmcWbEZI
+    31Xw0bS7yp0zSmHyq9nnow57ifn6gKTD4AbuORPJFpOMrZaa03tGiVsFAe6Jdl7F
+    5RcK+m4iiTzEz3gxyWmO7yrsI0QYTO79rDRV53DcVEJqisfJgB+tFrQMBgaOTcA7
+    55g4xhZtakQpzHGuLdFSOTYaEtuOMPqAHmycsOvjh/5jJyuWOFmUwRBuYEcxEL5E
+    yK9znEsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAzoNqrUq+pPH3GQz8p2FjlLWQ
+    w6iNKaIWiEQzDF8FaTiSnPi520uFupfDazSCmn/o+iz8wqCKzKo5pEx+8iUQCxPX
+    vA5QX4eCz1cfp94rNqdfqYgACoVAKjStGuQU9wOdjSQSOlfCHtE+Z74MsOIOYR47
+    tEnUbxYfiryMnNRafS4rI3XI7Oq8CWgzm1T5gym+UObuxTDIAdIDBHDQExqmdw4Q
+    zFmmv7iA7lrEx2FrVHHm23MaGmodXYY1cpSE743HzCbxKKa1iZAlA00UUgTjgYF/
+    LzX1/ZOoPhbQTBoAAltcl9q8hS9/G/FYf5flR6FnmcSJujPPZKUzDU9lWoKCqw==
+    -----END CERTIFICATE-----
+  client.key: |-
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAk8E7/x3VvyI1mD4NIZEvsEGlQ1kUfutmliokggS2Kp7LaT9S
+    AyRS2zrUQBOrhMLbtr3FcawA8oPOEgp81BRbdNlBXF+RzUoV109fuu6cA/owhece
+    aCnRutYkGPZUb7dAYfo6Pai18bQkw5t/iIBnuwQ6lG9ICVYJznX588y5cexMQYn2
+    vnGGobPFP2uhyU/roaiW8hyCFMKaLnzdqUgRdtN7LdZ1vbFvbWL+l6i701NSehNb
+    ztTLpe2pFpgaZG/dZ2oWfxPsBz1zvxRUKXeFjv57Oh00G7DbwH4NR3YiAa7PsAsQ
+    g9XyX7vMgq1SKBy85bWLQ4lXdtsRCW5O0wi+FwIDAQABAoIBAD/OKWeA7cXtMvG8
+    khUVyl816fUMadJpO1LLfhp7iGMdUb/wbS0YKYOsgu3s0JuzPghLKRFucrZHftzB
+    lKhM5jWugBAw4Riizo29JBzoX41EJGIerT3UGVKymMIC1fGsU+w7j50C1xc6cMnb
+    w5YhxSm4qMdiytvlQLTcs4S5urdb6JSseVfmRNOu1VoKkDwZMtp4NqpBwtmRohZS
+    EtzTwGYoW6rPHHWl33BWcCfQUikFILnEYk1e3ikCduHT/pZUAjjk1TxEgmYvL2l9
+    QViB2cjHl/3ZBEf6kDoEqhjTDRbInO8pJIBzzNIHGzRr64/JdxorPjtmWD0ON+IY
+    jq+dNZkCgYEAwwuCzsZxoeuG+JaY0XhEsGqMosDWLsKcILfpS5B0HIaWOEhtKyEM
+    Y/rNWZ3iDz3Ou6SLjQbQUnBs632Uu7lwzQ5mX5NPKCaGRtZ1NXr7OwOP4ovOgVK7
+    7MOlQL0bCa3ydq5sTcIRa2wjcn2G6LvnBwLswqy9ZRpzQVdI8/diOb0CgYEAwe5L
+    tCLhGscX51z+rrcVY9VFbUOIsTPOkoB63Y5xS1DblEvPR0IWBhBE05E/6azRG74H
+    bDRUAbxQKFemkSqtywXigcScyVpo89xlF/1vEqoHqMvSvG/LqBLmrIYKLHkiDNOB
+    QcwWBEMUYg6QvkFQtCATBG3VOMS3JqYHpFxzsmMCgYBFHfckvz3VW1lhDjzpPe1Z
+    duiPZDaCK4SYM5QAqxf6Y9cn6sKE3hk99MqAT2qkbAquhAjP2PJJxH1UlhP20igf
+    AlNU2ybZ240J3UV7xjDxILoEVfa/7UmbBVmyL1E9hN6/H+BRTcxOfOuyzrjYEH42
+    BdtQwVX8Vfsx1HSNv8SXIQKBgD0YvQLwZijQhohedOJITdXY7/l/aEYjgzYGgi7g
+    3HKU88ihpZjWiie44mYhAZi12F88HAyL49d0I3DCRHjBkGVA4l5tudN5x0zkp3jK
+    YD7qEGWuaSLyuZ+m7MN3qybdtsuBqtw21sza8UX/PryhyTImVLd1ftJWrzje39N5
+    SP3vAoGBAKpsMeA+mgg59K4/nd9VHqYytqnn8t24wjUBW/KMuLql0z1156b7rYjS
+    eZrr9yOIgHVih5VBm8s8UHojdzos9sr/xXzwGiyCH3UlGMQfaKszy3ru903dAHNi
+    1eGbfVTTfVCLaSQ+Uw99k8gMCmawPpWWC1CUSB4SQsUb/YBUA5IH
+    -----END RSA PRIVATE KEY-----
+  client.pem: |-
+    -----BEGIN CERTIFICATE-----
+    MIIDUzCCAjugAwIBAgIJANR7ri/2L29aMA0GCSqGSIb3DQEBCwUAMD8xCzAJBgNV
+    BAYTAmNuMQ4wDAYDVQQLDAVteW9yZzEPMA0GA1UECgwGbXl0ZXN0MQ8wDQYDVQQD
+    DAZteW5hbWUwHhcNMjIwNjA3MDEwMTIxWhcNMjMwNjA3MDEwMTIxWjBKMQswCQYD
+    VQQGEwJjbjERMA8GA1UECwwIbXljbGllbnQxEzARBgNVBAoMCmNsaWVudGNvbXAx
+    EzARBgNVBAMMCmNsaWVudG5hbWUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+    AoIBAQCTwTv/HdW/IjWYPg0hkS+wQaVDWRR+62aWKiSCBLYqnstpP1IDJFLbOtRA
+    E6uEwtu2vcVxrADyg84SCnzUFFt02UFcX5HNShXXT1+67pwD+jCF5x5oKdG61iQY
+    9lRvt0Bh+jo9qLXxtCTDm3+IgGe7BDqUb0gJVgnOdfnzzLlx7ExBifa+cYahs8U/
+    a6HJT+uhqJbyHIIUwpoufN2pSBF203st1nW9sW9tYv6XqLvTU1J6E1vO1Mul7akW
+    mBpkb91nahZ/E+wHPXO/FFQpd4WO/ns6HTQbsNvAfg1HdiIBrs+wCxCD1fJfu8yC
+    rVIoHLzltYtDiVd22xEJbk7TCL4XAgMBAAGjRzBFMAkGA1UdEwQCMAAwCwYDVR0P
+    BAQDAgXgMCsGA1UdEQQkMCKCESoub3JnLmV4YW1wbGUuY29tgg0qLmV4YW1wbGUu
+    Y29tMA0GCSqGSIb3DQEBCwUAA4IBAQCCJZyrt8HHAXSEgcKz/1YJN/I6l8A6tbE/
+    p6STxSU5V7T4NEyR9bCgqNKw15Ai/fnIcBMpFnWm7EE4Ku1HpRfO+BcjkwVajBaw
+    HDzyPDRz/zpeo/v9W5Zpq/XfQoyDXbMhy42GaPv3gRco1igvD4ZmOvTTbWqH21xY
+    HxZWuBmxYIDRdc/S81LSfts6Ccs25RJqrN1szRwXuSdjKR872aNo+pTvklHBSKvS
+    eunfdr0qivF29lAKg+hs/hUAbVPMKrYX9CzdXeB3mqjipXn/1g/60/568vicFWD/
+    A9XEDBRN689e9+WqNc5e1Y877y7HtgnNP15dXNNxlwshOXAZnFXc
+    -----END CERTIFICATE-----
+  server.key: |-
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEA1rtE2QaU1NfsIjYMZii9FJLmom0de4asGLcu80ESGkI2cpja
+    NfVYdZrXqY1zi4D8bUwP1Vj7n3CN8RpQ8inveg1x3zoCDN7vIIaZagqNzb6e7ie+
+    EVTqy9dbTRj/7O/+GzmEX3tCDtcahlU8p1D0ik67fruYyCd7583r/1o+E9FbDfyb
+    rFPvZCMutlx9Z1vzpxg8lxD9lD1CHkHNvILKgU76hYAt9kzsH4cwzVxbu8I3DGw3
+    dwYPXDkz0Yrxx18ioAEcVT6Nrpn5amf4e16XVGg+2OV6/WXrzQunElM7+suW8AVT
+    IgL+5yNLxkUAplWxXj3VLEBm74MwzmOJRKpSGQIDAQABAoIBADf9HDZ6QNQ+eJNz
+    BEie1q5Gn1w6lzVeKAFJwjQrA01Vdlzq/fqTvjzr4s+S0k3NlAPrkTVPvkwUTO5Q
+    rkp2JLruRoKt3Vr9xdv1PIsptU+wJEB0nFpoidAclvHDUve0m8z9ckZzHQZBj+j2
+    0JnPwfNOFBU3VN7bbLNEPgSWwxjnQtvP25NuTy57MTzuffw0PBZlcnVlJLkdq5qm
+    vHiRm4e4I9faXQypRAoyY+ipuWcP/ZIf8DnoT63w6ZMtqXeidlPQVVMnkEoOe54Z
+    W4+NcKO5PwRZG5xrnvYlMkzJ8YQUx3KhtDjMgAnqBGh6QEdx75c56DOXoo+YO7cy
+    ay+dPAECgYEA/8Qd6aTIauTt5U4xGuOOczR4Z8z+01hWCOfeTQaB3X98aq7kmhrw
+    iBCh2xF2EwRmxBTcpaE27tBTcGrpPsjtVqt+IoZzLvwvJBVIr2yvN4nM10e6zjxQ
+    4WFuS+X1/bfoBC7SgJen6xbxHl5S0fKCenEnO2q/U3L3Ng6CLJvIyB0CgYEA1u2L
+    aKHDkX0imCWJbGwKBY/YRJEl6JUJMLLCE+W7l0tbBJKPR4bkSlu+Ssgo48pkfQC0
+    7X4wyADcyCI1Z6YOWgDgUnHWWDNk/toU1WNndhDuTMG0Q3FksL731hwe8k5M3mOU
+    CcD/I8bvzjUmTlFGZ7AP5cdCbBE9MDYUn0QUqS0CgYB+LfbD6bOmaMKkueqn5VPF
+    qkEslImzIoVvZ1TYkzlGWTq8NwQ4ssmvluUC+p5Ry34XhmNEo0BCmSxQ7a2cd+v/
+    MiPMTKBOscNf/dAaG3hl4enY215hmIgeaL7NWun8/dnNFnxrTGZfKLZT0Rzyzr1o
+    QqKkQYmaVcF4Pbgi4cgwUQKBgAMVLSa3C0MO9GwSPcJcWlhyE7wICO8pFBSqu7Xl
+    Wad14TxTjdKM0MFwR25zKIL76C0S0YWGhdSYjpIgS3vNGe+Yi58jGtvxAMXXAu18
+    m4NKAuD+9kLxYWxXkN51UMxQ6zFVZE4vgnlU5SOkB4SgDc527ANztDQwmxwR6oHO
+    TC2RAoGBAOvnz8LpEfUQm4JKPM27SOsjpylElyQ45sVZFYqVvnrBew3jFW4gJGGb
+    qp+oar89dPursmObAbyTSc+wutQbOnLfmoM61zwibak7H0PJLnn3RQA/lZDGCK7C
+    Fvlb5x6niC8C+aGamE557PqghyWpVHDoMD0gtPv14XSwOh4GsTfB
+    -----END RSA PRIVATE KEY-----
+  server.pem: |-
+    -----BEGIN CERTIFICATE-----
+    MIIDUzCCAjugAwIBAgIJANR7ri/2L29YMA0GCSqGSIb3DQEBCwUAMD8xCzAJBgNV
+    BAYTAmNuMQ4wDAYDVQQLDAVteW9yZzEPMA0GA1UECgwGbXl0ZXN0MQ8wDQYDVQQD
+    DAZteW5hbWUwHhcNMjIwNjA2MDg0NzUzWhcNMjMwNjA2MDg0NzUzWjBKMQswCQYD
+    VQQGEwJjbjERMA8GA1UECwwIbXlzZXJ2ZXIxEzARBgNVBAoMCnNlcnZlcmNvbXAx
+    EzARBgNVBAMMCnNlcnZlcm5hbWUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+    AoIBAQDWu0TZBpTU1+wiNgxmKL0UkuaibR17hqwYty7zQRIaQjZymNo19Vh1mtep
+    jXOLgPxtTA/VWPufcI3xGlDyKe96DXHfOgIM3u8ghplqCo3Nvp7uJ74RVOrL11tN
+    GP/s7/4bOYRfe0IO1xqGVTynUPSKTrt+u5jIJ3vnzev/Wj4T0VsN/JusU+9kIy62
+    XH1nW/OnGDyXEP2UPUIeQc28gsqBTvqFgC32TOwfhzDNXFu7wjcMbDd3Bg9cOTPR
+    ivHHXyKgARxVPo2umflqZ/h7XpdUaD7Y5Xr9ZevNC6cSUzv6y5bwBVMiAv7nI0vG
+    RQCmVbFePdUsQGbvgzDOY4lEqlIZAgMBAAGjRzBFMAkGA1UdEwQCMAAwCwYDVR0P
+    BAQDAgXgMCsGA1UdEQQkMCKCESoub3JnLmV4YW1wbGUuY29tgg0qLmV4YW1wbGUu
+    Y29tMA0GCSqGSIb3DQEBCwUAA4IBAQDr9poKB3GGlHAa0hzizb7hSM9bh32zdvhY
+    1V5fBssmsXuJ9P2iRlNdGaEjN2JzJ4cYJbhbHWqYnQ8/H96xL2GvXC33FojCyWTk
+    NvqkxCPMeLIJjvCXv+ONstAX13rFxauqFKICtBjUywc158oMs+faCniTAnlafEC+
+    3ZWvh/Frj831LB4SaiPcgZ7aF/GpQXHOskx2nC17H/Y7aoJMggq4kiTbrBXFGrMe
+    LqrmfsKcBhuuVTTRSeNM++jwJBn60lS/4d63kv18j4W7eYqe+It3dS2xCS4/6HiL
+    Oyo2SVWBea2obkJuX8UXPG1XPCh6eXURjo6pvzDN5Tminr3IpuLg
+    -----END CERTIFICATE-----
+```
+
+执行如下命令，生成项目密钥配置：
+
+```YAML
+kubectl apply -f ./deploy/debug/example-server-secret.yaml
+
+# 可通过命令查看
+kubectl get secret -n dev
+```
+
+### HTTP服务下的Deployment
+
+修改/deploy/debug/example-http-server-deployment.yaml文件代码，代码如下：
+
+```YAML
+apiVersion: apps/v1
+kind: Deployment # 类型为deployment
+metadata: # deployment的详细信息
+  name: example-http-server-deploy
+  namespace: dev
+spec: # deployment描述
+  replicas: 1 # 每个pod生成3个副本
+  selector: # 对标签为app=example-http-server-pod的pod进行操作
+    matchLabels:
+      app: example-http-server-pod
+  template: # pod的模板设置
+    metadata: # pod的详细信息
+      labels: # 给pod打上标签app=example-http-server-pod
+        app: example-http-server-pod
+    spec: # pod描述
+      restartPolicy: Always # pod重启策略，默认为Always
+      containers: # 容器信息
+        - name: example-http-server
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always # 设置镜像拉取策略
+          env: # 设置环境变量
+            - name: RUN_MODE
+              value: "debug"
+          command: ["/go-example", "http"] # 容器运行后执行命令
+          ports: # 容器暴露端口
+            - name: http-port
+              containerPort: 8080
+              protocol: TCP
+            - name: http-pprof-port
+              containerPort: 6060
+              protocol: TCP
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: jwt-certs-volume
+              mountPath: /assets/certs/1652421664
+            - name: grpc-certs-volume
+              mountPath: /assets/certs/grpc_tls
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: jwt-certs-volume
+          secret:
+            secretName: example-server-secret-jwt-certs
+        - name: grpc-certs-volume
+          secret:
+            secretName: example-server-secret-grpc-certs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
+
+```
+
+#### 容器启动运行命令
+
+在上面代码中，指定了command，即当容器启动时会先执行/go-example http，这样服务就运行起来了。
+
+```YAML
+command: ["/go-example", "http"] # 容器运行后执行命令
+```
+
+同时还暴露容器的端口
+
+```YAML
+ports: # 容器暴露端口
+  - name: http-port
+    containerPort: 8080
+    protocol: TCP
+  - name: http-pprof-port
+    containerPort: 6060
+    protocol: TCP
+```
+
+#### 挂载卷
+
+这里定义了三种卷
+
+- config-volume：这里是configMap，通过如下代码实现将上面定义的configMap配置生成到/configs/debug目录下，即common.yaml和config_center.yaml文件；
+- jwt-certs-volume及grpc-certs-volume：这里是secret，同样将定义的配置生成到对应容器目录下；
+- logs-volume及nacos-volume：这里是HostPath，是将节点上的目录挂载到容器指定的目录下；
+
+```YAML
+    volumeMounts: # 挂载目录
+        - name: configs-volume
+          mountPath: /configs/debug
+        - name: jwt-certs-volume
+          mountPath: /assets/certs/1652421664
+        - name: grpc-certs-volume
+          mountPath: /assets/certs/grpc_tls
+        - name: logs-volume
+          mountPath: /logs
+        - name: nacos-volume
+          mountPath: /nacos
+  volumes: # 定义存储卷
+    - name: configs-volume
+      configMap:
+        name: example-server-configmap
+    - name: jwt-certs-volume
+      secret:
+        secretName: example-server-secret-jwt-certs
+    - name: grpc-certs-volume
+      secret:
+        secretName: example-server-secret-grpc-certs
+    - name: logs-volume
+      hostPath:
+        path: /Users/zonst/dockerVolumes/exampleVolume/http/logs
+    - name: nacos-volume
+      hostPath:
+        path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
+```
+
+运行命令部署pod
+
+```Bash
+kubectl apply -f ./deploy/debug/example-http-server-deployment.yaml
+```
+
+### Ingress进行转发请求
+
+kubernetes提供了Ingress资源对象，Ingress只需要一个NodePort或者一个LB就可以满足暴露多个Service的需求。
+
+#### Ingress环境部署
+
+这里使用k8s版本为1.24.1，需要使用[https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml](https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml)对应的Ingress环境部署文件；
+
+若k8s版本为1.21以前，可以参考[Service详解](https://www.wolai.com/9wQir53epFBAAgQXNEc9D1)中ingress使用进行环境部署。
+
+文件下载到项目目录下/deploy/ingress/controller/deploy.yaml，通过如下命令进行创建：
+
+```Bash
+kubectl apply -f ./deploy/ingress/controller/deploy.yaml
+
+# 将生成svc中ingress-nginx-controller类型为LoadBalancer，要使用该类型，还需要配置其他环境，这里修改NodePort
+kubectl edit svc ingress-nginx-controller -n ingress-nginx
+
+# 再次查看会在ingress-nginx命名空间中生成svc服务
+➜  ~ kubectl get svc -n ingress-nginx
+NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller             NodePort    10.96.233.75     <none>        80:30060/TCP,443:30806/TCP   42h
+ingress-nginx-controller-admission   ClusterIP   10.104.136.230   <none>        443/TCP                      42h
+
+```
+
+至此，Ingress环境已经部署好了。
+
+#### https密钥
+
+在/deploy/ingress/tls生成证书tls.crt和tls.key
+
+```YAML
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BJ/O=nginx/CN=goexample.com"
+
+```
+
+创建证书密钥配置
+
+```YAML
+# 创建密钥
+kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+```
+
+#### service服务
+
+更改类型为ClusterIP。
+
+```YAML
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-http-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-http-server-pod的pod进行代理
+    app: example-http-server-pod
+  type: ClusterIP
+  ports: # 端口映射
+    - port: 8080 # 端口名称
+      targetPort: 8080 # pod节点暴露的端口
+```
+
+执行命令
+
+```YAML
+kubectl apply -f ./deploy/debug/example-http-server-service.yaml
+```
+
+#### Ingress代理服务
+
+创建example-http-server-ingress.yaml文件，实现goexample.com域名代理example-http-server-service服务。
+
+```YAML
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-http-server-ingress
+  namespace: dev
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - goexample.com
+      secretName: tls-secret
+  rules:
+    - host: goexample.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-http-server-service
+                port:
+                  number: 8080
+```
+
+执行命令，生成ingress。
+
+```YAML
+kubectl apply -f ./deploy/debug/example-http-server-ingress.yaml
+
+# 查看ingress服务
+➜  ~ kubectl get ingress -n dev
+NAME                          CLASS   HOSTS           ADDRESS        PORTS   AGE
+example-http-server-ingress   nginx   goexample.com   10.96.233.75   80      41h
+```
+
+#### 请求访问
+
+使用Ingress部署环境生成的ingress-nginx-controller下暴露的端口+域名进行访问。
+
+```YAML
+https://goexample.com:30806/hello
+```
+
+### GRPC服务下的Deployment
+
+和http服务类似，创建example-grpc-server-deployment.yaml文件，代码如下：
+
+```YAML
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-grpc-server-deploy
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-grpc-server-pod
+  template:
+    metadata:
+      labels:
+        app: example-grpc-server-pod
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: example-grpc-server
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always
+          env:
+            - name: RUN_MODE
+              value: "debug"
+          command: ["./go-example", "grpc"]
+          ports:
+            - name: grpc-port
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: jwt-certs-volume
+              mountPath: /assets/certs/1652421664
+            - name: grpc-certs-volume
+              mountPath: /assets/certs/grpc_tls
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: jwt-certs-volume
+          secret:
+            secretName: example-server-secret-jwt-certs
+        - name: grpc-certs-volume
+          secret:
+            secretName: example-server-secret-grpc-certs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
+```
+
+运行命令部署pod
+
+```Bash
+kubectl apply -f ./deploy/debug/example-grpc-server-deployment.yaml
+```
+
+测试请求：[https://goexample.com:30806/grpc/hello](https://goexample.com:30806/grpc/hello)
+
+### Crontab定时任务
+
+创建example-cronjob.yaml，代码如下：
+
+```YAML
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: example-cronjob
+  namespace: dev
+  labels:
+    controller: cronjob
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: example-cronjob-test
+              image: xudengtang/go-example:latest
+              imagePullPolicy: Always # 设置镜像拉取策略
+              env:
+                - name: RUN_MODE
+                  value: "debug"
+              command: ["/go-example", "cronjob"]
+              volumeMounts: # 挂载目录
+                - name: configs-volume
+                  mountPath: /configs/debug
+                - name: logs-volume
+                  mountPath: /logs
+                - name: nacos-volume
+                  mountPath: /nacos
+          volumes: # 定义存储卷
+            - name: configs-volume
+              configMap:
+                name: example-server-configmap
+            - name: logs-volume
+              hostPath:
+                path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/cronjob
+            - name: nacos-volume
+              hostPath:
+                path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/cronjob
+
+```
+
+运行命令创建cronjob
+
+```YAML
+kubectl apply -f ./deploy/debug/example-cronjob.yaml
+```
+
+### Job一次性任务
+
+创建example-job.yaml文件，代码如下：
+
+```YAML
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-job
+  namespace: dev
+  labels:
+    controller: job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: example-job-test
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always # 设置镜像拉取策略
+          env:
+            - name: RUN_MODE
+              value: "debug"
+          command: [ "/go-example", "job" ]
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/job
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/job
+```
+
+运行命令创建job
+
+```YAML
+kubectl apply -f ./deploy/debug/example-job.yaml
+```
+
+### 消费者下的Deployment
+
+注意：由于kafka是通过docker进行部署的，代码部署到k8s后，需要访问到kafka集群，此时需要修改/etc/hosts中kafka节点的IP地址为本机内网IP地址。
+
+创建example-consumer-server-deployment.yaml，代码如下：
+
+```YAML
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-consumer-server-deploy
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-consumer-server-pod
+  template:
+    metadata:
+      labels:
+        app: example-consumer-server-pod
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: example-consumer-server
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always
+          env:
+            - name: RUN_MODE
+              value: "debug"
+          command: ["./go-example", "kafka_consumer"]
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/consumer
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/consumer
+```
+
+运行命令部署pod
+
+```Bash
+kubectl apply -f ./deploy/debug/example-consumer-server-deployment.yaml
+```
+
+测试请求：[https://goexample.com:30806/kafka/producer-async](https://goexample.com:30806/kafka/producer-async)，查看pod日志。
+
+### Socket服务下的Deployment
+
+#### deployment配置
+
+和http服务的deployment配置类似，端口和执行命令不同。
+
+```YAML
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-socket-server-deploy
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: example-socket-server-pod
+  template:
+    metadata:
+      labels:
+        app: example-socket-server-pod
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: example-socket-server
+          image: xudengtang/go-example:latest
+          imagePullPolicy: Always
+          env:
+            - name: RUN_MODE
+              value: "debug"
+          command: ["./go-example", "socket"]
+          ports:
+            - name: socket-port
+              containerPort: 30000
+              protocol: TCP
+          volumeMounts: # 挂载目录
+            - name: configs-volume
+              mountPath: /configs/debug
+            - name: jwt-certs-volume
+              mountPath: /assets/certs/1652421664
+            - name: grpc-certs-volume
+              mountPath: /assets/certs/grpc_tls
+            - name: logs-volume
+              mountPath: /logs
+            - name: nacos-volume
+              mountPath: /nacos
+      volumes: # 定义存储卷
+        - name: configs-volume
+          configMap:
+            name: example-server-configmap
+        - name: jwt-certs-volume
+          secret:
+            secretName: example-server-secret-jwt-certs
+        - name: grpc-certs-volume
+          secret:
+            secretName: example-server-secret-grpc-certs
+        - name: logs-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/logs/socket
+        - name: nacos-volume
+          hostPath:
+            path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/socket
+```
+
+#### NodePort类型Service
+
+与http服务类似，若直接通过NodePort类型的service，可以直接创建
+
+```YAML
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-socket-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-socket-server-pod的pod进行代理
+    app: example-socket-server-pod
+  type: NodePort
+  ports: # 端口映射
+    - port: 30000 # 端口名称
+      nodePort: 30000
+      targetPort: 30000 # pod节点暴露的端口
+```
+
+修改项目目录下的views/socket2.html中的socket地址为：127.0.0.1:30000/socket_server即可。
+
+本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击OPEN - SEND即可发起socket请求。
+
+#### Ingress代理服务
+
+同样可以实现ingress代理服务。修改service为ClusterIP类型
+
+```YAML
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-socket-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-socket-server-pod的pod进行代理
+    app: example-socket-server-pod
+  type: ClusterIP
+  ports: # 端口映射
+    - port: 30000 # 端口名称
+      targetPort: 30000 # pod节点暴露的端口
+```
+
+创建一个socket服务的ingress，新建example-socket-server-ingress.yaml文件，代码如下：
+
+```YAML
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-socket-server-ingress
+  namespace: dev
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: goexample.socket.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-socket-server-service
+                port:
+                  number: 30000
+```
+
+注意这里绑定的host不能和其他ingress重名。
+
+修改项目目录下的views/socket2.html中的socket地址为：goexample.socket.com:30060/socket_server即可。
+
+本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击OPEN - SEND即可发起socket请求。
+
+### 其他补充
+
+#### pod动态扩缩容
+
+以http服务为例，k8s的deployment支持动态扩缩容
+
+```Bash
+kubectl scale deploy example-http-server-deploy --replicas=5  -n dev
+```
+
+#### pod滚动更新
+
+以http服务为例，k8s的deployment支持滚动更新。
+
+```Bash
+kubectl rollout restart deploy example-http-server-deploy -n dev
+
+# 查询更新状态
+kubectl rollout status deploy example-http-server-deploy -n dev
+
+```
+
+#### pod回退
+
+k8s的deployment支持版本回退是基于deployment.yaml配置信息进行回退的。k8s会记录每次部署的配置信息，回退到指定版本，则重新执行指定版本的deployment.yaml配置信息。
+
+因此，若要实现版本回退，需要设置deployment部署时拉取不同的镜像版本，例如已部署了版本1.0、2.0、3.0，当前版本为3.0。若此时要回退到其他版本，则可以执行如下命令：
+
+```Bash
+# 查看升级历史记录
+[root@k8s-master01 ~]# kubectl rollout history deploy pc-deployment -n dev
+
+# 版本回滚
+# 这里直接使用--to-revision=1回滚到了1版本， 如果省略这个选项，就是回退到上个版本，就是2版本
+[root@k8s-master01 ~]# kubectl rollout undo deployment pc-deployment --to-revision=1 -n dev
+```
+
+#### 金丝雀发布
+
+Deployment控制器支持控制更新过程中的控制，如“暂停(pause)”或“继续(resume)”更新操作。
+
+```Bash
+# 1.先更新一小部分pod后，立即停止更新；
+[root@k8s-master01 ~]#  kubectl set image deploy pc-deployment nginx=nginx:1.17.4 -n dev && kubectl rollout pause deployment pc-deployment  -n dev
+deployment.apps/pc-deployment image updated
+deployment.apps/pc-deployment paused
+
+# 2.观察更新状态
+[root@k8s-master01 ~]# kubectl rollout status deploy pc-deployment -n dev　
+Waiting for deployment "pc-deployment" rollout to finish: 2 out of 4 new replicas have been updated...
+
+# 3.查看已更新的pod，看有没有出现错误等信息，若没有异常，则继续更新其他pod
+[root@k8s-master01 ~]# kubectl rollout resume deploy pc-deployment -n dev
+deployment.apps/pc-deployment resumed
+
+```

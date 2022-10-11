@@ -108,6 +108,8 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
 		name = "gRPC"
 	}
 
+	fmt.Printf("id:%v\n", in.Id)
+
 	return &pb.HelloResponse{
 		Id:   in.Id,
 		Name: "hello " + name,

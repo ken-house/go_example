@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service # 类型为service
+metadata: # service详细信息
+  name: example-socket-server-service
+  namespace: dev
+spec: # service描述
+  selector: # 对标签为app=example-socket-server-pod的pod进行代理
+    app: example-socket-server-pod
+  type: ClusterIP
+  ports: # 端口映射
+    - port: 30000 # 端口名称
+      targetPort: 30000 # pod节点暴露的端口

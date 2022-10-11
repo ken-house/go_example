@@ -40,9 +40,6 @@ const (
 
 const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
 
-// SocketWhiteIpList IP白名单
-var SocketWhiteIpList = []string{"127.0.0.1", "192.168.163.*"}
-
 // CacheDriver go-cache缓存对象
 var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
 

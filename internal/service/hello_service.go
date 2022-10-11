@@ -68,5 +68,6 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 		"user":           user.Username,
 		"value":          value,
 		"mongo_username": userInfo.Username,
+		"version":        "2.0",
 	}
 }

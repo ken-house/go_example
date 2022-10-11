@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-http-server-ingress
+  namespace: dev
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - goexample.com
+      secretName: tls-secret
+  rules:
+    - host: goexample.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-http-server-service
+                port:
+                  number: 8080
