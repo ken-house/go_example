@@ -90,6 +90,7 @@
 + 版本v3.1.0支持K8s容器编排部署；
 + 版本v3.1.1实现K8s容器编排部署全面升级；
 + 版本v3.2.0增加单元测试示例；
++ 版本v3.3.0对自动生成CRUD代码升级，实现完全自动化；
 
 ## 环境安装
 可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
@@ -5722,3 +5723,188 @@ func TestInsertUserList(t *testing.T) {
 PASS
 ok      github.com/go_example/internal/service/unit_test        0.825s
 ```
+## 完全自动化生成CRUD代码
+之前编写的Crud_Makefile自动生成CRUD代码，需要手动复制代码，执行wire后才可以进行编译。且不支持多个单词组合的名称。
+本次升级为完全自动化，仅需执行一条命令，就可以直接编译。
+### 安装gsed
+由于Mac和Linux有一些差异，在使用sed命令时，需要做特殊处理，为了和linux命令一致，安装gsed，命令如下：
+```shell
+brew install gnu-sed
+```
+### 升级Makefile文件
+```makefile
+# 以下内容根据实际情况修改，也可指定参数来覆盖默认值
+# 项目名
+goModule = github.com/go_example
+# 必须为蛇行
+name = test
+# 必须为蛇行
+tableName = test
+# 数据库连接
+db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+
+# 生成路由组名称
+routerName = $(subst _,-,$(name))
+# 生成表模型
+tableModel = `echo $(tableName) | awk -F '_' '{ print substr(toupper($$1),1,1) substr($$1,2) substr(toupper($$2),1,1) substr($$2,2) substr(toupper($$3),1,1) substr($$3,2) substr(toupper($$4),1,1) substr($$4,2) substr(toupper($$5),1,1) substr($$5,2) substr(toupper($$6),1,1) substr($$6,2) substr(toupper($$7),1,1) substr($$7,2) substr(toupper($$8),1,1) substr($$8,2) substr(toupper($$9),1,1) substr($$9,2) substr(toupper($$10),1,1) substr($$10,2)}'`
+# 对name转换为大驼峰
+nameUpper = `echo $(name) | awk -F '_' '{ print substr(toupper($$1),1,1) substr($$1,2) substr(toupper($$2),1,1) substr($$2,2) substr(toupper($$3),1,1) substr($$3,2) substr(toupper($$4),1,1) substr($$4,2) substr(toupper($$5),1,1) substr($$5,2) substr(toupper($$6),1,1) substr($$6,2) substr(toupper($$7),1,1) substr($$7,2) substr(toupper($$8),1,1) substr($$8,2) substr(toupper($$9),1,1) substr($$9,2) substr(toupper($$10),1,1) substr($$10,2)}'`
+# 对name转换为小驼峰
+nameLitter = `echo $(name) | awk -F '_' '{ print substr(tolower($$1),1,1) substr($$1,2) substr(toupper($$2),1,1) substr($$2,2) substr(toupper($$3),1,1) substr($$3,2) substr(toupper($$4),1,1) substr($$4,2) substr(toupper($$5),1,1) substr($$5,2) substr(toupper($$6),1,1) substr($$6,2) substr(toupper($$7),1,1) substr($$7,2) substr(toupper($$8),1,1) substr($$8,2) substr(toupper($$9),1,1) substr($$9,2) substr(toupper($$10),1,1) substr($$10,2)}'`
+# 模板文件目录
+templatePath = "./assets/templates/crud"
+# 目标文件目录
+targetControllerPath = "./internal/controller/$(name)_controller.go"
+targetServicePath = "./internal/service/$(name)_service.go"
+targetRepositoryPath = "./internal/repository/mysql/$(name)_repository.go"
+targetModelPath = "./internal/model/common.go"
+targetControllerWirePath = "./internal/assembly/controller.go"
+targetServiceWirePath = "./internal/assembly/service.go"
+targetServerWirePath = "./internal/assembly/server.go"
+targetServerHttpPath = "./internal/server/http.go"
+cleanTemplatePath = "./assets/templates/crud/clean.template"
+
+# 插入文本内容
+contentPoint1 = "        New$(nameUpper)Controller,"
+contentPoint2 = "	$(nameLitter)Ctr controller.$(nameUpper)Controller"
+contentPoint3 = "	$(nameLitter)Ctr controller.$(nameUpper)Controller,"
+contentPoint4 = "		$(nameLitter)Ctr: $(nameLitter)Ctr,"
+
+.PHONY:test
+test:
+	@echo name=$(name)
+	@echo routerName=$(routerName)
+	@echo litterName=$(nameLitter)
+	@echo upperName=$(nameUpper)
+	@echo tableName=$(tableName)
+	@echo tableModel=$(tableModel)
+
+
+.PHONY: crud
+all: controller service repository model model_db assembly http wire
+	@echo "\r\n"
+	@echo "-----------------------------------------------------------"
+	@echo "Congratulation! make success!"
+	@echo "-----------------------------------------------------------"
+
+.PHONY: controller
+controller:
+	@# 生成controller
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/controller.template $(targetControllerPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetControllerPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetControllerPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetControllerPath)
+	@echo "$(targetControllerPath) generate success"
+
+.PHONY: service
+service:
+	@# 生成service
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/service.template $(targetServicePath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetServicePath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetServicePath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetServicePath)
+	@echo "$(targetServicePath) generate success"
+
+.PHONY: repository
+repository:
+	@# 生成repository
+	@# 复制文件到指定位置，并改名
+	@cp $(templatePath)/repository.template $(targetRepositoryPath)
+	@# 替换文件中的宏
+	@sed -i '' 's#{{PROJECT_MODULE}}#$(goModule)#g' $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_NAME}}#'$(tableName)#g $(targetRepositoryPath)
+	@sed -i '' 's#{{TABLE_MODEL}}#'$(tableModel)#g $(targetRepositoryPath)
+	@echo "$(targetRepositoryPath) generate success"
+
+.PHONY: model
+model:
+	@# 生成请求model
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(targetModelPath)
+	@echo "$(targetModelPath) generate success"
+
+.PHONY: model_db
+model_db:
+	@# 生成数据库model
+	@xorm reverse mysql $(db) ./internal/model/mysql/templates/goxorm ./internal/model/mysql $(tableName)
+	@echo "./internal/model/mysql/$(tableName).go generate success"
+
+.PHONY: assembly
+assembly:
+	@# 生成wire依赖文件
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(targetControllerWirePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(targetServiceWirePath)
+	@gsed -i '/Point1/i\'$(contentPoint1) $(targetServerWirePath)
+	@echo "$(targetControllerWirePath) generate success"
+	@echo "$(targetServiceWirePath) generate success"
+	@echo "$(targetServerWirePath) generate success"
+
+.PHONY: http
+http:
+	@gsed -i '/Point2/i\'$(contentPoint2) $(targetServerHttpPath)
+	@gsed -i '/Point3/i\'$(contentPoint3) $(targetServerHttpPath)
+	@gsed -i '/Point4/i\'$(contentPoint4) $(targetServerHttpPath)
+
+	@cp $(templatePath)/wire/router.template $(templatePath)/wire/router.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/router.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/router.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME}}#'$(routerName)#g $(templatePath)/wire/router.tmp
+	@gsed -i '/Point5/r '$(templatePath)'/wire/router.tmp' $(targetServerHttpPath)
+
+	@cp $(templatePath)/wire/router_func.template $(templatePath)/wire/router_func.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/router_func.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/router_func.tmp
+	@cat $(templatePath)/wire/router_func.tmp >> $(targetServerHttpPath)
+	@echo "$(targetServerHttpPath) generate success"
+
+.PHONY: wire
+wire:
+	cd ./internal/assembly && $(GOPATH)/bin/wire
+
+.PHONY: clean
+clean:
+	@# 删除controller
+	@rm -f $(targetControllerPath)
+	@echo "delete controller success"
+	@# 删除service
+	@rm -f $(targetServicePath)
+	@echo "delete service success"
+	@# 删除repository
+	@rm -f $(targetRepositoryPath)
+	@echo "delete repository success"
+	@# 删除数据库表模型
+	@rm ./internal/model/mysql/$(tableName).go
+	@echo "delete db_model success"
+	@rm -f $(templatePath)/wire/http.tmp
+	@# 请手动删除./assets/templates/crud/clean.template对应的内容
+	@rm -f $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/model.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(cleanTemplatePath)
+	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(cleanTemplatePath)
+	@echo "请手动删除项目中./assets/templates/crud/clean.template文件内容对应以下文件："
+	@echo $(targetModelPath)
+	@echo $(targetControllerWirePath)
+	@echo $(targetServiceWirePath)
+	@echo "若手动添加过其他代码，请删除，例如以下两个文件："
+	@echo $(targetServerWirePath)
+	@echo $(targetServerHttpPath)
+	@echo "最后请切换到./internal/assembly目录下执行wire命令"
+```
+### 其他
++ 在internal/assembly/server.go和internal/server/http.go文件中增加了如下插入点：
+```go
+// Crud Makefile Point5
+```
++ 增加了templates/crud/wire/router.template和templates/crud/wire/router_func.template模板文件；
+### 一键生成
+```shell
+make all name=global_setting tableName=global_setting  -f Crud_Makefile
+```
+执行成功后，可直接进行编译。
