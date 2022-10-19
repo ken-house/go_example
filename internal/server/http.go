@@ -22,7 +22,8 @@ type httpServer struct {
 	jenkinsCtr    controller.JenkinsController
 	smsCtr        controller.SmsController
 	kafkaCtr      controller.KafkaController
-	authService   service.AuthService
+	// Crud Makefile Point2
+	authService service.AuthService
 }
 
 func NewHttpServer(
@@ -34,6 +35,7 @@ func NewHttpServer(
 	jenkinsCtr controller.JenkinsController,
 	smsCtr controller.SmsController,
 	kafkaCtr controller.KafkaController,
+	// Crud Makefile Point3
 	authService service.AuthService,
 ) HttpServer {
 	return &httpServer{
@@ -45,7 +47,8 @@ func NewHttpServer(
 		jenkinsCtr:    jenkinsCtr,
 		smsCtr:        smsCtr,
 		kafkaCtr:      kafkaCtr,
-		authService:   authService,
+		// Crud Makefile Point4
+		authService: authService,
 	}
 }
 
@@ -87,6 +90,8 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/kafka/producer-sync", srv.KafkaProducerSync())
 	// kafka异步生产者
 	router.GET("/kafka/producer-async", srv.KafkaProducerAsync())
+
+	// Crud Makefile Point5
 }
 
 func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
