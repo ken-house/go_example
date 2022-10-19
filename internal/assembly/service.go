@@ -3,10 +3,10 @@
 package assembly
 
 import (
-	CacheRepo "github.com/go_example/internal/repository/cache"
-	MongoRepo "github.com/go_example/internal/repository/mongodb"
-	MysqlRepo "github.com/go_example/internal/repository/mysql"
-	RedisRepo "github.com/go_example/internal/repository/redis"
+	cacheRepo "github.com/go_example/internal/repository/cache"
+	mongoRepo "github.com/go_example/internal/repository/mongodb"
+	mysqlRepo "github.com/go_example/internal/repository/mysql"
+	redisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/go_example/internal/service"
 	"github.com/google/wire"
 	"github.com/ken-house/go-contrib/prototype/excelHandler"
@@ -15,12 +15,12 @@ import (
 func NewHelloService() (service.HelloService, func(), error) {
 	panic(wire.Build(
 		NewMongoClient,
-		MongoRepo.NewUserRepository,
+		mongoRepo.NewUserRepository,
 		NewRedisSingleClient,
-		RedisRepo.NewUserRepository,
+		redisRepo.NewUserRepository,
 		NewMysqlGroupClient,
-		MysqlRepo.NewUserRepository,
-		CacheRepo.NewUserRepository,
+		mysqlRepo.NewUserRepository,
+		cacheRepo.NewUserRepository,
 		service.NewHelloService,
 	))
 }
@@ -35,9 +35,9 @@ func NewJenkinsService() (service.JenkinsService, func(), error) {
 func NewAuthService() (service.AuthService, func(), error) {
 	panic(wire.Build(
 		NewRedisSingleClient,
-		RedisRepo.NewUserRepository,
+		redisRepo.NewUserRepository,
 		NewMysqlGroupClient,
-		MysqlRepo.NewUserRepository,
+		mysqlRepo.NewUserRepository,
 		service.NewAuthService,
 	))
 }
@@ -45,7 +45,7 @@ func NewAuthService() (service.AuthService, func(), error) {
 func NewUserService() (service.UserService, func(), error) {
 	panic(wire.Build(
 		NewMysqlGroupClient,
-		MysqlRepo.NewUserRepository,
+		mysqlRepo.NewUserRepository,
 		service.NewUserService,
 	))
 }
