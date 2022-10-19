@@ -37,7 +37,7 @@ func (repo *{{CONTROLLER_NAME_LITTER}}Repository) InsertRow(ctx *gin.Context, da
 
 // todo 需要修改字段
 func (repo *{{CONTROLLER_NAME_LITTER}}Repository) UpdateById(ctx *gin.Context, data mysqlModel.{{TABLE_MODEL}}) (int64, error) {
-	rows, err := repo.engine.Table(repo.table).Cols("name", "age", "updated_at").Where("id=?", data.Id).Update(&data)
+	rows, err := repo.engine.Table(repo.table).Cols("updated_at").Where("id=?", data.Id).Update(&data)
 	if err != nil {
 		zap.L().Error("{{CONTROLLER_NAME_LITTER}}Repository.UpdateById err", zap.Error(err))
 	}
@@ -57,7 +57,7 @@ func (repo *{{CONTROLLER_NAME_LITTER}}Repository) FindAll(ctx *gin.Context, para
 	dataList := make([]mysqlModel.{{TABLE_MODEL}}, 0, 100)
 	engine := repo.engine.Table(repo.table)
 	err := engine.Find(&dataList)
-    if err != nil {
+	if err != nil {
         zap.L().Error("{{CONTROLLER_NAME_LITTER}}Repository.FindAll err", zap.Error(err))
     }
 	return dataList, err

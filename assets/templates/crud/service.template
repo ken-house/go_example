@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"{{PROJECT_MODULE}}/internal/model"
 	mysqlModel "{{PROJECT_MODULE}}/internal/model/mysql"
-	MysqlRepo "{{PROJECT_MODULE}}/internal/repository/mysql"
+	mysqlRepo "{{PROJECT_MODULE}}/internal/repository/mysql"
 	"github.com/spf13/cast"
 	"time"
 )
@@ -17,10 +17,10 @@ type {{CONTROLLER_NAME_UPPER}}Service interface {
 }
 
 type {{CONTROLLER_NAME_LITTER}}Service struct {
-	{{CONTROLLER_NAME_LITTER}}Repo MysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository
+	{{CONTROLLER_NAME_LITTER}}Repo mysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository
 }
 
-func New{{CONTROLLER_NAME_UPPER}}Service({{CONTROLLER_NAME_LITTER}}Repo MysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository) {{CONTROLLER_NAME_UPPER}}Service {
+func New{{CONTROLLER_NAME_UPPER}}Service({{CONTROLLER_NAME_LITTER}}Repo mysqlRepo.{{CONTROLLER_NAME_UPPER}}Repository) {{CONTROLLER_NAME_UPPER}}Service {
 	return &{{CONTROLLER_NAME_LITTER}}Service{
 		{{CONTROLLER_NAME_LITTER}}Repo: {{CONTROLLER_NAME_LITTER}}Repo,
 	}
@@ -42,7 +42,6 @@ func (svc *{{CONTROLLER_NAME_LITTER}}Service) Update(ctx *gin.Context, params mo
 	data := mysqlModel.{{TABLE_MODEL}}{
 		Id:        params.Id,
         UpdatedAt: now,
-        CreatedAt: now,
 	}
 	return svc.{{CONTROLLER_NAME_LITTER}}Repo.UpdateById(ctx, data)
 }

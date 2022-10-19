@@ -1,14 +1,16 @@
-goModule = github.com/go_example
-name = test
-tableName = test
-tableModel = Test
-# 数据库连接
-db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
+# 以下内容根据实际情况修改，也可指定参数来覆盖默认值
+goModule = github.com/go_example # 项目名
+name = test # 必须为驼峰
+tableName = test_upload # 必须为蛇行
+db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4" # 数据库连接
+
+# 生成表模型
+tableModel = `echo $(tableName)|awk -F '_' '{ print substr(toupper($$1),1,1) substr($$1,2) substr(toupper($$2),1,1) substr($$2,2) substr(toupper($$3),1,1) substr($$3,2) substr(toupper($$4),1,1) substr($$4,2) substr(toupper($$5),1,1) substr($$5,2) substr(toupper($$6),1,1) substr($$6,2) substr(toupper($$7),1,1) substr($$7,2) substr(toupper($$8),1,1) substr($$8,2) substr(toupper($$9),1,1) substr($$9,2) substr(toupper($$10),1,1) substr($$10,2)}'`
+# 对name进行处理为首字母大写和全小写
+nameLitter = `echo $(name) | awk '{print substr(tolower($0),1,1)substr($$0,2)}'`
+nameUpper = `echo $(name) | awk '{print substr(toupper($0),1,1)substr($$0,2)}'`
 # 模板文件目录
 templatePath = "./assets/templates/crud"
-# 对name进行处理为首字母大写和全小写
-nameLitter = `echo $(name) | awk '{print tolower($0)}'`
-nameUpper = `echo $(name) | awk '{print substr(toupper($0),1,1)substr(tolower($0),2)}'`
 # 目标文件目录
 targetControllerPath = "./internal/controller/$(nameLitter)_controller.go"
 targetServicePath = "./internal/service/$(nameLitter)_service.go"
@@ -18,8 +20,17 @@ targetControllerWirePath = "./internal/assembly/controller.go"
 targetServiceWirePath = "./internal/assembly/service.go"
 cleanTemplatePath = "./assets/templates/crud/clean.template"
 
+.PHONY:test
+test:
+	@echo litterName=$(litterName)
+	@echo upperName=$(upperName)
+	@echo tableName=$(tableName)
+	@echo tableModel=$(tableModel)
+
+
 .PHONY: crud
 all: controller service repository model model_db wire wire_tmp
+	@echo "Congratulation! make success!"
 	@echo "请手动添加$(templatePath)/wire/http.tmp文件内容到以下三个文件："
 	@echo "./internal/assembly/server.go"
 	@echo "./internal/server/http.go"

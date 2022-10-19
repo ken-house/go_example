@@ -2,58 +2,58 @@
 // 请手动复制到internal/assembly/server.go文件中
 func NewHttpServer() (server.HttpServer, func(), error) {
     // ...
-    NewDataController,
+    NewLeaveController,
 }
 
 // 请手动复制到internal/server/http.go文件中
 type httpServer struct {
     // ...
-    dataCtr       controller.DataController
+    leaveCtr       controller.LeaveController
 }
 
 
 func NewHttpServer(
     // ...
-    dataCtr controller.DataController,
+    leaveCtr controller.LeaveController,
 ) HttpServer {
     return &httpServer{
         // ...
-        dataCtr:       dataCtr,
+        leaveCtr:       leaveCtr,
     }
 }
 
 func (srv *httpServer) Register(router *gin.Engine) {
     // ...
-    dataRouter := v1Router.Group("/data")
+    leaveRouter := v1Router.Group("/leave")
     {
-        dataRouter.POST("/create", srv.DataCreate())
-        dataRouter.POST("/update", srv.DataUpdate())
-        dataRouter.POST("/delete", srv.DataDelete())
-        dataRouter.GET("/select", srv.DataSelect())
+        leaveRouter.POST("/create", srv.LeaveCreate())
+        leaveRouter.POST("/update", srv.LeaveUpdate())
+        leaveRouter.POST("/delete", srv.LeaveDelete())
+        leaveRouter.GET("/select", srv.LeaveSelect())
     }
 }
 
 // 以下代码生成到http.go下方
-func (srv *httpServer) DataCreate() gin.HandlerFunc {
+func (srv *httpServer) LeaveCreate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.dataCtr.Create(c))
+		c.Negotiate(srv.leaveCtr.Create(c))
 	}
 }
 
-func (srv *httpServer) DataUpdate() gin.HandlerFunc {
+func (srv *httpServer) LeaveUpdate() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.dataCtr.Update(c))
+		c.Negotiate(srv.leaveCtr.Update(c))
 	}
 }
 
-func (srv *httpServer) DataDelete() gin.HandlerFunc {
+func (srv *httpServer) LeaveDelete() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.dataCtr.Delete(c))
+		c.Negotiate(srv.leaveCtr.Delete(c))
 	}
 }
 
-func (srv *httpServer) DataSelect() gin.HandlerFunc {
+func (srv *httpServer) LeaveSelect() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Negotiate(srv.dataCtr.Select(c))
+		c.Negotiate(srv.leaveCtr.Select(c))
 	}
 }
