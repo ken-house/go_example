@@ -123,12 +123,11 @@ http:
 	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/router_func.tmp
 	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/router_func.tmp
 	@cat $(templatePath)/wire/router_func.tmp >> $(targetServerHttpPath)
+	@echo "$(targetServerHttpPath) generate success"
 
 .PHONY: wire
 wire:
-	@cd ./internal/assembly
-	@wire
-
+	cd ./internal/assembly && $(GOPATH)/bin/wire
 
 .PHONY: clean
 clean:
