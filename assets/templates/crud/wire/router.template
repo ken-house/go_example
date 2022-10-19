@@ -1,5 +1,5 @@
 
-    {{CONTROLLER_NAME_LITTER}}Router := router.Group("/{{CONTROLLER_NAME_LITTER}}")
+    {{CONTROLLER_NAME_LITTER}}Router := router.Group("/{{CONTROLLER_NAME}}")
     {
         {{CONTROLLER_NAME_LITTER}}Router.POST("/create", srv.{{CONTROLLER_NAME_UPPER}}Create())
         {{CONTROLLER_NAME_LITTER}}Router.POST("/update", srv.{{CONTROLLER_NAME_UPPER}}Update())

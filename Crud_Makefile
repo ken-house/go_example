@@ -8,6 +8,8 @@ tableName = test
 # 数据库连接
 db = "root:root@tcp(127.0.0.1:3306)/go_example?charset=utf8mb4"
 
+# 生成路由组名称
+routerName = $(subst _,-,$(name))
 # 生成表模型
 tableModel = `echo $(tableName) | awk -F '_' '{ print substr(toupper($$1),1,1) substr($$1,2) substr(toupper($$2),1,1) substr($$2,2) substr(toupper($$3),1,1) substr($$3,2) substr(toupper($$4),1,1) substr($$4,2) substr(toupper($$5),1,1) substr($$5,2) substr(toupper($$6),1,1) substr($$6,2) substr(toupper($$7),1,1) substr($$7,2) substr(toupper($$8),1,1) substr($$8,2) substr(toupper($$9),1,1) substr($$9,2) substr(toupper($$10),1,1) substr($$10,2)}'`
 # 对name转换为大驼峰
@@ -36,6 +38,7 @@ contentPoint4 = "		$(nameLitter)Ctr: $(nameLitter)Ctr,"
 .PHONY:test
 test:
 	@echo name=$(name)
+	@echo routerName=$(routerName)
 	@echo litterName=$(nameLitter)
 	@echo upperName=$(nameUpper)
 	@echo tableName=$(tableName)
@@ -117,6 +120,7 @@ http:
 	@cp $(templatePath)/wire/router.template $(templatePath)/wire/router.tmp
 	@sed -i '' 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/router.tmp
 	@sed -i '' 's#{{CONTROLLER_NAME_LITTER}}#'$(nameLitter)#g $(templatePath)/wire/router.tmp
+	@sed -i '' 's#{{CONTROLLER_NAME}}#'$(routerName)#g $(templatePath)/wire/router.tmp
 	@gsed -i '/Point5/r '$(templatePath)'/wire/router.tmp' $(targetServerHttpPath)
 
 	@cp $(templatePath)/wire/router_func.template $(templatePath)/wire/router_func.tmp
