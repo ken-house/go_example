@@ -156,4 +156,5 @@ clean:
 	@echo "若手动添加过其他代码，请删除，例如以下两个文件："
 	@echo "./internal/assembly/server.go"
 	@echo "./internal/server/http.go"
+	@echo "最后请切换到./internal/assembly目录下执行wire命令"
 
