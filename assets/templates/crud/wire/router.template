@@ -1,0 +1,8 @@
+
+    {{CONTROLLER_NAME_LITTER}}Router := router.Group("/{{CONTROLLER_NAME_LITTER}}")
+    {
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/create", srv.{{CONTROLLER_NAME_UPPER}}Create())
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/update", srv.{{CONTROLLER_NAME_UPPER}}Update())
+        {{CONTROLLER_NAME_LITTER}}Router.POST("/delete", srv.{{CONTROLLER_NAME_UPPER}}Delete())
+        {{CONTROLLER_NAME_LITTER}}Router.GET("/select", srv.{{CONTROLLER_NAME_UPPER}}Select())
+    }

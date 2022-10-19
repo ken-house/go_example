@@ -1,0 +1,24 @@
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Create() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Create(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Update() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Update(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Delete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Delete(c))
+	}
+}
+
+func (srv *httpServer) {{CONTROLLER_NAME_UPPER}}Select() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.{{CONTROLLER_NAME_LITTER}}Ctr.Select(c))
+	}
+}
