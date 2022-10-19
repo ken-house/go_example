@@ -150,11 +150,11 @@ clean:
 	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/controller.template >> $(cleanTemplatePath)
 	@sed 's#{{CONTROLLER_NAME_UPPER}}#'$(nameUpper)#g $(templatePath)/wire/service.template >> $(cleanTemplatePath)
 	@echo "请手动删除项目中./assets/templates/crud/clean.template文件内容对应以下文件："
-	@echo "./internal/model/common.go"
-	@echo "./internal/assembly/controller.go"
-	@echo "./internal/assembly/service.go"
+	@echo $(targetModelPath)
+	@echo $(targetControllerWirePath)
+	@echo $(targetServiceWirePath)
 	@echo "若手动添加过其他代码，请删除，例如以下两个文件："
-	@echo "./internal/assembly/server.go"
-	@echo "./internal/server/http.go"
+	@echo $(targetServerWirePath)
+	@echo $(targetServerHttpPath)
 	@echo "最后请切换到./internal/assembly目录下执行wire命令"
 
