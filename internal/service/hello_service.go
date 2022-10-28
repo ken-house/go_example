@@ -62,6 +62,18 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	//zap.L().Debug("this is test")
 	fmt.Println(meta.GlobalConfig.Redis.Single.PoolSize)
 
+	// http请求
+	/*	responseData := struct {
+			Hello string `json:"hello"`
+		}{}
+		httpClient := requester.NewRequestClient("http://127.0.0.1:8081", false, nil, "")
+		response, err := httpClient.Get(c, "/hello", &responseData, nil)
+		if err != nil {
+			zap.L().Error("请求失败", zap.Error(err))
+		}
+		fmt.Println(response)
+		fmt.Printf("responseData：%+v\n", responseData)*/
+
 	return map[string]string{
 		"hello":          "world，golang",
 		"env":            viper.GetString("server.mode"),
