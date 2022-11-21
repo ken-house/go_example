@@ -9,6 +9,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/ken-house/go-contrib/prototype/openTelemetry"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
 	"github.com/ken-house/go-contrib/utils/env"
 )
@@ -80,4 +81,9 @@ func NewConsumerClient() (meta.KafkaConsumerClient, func(), error) {
 // NewConsumerGroupClient kafka消费者组
 func NewConsumerGroupClient() (meta.KafkaConsumerGroupClient, func(), error) {
 	return kafkaClient.NewConsumerGroupClient(meta.GlobalConfig.Kafka)
+}
+
+// NewTracerProvider 分布式追踪提供者
+func NewTracerProvider() (meta.TracerProvider, func(), error) {
+	return openTelemetry.NewTracerProvider(meta.GlobalConfig.TracerConfig)
 }

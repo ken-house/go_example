@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/go_example/internal/model"
 	MysqlModel "github.com/go_example/internal/model/mysql"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
@@ -10,7 +11,7 @@ import (
 
 type AuthService interface {
 	FindIdentity(model.LoginForm) (MysqlModel.User, error)
-	GetUserInfo(int) (MysqlModel.User, error)
+	GetUserInfo(ctx context.Context, id int) (MysqlModel.User, error)
 	CheckAuthTokenRedis(int, string, string) error
 	SaveAuthTokenRedis(int, string, string) error
 }
@@ -34,8 +35,8 @@ func (svc *authService) FindIdentity(formData model.LoginForm) (MysqlModel.User,
 	return svc.UserMysqlRepo.GetUserInfoByFormData(formData)
 }
 
-func (svc *authService) GetUserInfo(userId int) (MysqlModel.User, error) {
-	return svc.UserMysqlRepo.GetUserInfoById(userId)
+func (svc *authService) GetUserInfo(ctx context.Context, userId int) (MysqlModel.User, error) {
+	return svc.UserMysqlRepo.GetUserInfoById(ctx, userId)
 }
 
 // CheckAuthTokenRedis 单点登录，检查用户认证redis中token是否为有效

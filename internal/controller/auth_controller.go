@@ -75,7 +75,7 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 	}
 
 	// 重新生成令牌
-	userInfo, err := ctr.authSvc.GetUserInfo(claims.UserInfo.Id)
+	userInfo, err := ctr.authSvc.GetUserInfo(c, claims.UserInfo.Id)
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 	}

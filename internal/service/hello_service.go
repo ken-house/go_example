@@ -1,19 +1,19 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/meta"
 	CacheRepo "github.com/go_example/internal/repository/cache"
 	MongoRepo "github.com/go_example/internal/repository/mongodb"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
-	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type HelloService interface {
-	SayHello(c *gin.Context) map[string]string
+	SayHello(ctx context.Context, uid int) map[string]string
 }
 
 type helloService struct {
@@ -37,15 +37,18 @@ func NewHelloService(
 	}
 }
 
-func (svc *helloService) SayHello(c *gin.Context) map[string]string {
-	uid := cast.ToInt(c.DefaultQuery("id", "0"))
+func (svc *helloService) SayHello(ctx context.Context, uid int) map[string]string {
+	newCtx, span := meta.HttpTracer.Start(ctx, "helloService_SayHello")
+	defer span.End()
+	span.SetAttributes(attribute.Int("uid", uid))
+
 	// 先从gocache中读取数据
-	user, err := svc.userCacheRepo.GetUserInfo(uid)
+	user, err := svc.userCacheRepo.GetUserInfo(newCtx, uid)
 	if err != nil {
-		user, err = svc.userRepo.GetUserInfoById(uid)
+		user, err = svc.userRepo.GetUserInfoById(newCtx, uid)
 		if err == nil {
 			// 写入数据到gocache中
-			_ = svc.userCacheRepo.SetUserInfo(uid, user)
+			_ = svc.userCacheRepo.SetUserInfo(newCtx, uid, user)
 		}
 	}
 
@@ -67,7 +70,7 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	//	Hello string `json:"hello"`
 	//}{}
 	//httpClient := requester.NewRequestClient("http://127.0.0.1:8081", nil, nil)
-	//response, err := httpClient.Get(c, "/hello", &responseData, nil)
+	//response, err := httpClient.Get(ctx, "/hello", &responseData, nil)
 	//if err != nil {
 	//	zap.L().Error("请求失败", zap.Error(err))
 	//}

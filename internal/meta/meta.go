@@ -6,6 +6,8 @@ import (
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/ken-house/go-contrib/prototype/openTelemetry"
+	"go.opentelemetry.io/otel/trace"
 	"time"
 
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -42,6 +44,9 @@ const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
 
 // CacheDriver go-cache缓存对象
 var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
+
+// HttpTracer http服务分布式追踪对象
+var HttpTracer trace.Tracer
 
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
@@ -81,3 +86,6 @@ type KafkaConsumerClient kafkaClient.ConsumerClient
 
 // KafkaConsumerGroupClient kafka消费者组
 type KafkaConsumerGroupClient kafkaClient.ConsumerGroupClient
+
+// TracerProvider 分布式追踪提供者
+type TracerProvider openTelemetry.TracerProvider

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -55,6 +56,8 @@ func NewHttpServer(
 func (srv *httpServer) Register(router *gin.Engine) {
 	// 若为后台调用，避免跨域
 	router.Use(middleware.CrossDomainMiddleware())
+	// otelgin分布式追踪
+	router.Use(otelgin.Middleware("go_example_http_service"))
 
 	// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
 	router.LoadHTMLGlob("views/*.html")

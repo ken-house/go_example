@@ -1,7 +1,9 @@
 package mysql
 
 import (
+	"context"
 	"errors"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/go_example/internal/meta"
 	"github.com/go_example/internal/model"
@@ -10,7 +12,7 @@ import (
 
 type UserRepository interface {
 	GetUserInfoByFormData(model.LoginForm) (MysqlModel.User, error)
-	GetUserInfoById(int) (MysqlModel.User, error)
+	GetUserInfoById(ctx context.Context, id int) (MysqlModel.User, error)
 	GetUserList() ([]MysqlModel.User, error)
 	InsertRows([]MysqlModel.User) error
 }
@@ -43,8 +45,11 @@ func (repo *userRepository) GetUserInfoByFormData(formData model.LoginForm) (use
 	return user, nil
 }
 
-func (repo *userRepository) GetUserInfoById(id int) (user MysqlModel.User, err error) {
+func (repo *userRepository) GetUserInfoById(ctx context.Context, id int) (user MysqlModel.User, err error) {
+	_, span := meta.HttpTracer.Start(ctx, "mysql_userRepository_GetUserInfoById")
+	defer span.End()
 	exist, err := repo.EngineGroup.Table(repo.Table).Where("id=?", id).Get(&user)
+	span.SetAttributes(attribute.Int("id", id), attribute.Bool("exist", exist))
 	if !exist {
 		return MysqlModel.User{}, errors.New("用户名或密码不正确")
 	}

@@ -44,6 +44,14 @@ var httpCmd = &cobra.Command{
 			}()
 		}
 
+		// 初始化分布式追踪提供者
+		tp, clean2, err := assembly.NewTracerProvider()
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		defer clean2()
+		meta.HttpTracer = tp.GetTracer("httpServer")
+
 		// 读取证书内容
 		auth.SetCerts()
 

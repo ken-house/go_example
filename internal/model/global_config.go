@@ -7,6 +7,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
+	"github.com/ken-house/go-contrib/prototype/openTelemetry"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
 )
 
@@ -44,6 +45,8 @@ type GlobalConfig struct {
 	AlibabaSmsCode AlibabaSmsCode `json:"alibaba_sms_code" mapstructure:"alibaba_sms_code"`
 
 	Kafka kafkaClient.Config `json:"kafka" mapstructure:"kafka"`
+
+	TracerConfig openTelemetry.TracerConfig `json:"tracer_config" mapstructure:"tracer_config"`
 }
 
 // ServerInfo 服务信息
