@@ -6547,3 +6547,61 @@ func (repo *userRepository) GetUserInfo(ctx context.Context, uid int) (MysqlMode
 
 查看 Jager，可以清晰地看到调用链路，如下图所示：
 ![image](assets/images/tracer.jpg)
+
+### 发起 HTTP 请求访问 - 跨进程
+
+举例：新增一个路由 127.0.0.1:8080/req 发起 http 请求访问 127.0.0.1:8080/hello。
+hello_controller.go 文件中新增 Request()方法，代码如下：
+
+```go
+func (ctr *helloController) Request(ctx *gin.Context) (int, gin.Negotiate) {
+	newCtx, span := meta.HttpTracer.Start(ctx.Request.Context(), "helloController_Request")
+	defer span.End()
+
+	data := ctr.helloSvc.Request(newCtx)
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": data,
+	})
+}
+```
+
+该方法调用了 hello_service.go 的方法，在改方法中发起了 HTTP 请求。代码如下：
+
+```go
+// Request 模拟HTTP请求
+func (svc *helloService) Request(ctx context.Context) string {
+	newCtx, span := meta.HttpTracer.Start(ctx, "helloService_Request")
+	defer span.End()
+
+	// http请求
+	responseData := struct {
+		Data struct {
+			Hello string `json:"hello"`
+		} `json:"data"`
+	}{}
+	func(ctx context.Context) {
+		newCtx, span = meta.HttpTracer.Start(ctx, "requester.httpClient.Get", trace.WithAttributes(semconv.PeerServiceKey.String("go_example")))
+		defer span.End()
+
+		client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+		httpClient := requester.NewRequestClient("http://127.0.0.1:8080", nil, client)
+		_, err := httpClient.Get(newCtx, "/hello", &responseData, nil)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "request failed")
+			zap.L().Error("请求失败", zap.Error(err))
+		}
+	}(newCtx)
+	return responseData.Data.Hello
+}
+```
+
+为了是请求客户端和服务端关联，需要有以下注意点：
+
+- 封装的公共请求方法，必须使用 http.NewRequestWithContext()发起请求；
+- 由于封装了公共请求方法，为了不影响公共方法的使用，这里使用匿名方法，将外部 ctx 传递到匿名方法中；
+- 匿名方法中创建的 Span 必须增加 trace.WithAttributes(semconv.PeerServiceKey.String("go_example"))属性；
+- 必须对 http.Client 使用 net/http 检测库进行包裹；
+
+效果如下：
+![image](assets/images/tracer_http.jpg)

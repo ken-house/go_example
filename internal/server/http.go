@@ -75,6 +75,7 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	})
 
 	router.GET("/hello", srv.Hello())
+	router.GET("/req", srv.Request())
 	// 登录接口
 	router.POST("/auth/login", srv.Login())
 	// 刷新token接口
@@ -107,6 +108,12 @@ func (srv *httpServer) HelloGrpc() gin.HandlerFunc {
 func (srv *httpServer) Hello() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.helloCtr.Say(c))
+	}
+}
+
+func (srv *httpServer) Request() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.helloCtr.Request(c))
 	}
 }
 

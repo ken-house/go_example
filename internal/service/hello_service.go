@@ -8,12 +8,20 @@ import (
 	MongoRepo "github.com/go_example/internal/repository/mongodb"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
+	"github.com/ken-house/go-contrib/prototype/requester"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
+	"net/http"
 )
 
 type HelloService interface {
 	SayHello(ctx context.Context, uid int) map[string]string
+	Request(ctx context.Context) string
 }
 
 type helloService struct {
@@ -65,18 +73,6 @@ func (svc *helloService) SayHello(ctx context.Context, uid int) map[string]strin
 	//zap.L().Debug("this is test")
 	fmt.Println(meta.GlobalConfig.Redis.Single.PoolSize)
 
-	// http请求
-	//responseData := struct {
-	//	Hello string `json:"hello"`
-	//}{}
-	//httpClient := requester.NewRequestClient("http://127.0.0.1:8081", nil, nil)
-	//response, err := httpClient.Get(ctx, "/hello", &responseData, nil)
-	//if err != nil {
-	//	zap.L().Error("请求失败", zap.Error(err))
-	//}
-	//fmt.Println(response)
-	//fmt.Printf("responseData：%+v\n", responseData)
-
 	return map[string]string{
 		"hello":          "world，golang",
 		"env":            viper.GetString("server.mode"),
@@ -85,4 +81,31 @@ func (svc *helloService) SayHello(ctx context.Context, uid int) map[string]strin
 		"mongo_username": userInfo.Username,
 		"version":        "2.0",
 	}
+}
+
+// Request 模拟HTTP请求
+func (svc *helloService) Request(ctx context.Context) string {
+	newCtx, span := meta.HttpTracer.Start(ctx, "helloService_Request")
+	defer span.End()
+
+	// http请求
+	responseData := struct {
+		Data struct {
+			Hello string `json:"hello"`
+		} `json:"data"`
+	}{}
+	func(ctx context.Context) {
+		newCtx, span = meta.HttpTracer.Start(ctx, "requester.httpClient.Get", trace.WithAttributes(semconv.PeerServiceKey.String("go_example")))
+		defer span.End()
+
+		client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+		httpClient := requester.NewRequestClient("http://127.0.0.1:8080", nil, client)
+		_, err := httpClient.Get(newCtx, "/hello", &responseData, nil)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "request failed")
+			zap.L().Error("请求失败", zap.Error(err))
+		}
+	}(newCtx)
+	return responseData.Data.Hello
 }
