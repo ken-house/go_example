@@ -5,6 +5,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
@@ -69,6 +72,8 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 }
 
 func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) {
+	newCtx, span := meta.HttpTracer.Start(c.Request.Context(), "grpcClientController_HelloGrpc")
+	defer span.End()
 	idStr := c.DefaultQuery("id", "1")
 	// 连接服务
 	//conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -122,7 +127,15 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	if err != nil {
 		zap.L().Panic("nacosServiceClient.FindHealthInstanceAddress err", zap.Error(err))
 	}
-	conn, err := grpc.Dial(nacosAddr, grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
+	conn, err := grpc.Dial(
+		nacosAddr,
+		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)),
+		grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(grpcAuth),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
 	if err != nil {
 		log.Printf("Dial err:%+v", err)
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
@@ -132,7 +145,12 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	client := pb.NewHelloServiceClient(conn)
 
 	// 调用服务
-	resp, err := client.SayHello(c, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
+	resp, err := func(ctx context.Context) (*pb.HelloResponse, error) {
+		_, span = meta.HttpTracer.Start(ctx, "client_SayHello", trace.WithAttributes(attribute.String("id", idStr)))
+		defer span.End()
+
+		return client.SayHello(ctx, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
+	}(newCtx)
 	if err != nil {
 		log.Printf("client.SayHello err:%+v", err)
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_CALL_FUNC.ToastError())

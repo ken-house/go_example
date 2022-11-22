@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ken-house/go-contrib/prototype/consulClient"
 
@@ -98,15 +100,23 @@ func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.Register
 
 // SayHello grpc服务
 func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	defer span.End()
+	span.SetAttributes(attribute.Int("id", cast.ToInt(in.Id)))
+
 	grpcAuth := auth.NewAuthentication("root", "root123")
 	if err := grpcAuth.Auth(ctx); err != nil {
 		return nil, err
 	}
 
 	name := "world"
-	if in.Id != 1 {
-		name = "gRPC"
-	}
+	func(ctx context.Context) {
+		_, span = meta.GrpcTracer.Start(ctx, "Test", trace.WithAttributes(attribute.String("name", name)))
+		defer span.End()
+		if in.Id != 1 {
+			name = "gRPC"
+		}
+	}(ctx)
 
 	fmt.Printf("id:%v\n", in.Id)
 

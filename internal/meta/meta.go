@@ -48,6 +48,9 @@ var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
 // HttpTracer http服务分布式追踪对象
 var HttpTracer trace.Tracer
 
+// GrpcTracer grpc服务分布式追踪对象
+var GrpcTracer trace.Tracer
+
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
 

@@ -30,7 +30,7 @@ require (
 	go.opentelemetry.io/otel v1.11.1
 	go.opentelemetry.io/otel/trace v1.11.1
 	go.uber.org/zap v1.21.0
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.50.1
 )
 
 require (
@@ -129,6 +129,7 @@ require (
 	github.com/xuri/excelize/v2 v2.6.0 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.36.4 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.1 // indirect
 	go.opentelemetry.io/otel/metric v0.33.0 // indirect
@@ -143,7 +144,7 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	golang.org/x/tools v0.1.9 // indirect
 	google.golang.org/genproto v0.0.0-20220601144221-27df5f98adab // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

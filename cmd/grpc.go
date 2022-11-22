@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"io/ioutil"
 	"log"
 	"net"
@@ -33,6 +34,14 @@ var grpcCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  `grpc server`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// 初始化分布式追踪提供者
+		tp, clean2, err := assembly.NewTracerProvider()
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		defer clean2()
+		meta.GrpcTracer = tp.GetTracer("grpcServer")
+
 		grpcSrv, cleanup, err := assembly.NewGrpcServer()
 		if err != nil {
 			log.Fatalf("%+v\n", err)
@@ -75,7 +84,12 @@ var grpcCmd = &cobra.Command{
 			ClientCAs:    certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
 		})
 
-		app := grpc.NewServer(grpc.Creds(creds))
+		// 通过otelgrpc包裹
+		app := grpc.NewServer(
+			grpc.Creds(creds),
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		)
 
 		// 开启健康检查
 		healthServer := health.NewServer()
@@ -104,7 +118,7 @@ var grpcCmd = &cobra.Command{
 				log.Fatalf("Serve err:%+v\n", err)
 			}
 		}()
-
+		fmt.Printf("Listen %s:%s\n", addr, port)
 		// 优雅关闭服务
 		quit := make(chan os.Signal)
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)

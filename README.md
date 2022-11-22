@@ -6460,6 +6460,12 @@ func (tp *tracerProvider) GetTracer(tracerName string) trace.Tracer {
 
 ### Gin 框架 HTTP 服务中增加全链路追踪
 
+安装
+
+```bash
+go get go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin
+```
+
 这里使用 Jaeger 作为分布式追踪数据的导出器。在配置文件中配置 TracerProvider，common.yaml 代码如下：
 
 ```yaml
@@ -6550,6 +6556,12 @@ func (repo *userRepository) GetUserInfo(ctx context.Context, uid int) (MysqlMode
 
 ### 发起 HTTP 请求访问 - 跨进程
 
+安装
+
+```bash
+go get go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
+```
+
 举例：新增一个路由 127.0.0.1:8080/req 发起 http 请求访问 127.0.0.1:8080/hello。
 hello_controller.go 文件中新增 Request()方法，代码如下：
 
@@ -6605,3 +6617,109 @@ func (svc *helloService) Request(ctx context.Context) string {
 
 效果如下：
 ![image](assets/images/tracer_http.jpg)
+
+### Grpc 请求 - 跨进程
+
+#### 安装
+
+```bash
+go get go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc
+```
+
+#### 服务端
+
+初始化 TracerProvider，创建一个名称为 grpcServer 的 Tracer 对象，创建 grpc 服务时，使用 otelgrpc 对其进行包裹。对应 cmd/grpc.go 文件代码如下：
+
+```go
+		// 初始化分布式追踪提供者
+		tp, clean2, err := assembly.NewTracerProvider()
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		defer clean2()
+		meta.GrpcTracer = tp.GetTracer("grpcServer")
+
+		// ....
+
+		// 通过otelgrpc包裹
+		app := grpc.NewServer(
+			grpc.Creds(creds),
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		)
+
+		// ....
+
+```
+
+在 server/grpc.go 文件中，修改 SayHello()方法，添加 Span，为了演示效果增加一个匿名方法，代码如下：
+
+```go
+// SayHello grpc服务
+func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	defer span.End()
+	span.SetAttributes(attribute.Int("id", cast.ToInt(in.Id)))
+
+	grpcAuth := auth.NewAuthentication("root", "root123")
+	if err := grpcAuth.Auth(ctx); err != nil {
+		return nil, err
+	}
+
+	name := "world"
+	func(ctx context.Context) {
+		_, span = meta.GrpcTracer.Start(ctx, "Test", trace.WithAttributes(attribute.String("name", name)))
+		defer span.End()
+		if in.Id != 1 {
+			name = "gRPC"
+		}
+	}(ctx)
+
+	fmt.Printf("id:%v\n", in.Id)
+
+	return &pb.HelloResponse{
+		Id:   in.Id,
+		Name: "hello " + name,
+	}, nil
+}
+```
+
+#### 客户端
+
+客户端为 http 服务，直接通过之前创建的 Tracer 对象进行追踪。在 grpc_client_controller.go 文件中，修改连接 grpc 参数，使用 otelgrpc 对其进行包裹。同时为了增加展示效果，使用匿名方法封装了一个 Span，代码如下：
+
+```go
+func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) {
+	newCtx, span := meta.HttpTracer.Start(c.Request.Context(), "grpcClientController_HelloGrpc")
+	defer span.End()
+  // ......
+	conn, err := grpc.Dial(
+		nacosAddr,
+		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)),
+		grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(grpcAuth),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+	)
+	if err != nil {
+		log.Printf("Dial err:%+v", err)
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_DIAL.ToastError())
+	}
+
+	// 创建grpc client
+	client := pb.NewHelloServiceClient(conn)
+
+	// 调用服务
+	resp, err := func(ctx context.Context) (*pb.HelloResponse, error) {
+		_, span = meta.HttpTracer.Start(ctx, "client_SayHello", trace.WithAttributes(attribute.String("id", idStr)))
+		defer span.End()
+
+		return client.SayHello(ctx, &pb.HelloRequest{Id: cast.ToInt32(idStr)})
+	}(newCtx)
+	// ....
+```
+
+#### 展示效果
+
+![image](assets/images/tracer_grpc.png)
