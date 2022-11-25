@@ -34,13 +34,6 @@ var NacosConfig nacosClient.Config
 // GlobalConfig 全局配置
 var GlobalConfig model.GlobalConfig
 
-const (
-	MysqlSingleDriverKey = "single" // 单机数据库
-	MysqlGroupDriverKey  = "group"  // MysqlGroupDriverKey Mysql配置驱动Key
-	RedisSingleDriverKey = "single" // redis普通连接
-	RedisGroupDriverKey  = "group"  // redisCluster连接
-)
-
 const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
 
 // CacheDriver go-cache缓存对象
@@ -54,6 +47,9 @@ var GrpcTracer trace.Tracer
 
 // HttpMeter http服务指标监控对象
 var HttpMeter metric.Meter
+
+// GrpcMeter grpc服务指标监控
+var GrpcMeter metric.Meter
 
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient

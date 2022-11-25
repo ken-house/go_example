@@ -8,11 +8,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -55,6 +60,7 @@ var grpcCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("Listen err:%+v\n", err)
 		}
+		defer listen.Close()
 
 		// 2.创建一个grpc服务
 		//creds, err := credentials.NewServerTLSFromFile("./assets/certs/grpc_tls/server.pem", "./assets/certs/grpc_tls/server.key")
@@ -84,11 +90,21 @@ var grpcCmd = &cobra.Command{
 			ClientCAs:    certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
 		})
 
-		// 通过otelgrpc包裹
+		var prometheusRegister = prometheus.NewRegistry()
+		grpcMetrics := grpc_prometheus.NewServerMetrics()
+		prometheusRegister.MustRegister(grpcMetrics, meta.CustomizedCounterMetric)
+
+		// 添加otelgrpc追踪拦截器、prometheus指标监控拦截器
 		app := grpc.NewServer(
 			grpc.Creds(creds),
-			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				otelgrpc.UnaryServerInterceptor(),
+				grpcMetrics.UnaryServerInterceptor(),
+			)),
+			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+				otelgrpc.StreamServerInterceptor(),
+				grpcMetrics.StreamServerInterceptor(),
+			)),
 		)
 
 		// 开启健康检查
@@ -98,6 +114,21 @@ var grpcCmd = &cobra.Command{
 
 		// 3.注册服务
 		grpcSrv.Register(app)
+
+		// 注册服务到prometheus
+		grpcMetrics.InitializeMetrics(app)
+
+		// Create a HTTP server for prometheus.
+		httpServer := &http.Server{
+			Handler: promhttp.HandlerFor(prometheusRegister, promhttp.HandlerOpts{}),
+			Addr:    fmt.Sprintf("0.0.0.0:%d", 10000),
+		}
+		// Start your http server for prometheus.
+		go func() {
+			if err := httpServer.ListenAndServe(); err != nil {
+				log.Printf("listen: %+v\n", err)
+			}
+		}()
 
 		// 注册服务到consul
 		consulClient, serviceIdArr, err := grpcSrv.RegisterConsul()

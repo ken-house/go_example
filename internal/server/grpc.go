@@ -104,6 +104,9 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
 	defer span.End()
 	span.SetAttributes(attribute.Int("id", cast.ToInt(in.Id)))
 
+	// 指标数值加+1
+	meta.CustomizedCounterMetric.WithLabelValues("Test").Add(1)
+
 	grpcAuth := auth.NewAuthentication("root", "root123")
 	if err := grpcAuth.Auth(ctx); err != nil {
 		return nil, err
