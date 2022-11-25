@@ -6,6 +6,8 @@
 最终实现一个高性能、可扩展、多应用的 web 框架。 除 HTTP 服务外，还包含 Socket 服务、GRPC 服务、Consul/Nacos 服务注册与服务发现、配置中心、Kafka 等功能。
 支持 Docker 容器化部署、K8s 部署；
 增加 Opentelemetry 全链路追踪，使用 Jaeger 作为导出器。
+增加 Opentelemetry 对 HTTP 服务指标监控，使用 Prometheus 作为导出器。
+增加 Promeeheus 对 GRPC 服务进行指标监控。
 
 ## 功能
 
@@ -31,6 +33,8 @@
 - 支持 K8s 容器编排部署；
 - 支持单元测试；
 - 增加 Opentelemetry 全链路追踪；
+- 增加 Opentelemetry 对 HTTP 服务指标监控；
+- 支持 Prometheus 对 GRPC 服务指标监控；
 
 ## 主要贡献
 
@@ -57,8 +61,10 @@
 - https://github.com/nacos-group/nacos-sdk-go
 - https://github.com/Shopify/sarama
 - https://github.com/panjf2000/ants
-- https://github.com/open-telemetry
 - https://opentelemetry.io/registry
+- https://github.com/open-telemetry/opentelemetry-go
+- https://github.com/grpc-ecosystem/go-grpc-middleware
+- https://github.com/grpc-ecosystem/go-grpc-prometheus
 
 ## 版本
 
@@ -100,7 +106,7 @@
 - 版本 v3.1.1 实现 K8s 容器编排部署全面升级；
 - 版本 v3.2.0 增加单元测试示例；
 - 版本 v3.3.0 对自动生成 CRUD 代码升级，实现完全自动化；
-- 版本 v4.0.0 增加 Opentelemetry 全链路追踪；
+- 版本 v4.0.0 增加 Opentelemetry 全链路追踪及指标监控；
 
 ## 环境安装
 
@@ -6723,3 +6729,223 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 #### 展示效果
 
 ![image](assets/images/tracer_grpc.png)
+
+## OpenTelemetry 指标监控
+
+当前 OpenTelemetry 提供了一些有关 Metric 相关的方法，这里在 HTTP 服务中使用 OpenTelemetry 中的 MeterProvider 创建 Meter 来收集数据到 prometheus。
+
+### 指标监控封装
+
+与全链路追踪类似，通过初始化 MeterProvider 提供者对象，创建一个 Meter 对象来收集指标数据，使用 prometheus 作为导出器。
+根据 prometheus 监控要求，提供一个 http 接口，默认路径为/metrics。
+
+```go
+package openTelemetry
+
+import (
+	"context"
+	"log"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/gin-gonic/gin"
+
+	"go.opentelemetry.io/otel/metric"
+
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	sdkMetric "go.opentelemetry.io/otel/sdk/metric"
+)
+
+type MeterProvider interface {
+	GetMeter(meterName string) metric.Meter
+	MeterPrometheusForGin(router *gin.Engine)
+}
+
+type meterProvider struct {
+	*sdkMetric.MeterProvider
+}
+
+type MeterConfig struct {
+	ExporterData struct {
+		Kind string `json:"kind" mapstructure:"kind"`
+	} `json:"exporter_data" mapstructure:"exporter_data"`
+	ResourceData struct {
+		ServiceName    string `json:"service_name" mapstructure:"service_name"`
+		ServiceVersion string `json:"service_version" mapstructure:"service_version"`
+	} `json:"resource_data" mapstructure:"resource_data"`
+}
+
+func NewMeterProvider(cfg MeterConfig) (*meterProvider, func(), error) {
+	mp, err := initMeterProvider(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &meterProvider{
+			mp,
+		}, func() {
+			if err := mp.Shutdown(context.Background()); err != nil {
+				log.Printf("Error shutting down meter provider: %v", err)
+			}
+		}, nil
+}
+
+// newPrometheusExporter 定义一个prometheus导出器
+func newPrometheusExporter() (*prometheus.Exporter, error) {
+	return prometheus.New()
+}
+
+// 初始化MeterProvider
+func initMeterProvider(cfg MeterConfig) (*sdkMetric.MeterProvider, error) {
+	exporter, err := newPrometheusExporter()
+	if err != nil {
+		log.Println("导出器初始化失败")
+		return nil, err
+	}
+
+	mp := sdkMetric.NewMeterProvider(
+		sdkMetric.WithReader(exporter),
+		sdkMetric.WithResource(newResource(cfg.ResourceData.ServiceName, cfg.ResourceData.ServiceVersion)),
+	)
+	return mp, err
+}
+
+// GetMeter 创建一个指标监控对象
+func (mp *meterProvider) GetMeter(meterName string) metric.Meter {
+	return mp.Meter(meterName)
+}
+
+// MeterPrometheusForGin 为Gin接入Prometheus
+func (mp *meterProvider) MeterPrometheusForGin(router *gin.Engine) {
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+}
+```
+
+### HTTP 服务使用
+
+在 cmd/http.go 文件，初始化 MeterProvider，创建 Meter 对象。
+
+```go
+		// 初始化指标监控提供者
+		mp, clean3, err := assembly.NewMeterProvider()
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		defer clean3()
+		meta.HttpMeter = mp.GetMeter("httpServer")
+
+```
+
+在路由中添加/metrics，对应的处理方法为 gin.WrapH(promhttp.Handler()).
+
+```go
+		// 接入OpenTelemetry，使用prometheus做指标监控
+		mp.MeterPrometheusForGin(app)
+```
+
+运行服务，访问 127.0.0.1:8080/metrics 即可。
+
+## Prometheus 对 GRPC 服务指标监控
+
+由于 OpenTelemetry 指标监控还不够完善，直接使用 Prometheus 进行数据监控采集也是可以的。这里介绍 Prometheus 对 GRCP 服务指标监控。
+
+### 服务端
+
+默认 prometheus 有个全局的注册表，这里推荐通过 prometheus.NewRegistry()创建自定义注册表，通过 grpc_prometheus.NewServerMetrics()定义默认服务指标，meta.CustomizedCounterMetric 为自定义的监控指标。
+
+```go
+prometheusRegister := prometheus.NewRegistry()
+grpcMetrics := grpc_prometheus.NewServerMetrics()
+prometheusRegister.MustRegister(grpcMetrics, meta.CustomizedCounterMetric)
+```
+
+添加 prometheus 指标监控拦截器，由于在接入全链路追踪已经添加了 grpc.UnaryInterceptor，直接再添加一个会报错，这里引入 grpc_middleware.ChainUnaryServer()对多个进行封装为同一个拦截器。
+安装
+
+```bash
+go get 	github.com/grpc-ecosystem/go-grpc-prometheus
+
+```
+
+创建 GRPC 服务，添加拦截器，并注册到 prometheus.代码如下：
+
+```go
+app := grpc.NewServer(
+	grpc.Creds(creds),
+	grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+		otelgrpc.UnaryServerInterceptor(),
+		grpcMetrics.UnaryServerInterceptor(),
+	)),
+	grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+		otelgrpc.StreamServerInterceptor(),
+		grpcMetrics.StreamServerInterceptor(),
+	)),
+)
+// ....
+// 注册服务到prometheus
+grpcMetrics.InitializeMetrics(app)
+```
+
+最后启动一个 http 服务，注意端口不要重复，代码如下：
+
+```go
+// Create a HTTP server for prometheus.
+httpServer := &http.Server{
+	Handler: promhttp.HandlerFor(prometheusRegister, promhttp.HandlerOpts{}),
+	Addr:    fmt.Sprintf("0.0.0.0:%d", 10000),
+}
+// Start your http server for prometheus.
+go func() {
+	if err := httpServer.ListenAndServe(); err != nil {
+		log.Printf("listen: %+v\n", err)
+	}
+}()
+```
+
+#### 自定义指标使用
+
+定义一个自定义指标，当 GRPC 服务被访问时计数器+1.在 meta/metrics.go 文件中自定义的指标：
+
+```go
+// CustomizedCounterMetric 自定义指标收集器
+var CustomizedCounterMetric = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "demo_server_say_hello_method_handle_count",
+	Help: "Total number of RPCs handled on the server.",
+}, []string{"name"})
+```
+
+在 SayHello()方法增加指标自增代码：
+
+```go
+// SayHello grpc服务
+func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	span := trace.SpanFromContext(ctx)
+	defer span.End()
+	span.SetAttributes(attribute.Int("id", cast.ToInt(in.Id)))
+
+	// 指标数值加+1
+	meta.CustomizedCounterMetric.WithLabelValues("Test").Add(1)
+	// ......
+}
+```
+
+### 客户端
+
+由于客户端在 http 服务中，已经接入了 OpenTelemetry 的指标监控，并使用 Prometheus 作为导出器。
+也可以和服务端一样，通过自定义注册表，将服务指标和自定义指标注册到自定义注册表中，在创建服务指标时注意使用 grpc_prometheus.NewClientMetrics()。
+当前 OpenTelemetry 默认使用了全局注册表，只需要修改 grpc.Dial 方法中的拦截器，增加两个 prometheus 客户端拦截器，代码如下：
+
+```go
+conn, err := grpc.Dial(
+		nacosAddr,
+		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)),
+		grpc.WithTransportCredentials(creds),
+		grpc.WithPerRPCCredentials(grpcAuth),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+	)
+```
+
+访问 127.0.0.1:8080/metrics 即可。

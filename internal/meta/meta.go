@@ -48,9 +48,6 @@ var GrpcTracer trace.Tracer
 // HttpMeter http服务指标监控对象
 var HttpMeter metric.Meter
 
-// GrpcMeter grpc服务指标监控
-var GrpcMeter metric.Meter
-
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
 

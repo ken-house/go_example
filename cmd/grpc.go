@@ -90,7 +90,7 @@ var grpcCmd = &cobra.Command{
 			ClientCAs:    certPool,                       // 设置根证书的集合，校验方式使用 ClientAuth 中设定的模式
 		})
 
-		var prometheusRegister = prometheus.NewRegistry()
+		prometheusRegister := prometheus.NewRegistry()
 		grpcMetrics := grpc_prometheus.NewServerMetrics()
 		prometheusRegister.MustRegister(grpcMetrics, meta.CustomizedCounterMetric)
 
