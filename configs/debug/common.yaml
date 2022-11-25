@@ -113,4 +113,10 @@ tracer_config:
   resource_data:
     service_name: "go_example"
     service_version: "v4.0.0"
+meter_config:
+  exporter_data:
+    kind: "prometheus"
+  resource_data:
+    service_name: "go_example"
+    service_version: "v4.0.0"
 

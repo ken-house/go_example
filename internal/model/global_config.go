@@ -47,6 +47,8 @@ type GlobalConfig struct {
 	Kafka kafkaClient.Config `json:"kafka" mapstructure:"kafka"`
 
 	TracerConfig openTelemetry.TracerConfig `json:"tracer_config" mapstructure:"tracer_config"`
+
+	MeterConfig openTelemetry.MeterConfig `json:"meter_config" mapstructure:"meter_config"`
 }
 
 // ServerInfo 服务信息

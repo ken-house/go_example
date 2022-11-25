@@ -7,6 +7,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
 	"github.com/ken-house/go-contrib/prototype/openTelemetry"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"time"
 
@@ -51,6 +52,9 @@ var HttpTracer trace.Tracer
 // GrpcTracer grpc服务分布式追踪对象
 var GrpcTracer trace.Tracer
 
+// HttpMeter http服务指标监控对象
+var HttpMeter metric.Meter
+
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
 
@@ -92,3 +96,6 @@ type KafkaConsumerGroupClient kafkaClient.ConsumerGroupClient
 
 // TracerProvider 分布式追踪提供者
 type TracerProvider openTelemetry.TracerProvider
+
+// MeterProvider 指标监控提供者
+type MeterProvider openTelemetry.MeterProvider

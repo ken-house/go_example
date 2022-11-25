@@ -52,6 +52,14 @@ var httpCmd = &cobra.Command{
 		defer clean2()
 		meta.HttpTracer = tp.GetTracer("httpServer")
 
+		// 初始化指标监控提供者
+		mp, clean3, err := assembly.NewMeterProvider()
+		if err != nil {
+			log.Printf("%+v\n", err)
+		}
+		defer clean3()
+		meta.HttpMeter = mp.GetMeter("httpServer")
+
 		// 读取证书内容
 		auth.SetCerts()
 
@@ -67,6 +75,9 @@ var httpCmd = &cobra.Command{
 
 		// 初始化engine
 		app := gin.Default()
+
+		// 接入OpenTelemetry，使用prometheus做指标监控
+		mp.MeterPrometheusForGin(app)
 
 		// 注册路由
 		httpSrv.Register(app)

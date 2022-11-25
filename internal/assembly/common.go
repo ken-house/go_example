@@ -87,3 +87,7 @@ func NewConsumerGroupClient() (meta.KafkaConsumerGroupClient, func(), error) {
 func NewTracerProvider() (meta.TracerProvider, func(), error) {
 	return openTelemetry.NewTracerProvider(meta.GlobalConfig.TracerConfig)
 }
+
+func NewMeterProvider() (meta.MeterProvider, func(), error) {
+	return openTelemetry.NewMeterProvider(meta.GlobalConfig.MeterConfig)
+}
