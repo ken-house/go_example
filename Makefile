@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -ldflags "-s -w" -o ./bin/go-example main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -ldflags "-s -w" -tags=jsoniter -o ./bin/go-example main.go
 
 .PHONY: push
 push:

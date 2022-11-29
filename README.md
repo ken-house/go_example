@@ -1,101 +1,116 @@
 # go_example
+
 ## 简介
-本项目为基础的web开发架构设计，主要采用gin框架，使用cobra生成应用和命令文件的脚手架，使用wire解决依赖注入问题，
-最终实现一个高性能、可扩展、多应用的web框架。 除HTTP服务外，还包含Socket服务、GRPC服务、Consul/Nacos服务注册与服务发现、配置中心、Kafka等功能。
-支持Docker容器化部署、K8s部署；
+
+本项目为基础的 web 开发架构设计，主要采用 gin 框架，使用 cobra 生成应用和命令文件的脚手架，使用 wire 解决依赖注入问题，
+最终实现一个高性能、可扩展、多应用的 web 框架。 除 HTTP 服务外，还包含 Socket 服务、GRPC 服务、Consul/Nacos 服务注册与服务发现、配置中心、Kafka 等功能。
+支持 Docker 容器化部署、K8s 部署；
 
 ## 功能
-+ 连接MySQL单机及主从数据库；
-+ 连接Redis单机及Cluster集群；
-+ 使用JWT登录验证及单点登录；
-+ Excel文件（.xlsx）导入导出；
-+ 提供WebSocket服务；
-+ 提供gRPC服务；
-+ 支持Consul服务注册与服务发现、配置中心；
-+ 增加go-cache内存缓存使用；
-+ 连接MongoDB单机及集群；
-+ 增加PProf性能分析；
-+ 增加gRPC熔断降级处理；
-+ 增加zap高性能日志库；
-+ 增加gin参数验证；
-+ 增加jenkins服务；
-+ 增加阿里云短信服务；
-+ 支持自动生成CRUD代码；
-+ 支持nacos服务注册与发现、配置中心；
-+ 支持kafka服务；
-+ 支持Docker容器化部署；
-+ 支持K8s容器编排部署；
-+ 支持单元测试；
+
+- 连接 MySQL 单机及主从数据库；
+- 连接 Redis 单机及 Cluster 集群；
+- 使用 JWT 登录验证及单点登录；
+- Excel 文件（.xlsx）导入导出；
+- 提供 WebSocket 服务；
+- 提供 gRPC 服务；
+- 支持 Consul 服务注册与服务发现、配置中心；
+- 增加 go-cache 内存缓存使用；
+- 连接 MongoDB 单机及集群；
+- 增加 PProf 性能分析；
+- 增加 gRPC 熔断降级处理；
+- 增加 zap 高性能日志库；
+- 增加 gin 参数验证；
+- 增加 jenkins 服务；
+- 增加阿里云短信服务；
+- 支持自动生成 CRUD 代码；
+- 支持 nacos 服务注册与发现、配置中心；
+- 支持 kafka 服务；
+- 支持 Docker 容器化部署；
+- 支持 K8s 容器编排部署；
+- 支持单元测试；
+- 支持邮件服务；
+- 提供 ip 查询地区服务；
+- 增加 jsoniter 优化 json 格式化；
 
 ## 主要贡献
-+ https://github.com/gin-gonic/gin
-+ https://github.com/spf13/cobra
-+ https://github.com/google/wire
-+ https://github.com/spf13/viper
-+ https://xorm.io/xorm
-+ https://github.com/go-redis/redis
-+ https://github.com/golang-jwt/jwt
-+ https://github.com/qax-os/excelize
-+ https://github.com/gorilla/websocket
-+ https://google.golang.org/grpc
-+ https://github.com/hashicorp/consul
-+ https://github.com/patrickmn/go-cache
-+ https://go.mongodb.org/mongo-driver
-+ https://github.com/felixge/fgprof
-+ https://github.com/afex/hystrix-go
-+ https://github.com/uber-go/zap
-+ https://github.com/go-playground/validator
-+ https://github.com/dlclark/regexp2
-+ https://github.com/bndr/gojenkins
-+ https://github.com/alibabacloud-go
-+ https://github.com/nacos-group/nacos-sdk-go
-+ https://github.com/Shopify/sarama
-+ https://github.com/panjf2000/ants
+
+- https://github.com/gin-gonic/gin
+- https://github.com/spf13/cobra
+- https://github.com/google/wire
+- https://github.com/spf13/viper
+- https://xorm.io/xorm
+- https://github.com/go-redis/redis
+- https://github.com/golang-jwt/jwt
+- https://github.com/qax-os/excelize
+- https://github.com/gorilla/websocket
+- https://google.golang.org/grpc
+- https://github.com/hashicorp/consul
+- https://github.com/patrickmn/go-cache
+- https://go.mongodb.org/mongo-driver
+- https://github.com/felixge/fgprof
+- https://github.com/afex/hystrix-go
+- https://github.com/uber-go/zap
+- https://github.com/go-playground/validator
+- https://github.com/dlclark/regexp2
+- https://github.com/bndr/gojenkins
+- https://github.com/alibabacloud-go
+- https://github.com/nacos-group/nacos-sdk-go
+- https://github.com/Shopify/sarama
+- https://github.com/panjf2000/ants
+- https://github.com/go-gomail/gomail/tree/v2
+- https://github.com/lionsoul2014/ip2region
+- https://github.com/json-iterator/go
 
 ## 版本
-+ 版本v1.0.0实现了cobra+gin框架的结合；
-+ 版本v1.1.0增加了wire解决依赖注入及项目文件目录整体架构；
-+ 版本v1.2.0增加了xorm连接Mysql数据库；
-+ 版本v1.3.1实现了redis连接；
-+ 版本v1.4.0接入JWT实现登录验证；
-+ 版本v1.4.1增加JWT Refresh Token；
-+ 版本v1.4.2升级JWT密钥；
-+ 版本v1.4.3单点登录；
-+ 版本v1.4.4单点登录，对代码依赖优化；
-+ 版本v1.5.0增加xlsx文件导入导出；
-+ 版本v1.6.0实现Gin优雅关机；
-+ 版本v1.7.0实现WebSocket服务；
-+ 版本v1.7.1实现WebSocket心跳检测及客户端来源检查；
-+ 版本v1.8.0实现gRPC服务；
-+ 版本v1.8.1增加gRPC使用服务端认证及使用客户端/服务端各自证书认证；
-+ 版本v1.8.2实现gRPC基于Token认证；
-+ 版本v1.9.0使用consul做服务注册与服务发现；
-+ 版本v1.10.0增加go-cache内存缓存；
-+ 版本v1.11.0实现mongodb连接；
-+ 版本v1.11.1修改为mongodb可连接单机或集群；
-+ 版本v1.12.0增加了pprof性能分析器
-+ 版本v1.13.0增加gRPC熔断降级处理；
-+ 版本v1.14.0统一错误码；
-+ 版本v2.0.0调整代码结构引用自有包；
-+ 版本v2.1.0增加zap高性能日志；
-+ 版本v2.2.0增加gin参数验证；
-+ 版本v2.3.0增加jenkins服务；
-+ 版本v2.4.0增加阿里云短信服务；
-+ 版本v2.5.0支持自动生成CRUD代码；
-+ 版本v2.6.0支持Nacos配置中心；
-+ 版本v2.6.1支持Nacos配置中心监听，客户端自动感知；
-+ 版本v2.6.2增加consul配置中心，nacos服务注册与服务发现；
-+ 版本v2.7.0增加kafka生产消费服务；
-+ 版本v3.0.0支持Docker容器化部署；
-+ 版本v3.1.0支持K8s容器编排部署；
-+ 版本v3.1.1实现K8s容器编排部署全面升级；
-+ 版本v3.2.0增加单元测试示例；
-+ 版本v3.3.0对自动生成CRUD代码升级，实现完全自动化；
+
+- 版本 v1.0.0 实现了 cobra+gin 框架的结合；
+- 版本 v1.1.0 增加了 wire 解决依赖注入及项目文件目录整体架构；
+- 版本 v1.2.0 增加了 xorm 连接 Mysql 数据库；
+- 版本 v1.3.1 实现了 redis 连接；
+- 版本 v1.4.0 接入 JWT 实现登录验证；
+- 版本 v1.4.1 增加 JWT Refresh Token；
+- 版本 v1.4.2 升级 JWT 密钥；
+- 版本 v1.4.3 单点登录；
+- 版本 v1.4.4 单点登录，对代码依赖优化；
+- 版本 v1.5.0 增加 xlsx 文件导入导出；
+- 版本 v1.6.0 实现 Gin 优雅关机；
+- 版本 v1.7.0 实现 WebSocket 服务；
+- 版本 v1.7.1 实现 WebSocket 心跳检测及客户端来源检查；
+- 版本 v1.8.0 实现 gRPC 服务；
+- 版本 v1.8.1 增加 gRPC 使用服务端认证及使用客户端/服务端各自证书认证；
+- 版本 v1.8.2 实现 gRPC 基于 Token 认证；
+- 版本 v1.9.0 使用 consul 做服务注册与服务发现；
+- 版本 v1.10.0 增加 go-cache 内存缓存；
+- 版本 v1.11.0 实现 mongodb 连接；
+- 版本 v1.11.1 修改为 mongodb 可连接单机或集群；
+- 版本 v1.12.0 增加了 pprof 性能分析器
+- 版本 v1.13.0 增加 gRPC 熔断降级处理；
+- 版本 v1.14.0 统一错误码；
+- 版本 v2.0.0 调整代码结构引用自有包；
+- 版本 v2.1.0 增加 zap 高性能日志；
+- 版本 v2.2.0 增加 gin 参数验证；
+- 版本 v2.3.0 增加 jenkins 服务；
+- 版本 v2.4.0 增加阿里云短信服务；
+- 版本 v2.5.0 支持自动生成 CRUD 代码；
+- 版本 v2.6.0 支持 Nacos 配置中心；
+- 版本 v2.6.1 支持 Nacos 配置中心监听，客户端自动感知；
+- 版本 v2.6.2 增加 consul 配置中心，nacos 服务注册与服务发现；
+- 版本 v2.7.0 增加 kafka 生产消费服务；
+- 版本 v3.0.0 支持 Docker 容器化部署；
+- 版本 v3.1.0 支持 K8s 容器编排部署；
+- 版本 v3.1.1 实现 K8s 容器编排部署全面升级；
+- 版本 v3.2.0 增加单元测试示例；
+- 版本 v3.3.0 对自动生成 CRUD 代码升级，实现完全自动化；
+- 版本 v3.4.0 增加邮件服务、ip 查询地区、优化 json 格式化；
 
 ## 环境安装
-可以使用Linux安装，也可以通过Docker安装相关服务，以下使用Docker安装服务：
-1. MySQL服务；
-这里推荐使用MySQL8.0.18版本，高版本数据库在xorm生成model时会报错
+
+可以使用 Linux 安装，也可以通过 Docker 安装相关服务，以下使用 Docker 安装服务：
+
+1. MySQL 服务；
+   这里推荐使用 MySQL8.0.18 版本，高版本数据库在 xorm 生成 model 时会报错
+
 ```shell
 # 拉取镜像后，启动容器
 docker pull mysql:8.0.18
@@ -133,23 +148,31 @@ CREATE TABLE `user` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户表';
 ```
-2. Redis服务；
+
+2. Redis 服务；
+
 ```shell
 # 拉去镜像，运行容器
 docker pull redis:latest
 docker run -itd -p 6379:6379 -v /data/redis:/data --name redis redis:latest
 ```
-3. Mongodb服务；
+
+3. Mongodb 服务；
+
 ```shell
 docker pull mongo:latest
 docker run -itd -p 27017:27017 -v /data/mongo:/data/db --name mongo mongo:latest
 ```
-4. Consul服务；
+
+4. Consul 服务；
+
 ```shell
 docker pull consul:latest
 docker run -itd -p 8500:8500 -v /data/consul/data:/consul/data -v /data/consul/conf:/consul/conf --name consul consul:latest
 ```
-5. Jenkins服务；
+
+5. Jenkins 服务；
+
 ```shell
 # 拉取jenkins/jenkins:latest镜像
 docker pull jenkins/jenkins
@@ -159,26 +182,30 @@ docker run -itd -p 8088:8080 -p 50000:50000 \
            -v /var/run/docker.sock:/var/run/docker.sock \
            --name jenkins jenkins/jenkins
 ```
-6. Nacos服务；
+
+6. Nacos 服务；
+
 ```shell
 docker image pull nacos/nacos-server
-docker run -itd 
+docker run -itd
       -p 8848:8848 \ # 用于nacos管理界面；
       -p 9848:9848 \ # Nacos2.0版本增加gRPC通信方式，用于客户端gRPC向服务端发起连接和请求；
       -p 9849:9849 \ # Nacos2.0用于服务间通信同步数据，若集群模式必须要开启；
-      -e MODE=standalone \ 
-      -v /data/nacos/logs:/home/nacos/logs \ 
-      -v /data/nacos/data:/home/nacos/data \  
+      -e MODE=standalone \
+      -v /data/nacos/logs:/home/nacos/logs \
+      -v /data/nacos/data:/home/nacos/data \
       --name nacos \
       nacos/nacos-server
 ```
+
 访问http://127.0.0.1:8848/nacos/index.html进入管理界面，需做如下操作：
-1. 命名空间创建debug、test、release；
-2. 配置管理 - 配置列表在相应的命名空间创建Data-id配置，以生产环境为例，其中Group为go_example，Data Id为release-go_example-common.yaml；
+
+1. 命名空间创建 debug、test、release；
+2. 配置管理 - 配置列表在相应的命名空间创建 Data-id 配置，以生产环境为例，其中 Group 为 go_example，Data Id 为 release-go_example-common.yaml；
 
 如下图所示：
-![image](assets/images/nacos.png)
-7. Kafka服务
+![image](assets/images/nacos.png) 7. Kafka 服务
+
 ```shell
 # 创建自定义网络
 docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 mynet
@@ -193,15 +220,19 @@ docker run -d -p 9092:9092 --net mynet -e KAFKA_BROKER_ID=0 -e KAFKA_ZOOKEEPER_C
 docker run -d -p 9093:9093 --net mynet -e KAFKA_BROKER_ID=1 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9093 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093 -v ~/dockerVolumes/kafkaVolume/kafka/1:/kafka -v /etc/localtime:/etc/localtime --name kafka-1 wurstmeister/kafka
 docker run -d -p 9094:9094 --net mynet -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181/kafka -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9094 -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9094 -v ~/dockerVolumes/kafkaVolume/kafka/2:/kafka -v /etc/localtime:/etc/localtime --name kafka-2 wurstmeister/kafka
 ```
-除此之外，在使用还需要修改hosts文件
+
+除此之外，在使用还需要修改 hosts 文件
+
 ```shell
 127.0.0.1 kafka-0 kafka-1 kafka-2
 ```
-8. Kubernets部署
-安装Docker Desktop，通过Docker Desktop安装kubernets单点集群，操作步骤如下：
-![image](assets/images/k8s.png)
+
+8. Kubernets 部署
+   安装 Docker Desktop，通过 Docker Desktop 安装 kubernets 单点集群，操作步骤如下：
+   ![image](assets/images/k8s.png)
 
 安装完成后，通过如下命令查看集群情况
+
 ```shell
 # 查看集群情况
 kubectl cluster-info
@@ -210,25 +241,31 @@ kubectl get nodes
 ```
 
 ## 使用
-要求golang版本必须支持Go Modules，本系统使用1.18.3版本。
+
+要求 golang 版本必须支持 Go Modules，本系统使用 1.18.3 版本。
 
 克隆到本地目录
+
 ```shell
 git clone git@github.com:ken-house/go_example.git
 ```
+
 加载相应的依赖包
+
 ```shell
 go mod tidy
 ```
+
 启动服务
+
 ```go
 go run main.go http
 ```
+
 访问：http://127.0.0.1:8080/hello
 
-
-
 ## 目录结构
+
 ```
 go_example/
 ├── cmd
@@ -236,7 +273,7 @@ go_example/
 │   └── root.go // 根命令
 ├── configs // 配置文件
 │   ├── debug
-│   │   └── common.yaml 
+│   │   └── common.yaml
 │   ├── dev
 │   ├── prod
 │   └── test
@@ -265,23 +302,35 @@ go_example/
 ├── main.go
 └── README.md
 ```
+
 ## 项目框架实现过程
+
 ### 新建项目
-创建一个项目目录，例如：go_example，执行命令初始化go modules。
+
+创建一个项目目录，例如：go_example，执行命令初始化 go modules。
+
 ```shell
 go mod init github.com/go_example
 ```
+
 ### 创建脚手架
-安装cobra
+
+安装 cobra
+
 ```shell
 cobra init ../go_example
 ```
-创建web服务入口
+
+创建 web 服务入口
+
 ```shell
 cobra add http
 ```
-### 引入Gin框架做web服务
-在cmd/http.go文件中，创建Gin引擎，注册路由，运行服务。
+
+### 引入 Gin 框架做 web 服务
+
+在 cmd/http.go 文件中，创建 Gin 引擎，注册路由，运行服务。
+
 ```go
 // httpCmd represents the http command
 var httpCmd = &cobra.Command{
@@ -313,7 +362,9 @@ var httpCmd = &cobra.Command{
 	},
 }
 ```
-在cmd/root.go文件中，通过cobra.OnInitialize(initConfig)对项目的配置进行初始化。
+
+在 cmd/root.go 文件中，通过 cobra.OnInitialize(initConfig)对项目的配置进行初始化。
+
 ```go
 func init() {
 	// 初始化配置文件
@@ -339,27 +390,35 @@ func initConfig() {
 	}
 }
 ```
-此时，运行项目就可以启动web服务，访问127.0.0.1:8080/hello即可访问。
+
+此时，运行项目就可以启动 web 服务，访问 127.0.0.1:8080/hello 即可访问。
+
 ```shell
 go run main.go http
 ```
-### wire解决依赖注入
-安装wire
+
+### wire 解决依赖注入
+
+安装 wire
+
 ```shell
 go get -u github.com/google/wire
 ```
+
 对项目目录结构进行分层，目录结构如下：
 
 ![image](assets/images/1.png)
 
-在项目中，web服务调用controller控制器，控制器调用service服务类，服务类调用repository数据仓库层，
-数据仓库层调用其他包生成的服务引擎客户端（如mysql）。
+在项目中，web 服务调用 controller 控制器，控制器调用 service 服务类，服务类调用 repository 数据仓库层，
+数据仓库层调用其他包生成的服务引擎客户端（如 mysql）。
 
 这里以控制器调用服务类举例：
-在controller目录下创建hello_controller.go文件。 
-1. 采用面向接口编程，因此会有一个向外提供服务的interface类型的HelloController， 该接口规范了struct类型的接收者里的方法；
-2. 在接收者helloController中定义要调用的服务service.HelloService；
-3.  创建一个实例化当前控制器的方法，提供给上层调用；
+在 controller 目录下创建 hello_controller.go 文件。
+
+1. 采用面向接口编程，因此会有一个向外提供服务的 interface 类型的 HelloController， 该接口规范了 struct 类型的接收者里的方法；
+2. 在接收者 helloController 中定义要调用的服务 service.HelloService；
+3. 创建一个实例化当前控制器的方法，提供给上层调用；
+
 ```go
 package controller
 
@@ -391,7 +450,8 @@ func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
 	return negotiate.JSON(http.StatusOK, data)
 }
 ```
-在service目录下创建hello_service.go文件。同hello_controller.go文件类似定义。
+
+在 service 目录下创建 hello_service.go 文件。同 hello_controller.go 文件类似定义。
 
 ```go
 package service
@@ -425,8 +485,10 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	}
 }
 ```
-assembly目录下创建wire文件，这里命名为controller.go，定义了控制器的依赖关系。
-必须在文件第一行加上// +build wireinject表示不参与编译。
+
+assembly 目录下创建 wire 文件，这里命名为 controller.go，定义了控制器的依赖关系。
+必须在文件第一行加上// +build wireinject 表示不参与编译。
+
 ```go
 //go:build wireinject
 // +build wireinject
@@ -445,7 +507,9 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	))
 }
 ```
-同样创建一个服务类的service.go文件，定义服务类的依赖关系。
+
+同样创建一个服务类的 service.go 文件，定义服务类的依赖关系。
+
 ```go
 //go:build wireinject
 
@@ -465,21 +529,29 @@ func NewHelloService() (service.HelloService, func(), error) {
 	))
 }
 ```
-进入assembly目录下，执行wire命令生成wire_gen.go文件。
+
+进入 assembly 目录下，执行 wire 命令生成 wire_gen.go 文件。
+
 ```shell
 cd ./internal/assembly
 wire
 ```
+
 这样就解决了文件互相依赖的问题，每层更加专注实现自己的功能，不用关心依赖方的实现。
 
-## 连接MySQL
+## 连接 MySQL
+
 ### 安装
+
 ```shell
 go get -u github.com/go-sql-driver/mysql
 go get -u xorm.io/xorm
 ```
+
 ### 代码解析
-在assembly目录下，创建一个common.go文件，该文件定义了获取MySQL连接，并遵循wire规范。
+
+在 assembly 目录下，创建一个 common.go 文件，该文件定义了获取 MySQL 连接，并遵循 wire 规范。
+
 ```go
 // NewMysqlSingleClient 单机数据库连接
 func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
@@ -500,9 +572,11 @@ func NewMysqlGroupClient() (meta.MysqlGroupClient, func(), error) {
 	return mysqlClient.NewGroupClient(cfg)
 }
 ```
-以单机数据库连接为例，定义了SingleClient接口，singleClient结构体为接收者，NewSingleClient用来返回一个客户端连接及wire所需要的回调方法和错误。
 
-在获取数据库连接中，使用了xorm创建数据库连接。
+以单机数据库连接为例，定义了 SingleClient 接口，singleClient 结构体为接收者，NewSingleClient 用来返回一个客户端连接及 wire 所需要的回调方法和错误。
+
+在获取数据库连接中，使用了 xorm 创建数据库连接。
+
 ```go
 package mysqlClient
 
@@ -578,7 +652,9 @@ func newEngine(cfg SingleConfig) (*xorm.Engine, error) {
 }
 
 ```
-最后，将NewMysqlSingleClient或NewMysqlGroupClient方法注入到Repository中，修改assembly/service.go文件如下：
+
+最后，将 NewMysqlSingleClient 或 NewMysqlGroupClient 方法注入到 Repository 中，修改 assembly/service.go 文件如下：
+
 ```go
 //go:build wireinject
 
@@ -601,16 +677,22 @@ func NewHelloService() (service.HelloService, func(), error) {
 	))
 }
 ```
+
 这样在数据仓库层（repository）就可以使用数据库连接了。
 
-## 连接Redis
+## 连接 Redis
+
 ### 安装
+
 ```shell
 go get -u github.com/go-redis/redis/v8
 ```
+
 ### 代码解析
-Redis连接同MySQL类似，目的也是提供一个Redis连接，注入到repository中。
-在assembly/common.go文件中定义两个方法分别为连接单机和redisCluster集群模式；
+
+Redis 连接同 MySQL 类似，目的也是提供一个 Redis 连接，注入到 repository 中。
+在 assembly/common.go 文件中定义两个方法分别为连接单机和 redisCluster 集群模式；
+
 ```go
 // NewRedisSingleClient 连接Redis单机
 func NewRedisSingleClient() (meta.RedisSingleClient, func(), error) {
@@ -630,9 +712,11 @@ func NewRedisGroupClient() (meta.RedisGroupClient, func(), error) {
 	return redisClient.NewGroupClient(cfg)
 }
 ```
-以单机连接为例，定义了SingleClient接口，singleClient结构体为接收者，NewSingleClient返回redis连接及回调方法和错误
 
-获取redis连接使用了github.com/go-redis/redis/v8包，代码如下：
+以单机连接为例，定义了 SingleClient 接口，singleClient 结构体为接收者，NewSingleClient 返回 redis 连接及回调方法和错误
+
+获取 redis 连接使用了 github.com/go-redis/redis/v8 包，代码如下：
+
 ```go
 package redisClient
 
@@ -682,7 +766,9 @@ func NewClient(cfg SingleConfig) (*redis.Client, error) {
 	return client, err
 }
 ```
-最后，将NewRedisSingleClient和NewRedisGroupClient方法注入到Repository中，修改assembly/service.go文件如下：
+
+最后，将 NewRedisSingleClient 和 NewRedisGroupClient 方法注入到 Repository 中，修改 assembly/service.go 文件如下：
+
 ```go
 //go:build wireinject
 
@@ -705,13 +791,19 @@ func NewHelloService() (service.HelloService, func(), error) {
 	))
 }
 ```
-这样在数据仓库层（repository）就可以使用Redis连接了。
 
-## JWT登录验证
-JWT的出现就是为了解决传统Session+Cookie技术存在的各种问题，随着前后端分离的发展，JWT被广泛使用。
+这样在数据仓库层（repository）就可以使用 Redis 连接了。
+
+## JWT 登录验证
+
+JWT 的出现就是为了解决传统 Session+Cookie 技术存在的各种问题，随着前后端分离的发展，JWT 被广泛使用。
+
 ### 普通验证
-#### 生成JWT
-注册两个路由，分别为登录和首页，其中首页需要登录用户才可以访问，修改internal/server/http.go文件，代码如下：
+
+#### 生成 JWT
+
+注册两个路由，分别为登录和首页，其中首页需要登录用户才可以访问，修改 internal/server/http.go 文件，代码如下：
+
 ```go
 func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/hello", srv.Hello())
@@ -721,7 +813,9 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
 }
 ```
-当请求127.0.0.1:8080/login进行登录，系统根据提交的表单数据验证用户密码后生成JWT，
+
+当请求 127.0.0.1:8080/login 进行登录，系统根据提交的表单数据验证用户密码后生成 JWT，
+
 ```go
 func (svc *loginService) Login(formData model.LoginForm) (token string, err error) {
 	// 验证用户登录
@@ -734,13 +828,17 @@ func (svc *loginService) Login(formData model.LoginForm) (token string, err erro
 	return auth.GenToken(userInfo)
 }
 ```
-接下来，golang如何生成jwt的，需要先安装：
+
+接下来，golang 如何生成 jwt 的，需要先安装：
+
 ```shell
 go get -u github.com/golang-jwt/jwt/v4
 ```
-+ 新建common/auth/auth.go文件，因为我们要自定义参数，所以定义一个CustomClaims结构体，其中包含用户信息；
-+ 定义一个token的过期时间及加密盐；
-+ 定义生成token的方法，使用jwt.SigningMethodHS256加密方式生成签名对象，然后通过加密盐进行加密并返回json字符串;
+
+- 新建 common/auth/auth.go 文件，因为我们要自定义参数，所以定义一个 CustomClaims 结构体，其中包含用户信息；
+- 定义一个 token 的过期时间及加密盐；
+- 定义生成 token 的方法，使用 jwt.SigningMethodHS256 加密方式生成签名对象，然后通过加密盐进行加密并返回 json 字符串;
+
 ```go
 type CustomClaims struct {
 	UserInfo MysqlModel.User `json:"user_info"`
@@ -769,13 +867,19 @@ func GenToken(userInfo MysqlModel.User) (string, error) {
 	return token.SignedString(CustomSecret)
 }
 ```
-至此，登陆成功后会返回一个json字符串，我们称为token(令牌)。
-#### 解析JWT
-gin框架支持中间价，在访问主页的路由上使用中间价，即可完成验证；
+
+至此，登陆成功后会返回一个 json 字符串，我们称为 token(令牌)。
+
+#### 解析 JWT
+
+gin 框架支持中间价，在访问主页的路由上使用中间价，即可完成验证；
+
 ```go
 router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
 ```
-创建internal/middleware/jwt_auth_middlerware.go文件，接收请求头里的AUTHORIZATION进行解析JWT，解析成功将JWT中的UserInfo信息写入到gin.context中；
+
+创建 internal/middleware/jwt_auth_middlerware.go 文件，接收请求头里的 AUTHORIZATION 进行解析 JWT，解析成功将 JWT 中的 UserInfo 信息写入到 gin.context 中；
+
 ```go
 func JWTAuthMiddleware() func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -811,7 +915,9 @@ func JWTAuthMiddleware() func(c *gin.Context) {
 	}
 }
 ```
-接下来，就是对token进行解析，可以在common/auth/auth.go文件中看到，将token使用加密盐解析，最终得到CustomClaims；
+
+接下来，就是对 token 进行解析，可以在 common/auth/auth.go 文件中看到，将 token 使用加密盐解析，最终得到 CustomClaims；
+
 ```go
 // ParseToken 解析token
 func ParseToken(tokenString string) (*CustomClaims, error) {
@@ -831,26 +937,30 @@ func ParseToken(tokenString string) (*CustomClaims, error) {
 	return nil, errors.New("token invalid")
 }
 ```
-至此，中间件若成功解析并写入到gin的上下文后，会进入到srv.Home()的业务逻辑中。
-这样就实现了普通的JWT登录验证。
 
-### JWT续期（Refresh Token）
-JWT是一次签发带有过期时间的令牌Token，当登录成功后，系统会签发一个token，过期时间假设为30分钟，若用户登录成功后在30分钟后操作，解析JWT将会失效，那么就无法进入主页。
-为了解决这个问题，可以采用refresh token的方式。
+至此，中间件若成功解析并写入到 gin 的上下文后，会进入到 srv.Home()的业务逻辑中。
+这样就实现了普通的 JWT 登录验证。
 
-在请求接口中，我们使用的token称为access_token，该token带有用户信息；当access_token过期后，我们使用refresh_token重新获取新的access_token,
+### JWT 续期（Refresh Token）
+
+JWT 是一次签发带有过期时间的令牌 Token，当登录成功后，系统会签发一个 token，过期时间假设为 30 分钟，若用户登录成功后在 30 分钟后操作，解析 JWT 将会失效，那么就无法进入主页。
+为了解决这个问题，可以采用 refresh token 的方式。
+
+在请求接口中，我们使用的 token 称为 access_token，该 token 带有用户信息；当 access_token 过期后，我们使用 refresh_token 重新获取新的 access_token,
 具体流程如下：
-+ 客户端使用用户名密码进行认证
-+ 服务端生成有效时间较短的 Access Token（例如 10 分钟），和有效时间较长的 Refresh Token（例如 7 天）
-+ 客户端访问需要认证的接口时，携带 Access Token
-+ 如果 Access Token 没有过期，服务端鉴权后返回给客户端需要的数据
-+ 如果携带 Access Token 访问需要认证的接口时鉴权失败（例如返回 401 错误），则客户端使用 Refresh Token 向刷新接口申请新的 Access Token
-+ 如果 Refresh Token 没有过期，服务端向客户端下发新的 Access Token
-+ 客户端使用新的 Access Token 访问需要认证的接口
+
+- 客户端使用用户名密码进行认证
+- 服务端生成有效时间较短的 Access Token（例如 10 分钟），和有效时间较长的 Refresh Token（例如 7 天）
+- 客户端访问需要认证的接口时，携带 Access Token
+- 如果 Access Token 没有过期，服务端鉴权后返回给客户端需要的数据
+- 如果携带 Access Token 访问需要认证的接口时鉴权失败（例如返回 401 错误），则客户端使用 Refresh Token 向刷新接口申请新的 Access Token
+- 如果 Refresh Token 没有过期，服务端向客户端下发新的 Access Token
+- 客户端使用新的 Access Token 访问需要认证的接口
 
 ![image](assets/images/jwt.jpg)
 
-对普通验证代码进行改造，生成token时，返回一个access_token和refresh_token，解析token时使用对应的解密盐；
+对普通验证代码进行改造，生成 token 时，返回一个 access_token 和 refresh_token，解析 token 时使用对应的解密盐；
+
 ```go
 package auth
 
@@ -938,7 +1048,9 @@ func ParseToken(tokenString string, grantType string) (*CustomClaims, error) {
 	return nil, errors.New("token invalid")
 }
 ```
-注册一个/auth/refresh_token路由，用于刷新token；
+
+注册一个/auth/refresh_token 路由，用于刷新 token；
+
 ```go
 func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/hello", srv.Hello())
@@ -950,7 +1062,9 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/home", middleware.JWTAuthMiddleware(), srv.Home())
 }
 ```
-RefreshToken方法，从头信息AUTHORIZATION中读取refresh_token，若解析refresh_token成功，可以得到用户id,查询用户信息，生成新的access_token及refresh_token,客户端后期使用新的access_token进行请求；
+
+RefreshToken 方法，从头信息 AUTHORIZATION 中读取 refresh_token，若解析 refresh_token 成功，可以得到用户 id,查询用户信息，生成新的 access_token 及 refresh_token,客户端后期使用新的 access_token 进行请求；
+
 ```go
 func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 	authorization := c.Request.Header.Get("Authorization")
@@ -987,24 +1101,31 @@ func (ctr *authController) RefreshToken(c *gin.Context) (int, gin.Negotiate) {
 	})
 }
 ```
-经过Refresh Token机制处理，实现了JWT的续期。
+
+经过 Refresh Token 机制处理，实现了 JWT 的续期。
 
 ### 密钥对加密
-前面对token加密都是通过自定义的密码盐进行加密，安全级别较低，使用密钥对加密token，更加安全可靠！
-创建assets/certs/1652421664目录，执行下面命令，生成密钥对：
+
+前面对 token 加密都是通过自定义的密码盐进行加密，安全级别较低，使用密钥对加密 token，更加安全可靠！
+创建 assets/certs/1652421664 目录，执行下面命令，生成密钥对：
+
 ```shell
 # 生成私钥
 openssl genrsa -out rsa_private_key.pem 1024
 # 生成公钥
 openssl rsa -in rsa_private_key.pem -pubout -out rsa_public_key.pem
 ```
-在配置文件中定义密钥列表及当前使用的key
+
+在配置文件中定义密钥列表及当前使用的 key
+
 ```yaml
 certs:
   curKey: 1652421664
   keys: [1652421664]
 ```
-定义SetCerts()方法读取证书内容到全局变量certs中，该方法将在cmd/http.go文件中的RUN方法调用。
+
+定义 SetCerts()方法读取证书内容到全局变量 certs 中，该方法将在 cmd/http.go 文件中的 RUN 方法调用。
+
 ```go
 type cert struct {
 	PrivateKey []byte
@@ -1048,7 +1169,9 @@ func SetCerts() {
 	curKey = viper.GetString("certs.curKey")
 }
 ```
-接下来只需要将之前使用的密码盐加密替换成从pem文件中读取密钥对进行加解密，注意这里jwt.SigningMethodRS512加密类型，必须和生成密钥对的类型一致。
+
+接下来只需要将之前使用的密码盐加密替换成从 pem 文件中读取密钥对进行加解密，注意这里 jwt.SigningMethodRS512 加密类型，必须和生成密钥对的类型一致。
+
 ```go
 // GenToken 生成token
 func GenToken(userInfo MysqlModel.User) (string, string, error) {
@@ -1120,10 +1243,12 @@ func ParseToken(tokenString string) (*CustomClaims, error) {
 ```
 
 ### 单点登录
-由于JWT令牌是一次签发，在有效时间内一直有效，因此在多个设备登录后，本地的token是有效的，为了保证单点登录，可通过Redis记录用户最新一次的token信息。
-生成或重新刷新token会将redis hash数据更新，解析token时，会检查token是否为用户的最新token信息。
 
-在jwt.go文件中的GenToken()方法中增加保存到redis的操作：
+由于 JWT 令牌是一次签发，在有效时间内一直有效，因此在多个设备登录后，本地的 token 是有效的，为了保证单点登录，可通过 Redis 记录用户最新一次的 token 信息。
+生成或重新刷新 token 会将 redis hash 数据更新，解析 token 时，会检查 token 是否为用户的最新 token 信息。
+
+在 jwt.go 文件中的 GenToken()方法中增加保存到 redis 的操作：
+
 ```go
 // 将token写入redis hash中
 err = saveAuthTokenRedis(userInfo.Id, accessTokenSign, refreshTokenSign)
@@ -1131,7 +1256,9 @@ if err != nil {
     return "", "", err
 }
 ```
-在ParseToken()方法中获取redis的认证token，并和当前使用的token判断；
+
+在 ParseToken()方法中获取 redis 的认证 token，并和当前使用的 token 判断；
+
 ```go
 if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
     // 判断token是否有效，若无效返回错误
@@ -1142,10 +1269,14 @@ if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
     return claims, nil
 }
 ```
+
 ### 单点登录优化（代码依赖）
-在v1.4.3版本中，单独创建了driver/目录，实现redis连接，这样就存在两套Redis连接（通过wire注入形式的连接和driver自己编写的连接），为了优化该问题，避免循环调用，
+
+在 v1.4.3 版本中，单独创建了 driver/目录，实现 redis 连接，这样就存在两套 Redis 连接（通过 wire 注入形式的连接和 driver 自己编写的连接），为了优化该问题，避免循环调用，
 对代码进行了以下调整：
-1. 在httpServer注入一个authService，并在中间件中传入该服务类；
+
+1. 在 httpServer 注入一个 authService，并在中间件中传入该服务类；
+
 ```go
 type httpServer struct {
 	helloCtr    controller.HelloController
@@ -1178,7 +1309,9 @@ func (srv *httpServer) Register(router *gin.Engine) {
     router.GET("/home", middleware.JWTAuthMiddleware(srv.authService), srv.Home())
 }
 ```
-2. 中间件将authService服务类传入到auth.ParseToken方法中；
+
+2. 中间件将 authService 服务类传入到 auth.ParseToken 方法中；
+
 ```go
 func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
 	return func(c *gin.Context) {
@@ -1221,7 +1354,9 @@ func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
 	}
 }
 ```
-3. 在auth/jwt.go文件中，便可以使用authService下的验证令牌方法及生成令牌方法；
+
+3. 在 auth/jwt.go 文件中，便可以使用 authService 下的验证令牌方法及生成令牌方法；
+
 ```go
 // GenToken 生成token
 func GenToken(authService service.AuthService, userInfo MysqlModel.User) (string, string, error) {
@@ -1301,17 +1436,24 @@ func ParseToken(authService service.AuthService, tokenString string, grantType s
 	return nil, errors.New("token invalid")
 }
 ```
-最后，在authService中会依赖redis.UserRepository，该仓库会依赖redisClient连接，这样便实现了整个依赖注入的过程。
-## xlsx文件导入导出
+
+最后，在 authService 中会依赖 redis.UserRepository，该仓库会依赖 redisClient 连接，这样便实现了整个依赖注入的过程。
+
+## xlsx 文件导入导出
+
 Excelize 是 Go 语言编写的用于操作 Office Excel 文档基础库。
+
 ### 安装
+
 ```shell
 go get -u github.com/xuri/excelize/v2
 ```
 
-### xlsx导出
-在common/excelHandler目录下创建excel_export.go文件，定义了一个Export()公共方法用于导出文件；
+### xlsx 导出
+
+在 common/excelHandler 目录下创建 excel_export.go 文件，定义了一个 Export()公共方法用于导出文件；
 按行设置表头及文件内容，指定请求头进行下载；
+
 ```go
 package excelHandler
 
@@ -1376,7 +1518,9 @@ func (excel *excelExportHandler) setExcelContent(rows [][]interface{}, sheetName
 	return nil
 }
 ```
-新建一个service/excel_user_service.go文件，组装数据调用公共导入方法，代码如下：
+
+新建一个 service/excel_user_service.go 文件，组装数据调用公共导入方法，代码如下：
+
 ```go
 // ExportUser 导出用户信息
 func (svc *excelUserService) ExportUser(c *gin.Context, userList []MysqlModel.User) error {
@@ -1396,8 +1540,11 @@ func (svc *excelUserService) ExportUser(c *gin.Context, userList []MysqlModel.Us
 	return svc.excelExportHandler.Export(c, rows, headerArr, fileName)
 }
 ```
-### xlsx导入
-通过router.LoadHTMLGlob("views/index.html")告诉gin加载文件，添加上传文件页面路由，并定义了文件导入处理路由；
+
+### xlsx 导入
+
+通过 router.LoadHTMLGlob("views/index.html")告诉 gin 加载文件，添加上传文件页面路由，并定义了文件导入处理路由；
+
 ```go
 // Excel文件导出
 router.GET("/excel/export", srv.Export())
@@ -1409,22 +1556,30 @@ router.GET("/excel/import_index", func(c *gin.Context) {
 })
 router.POST("/excel/import", srv.Import())
 ```
-views/index.html文件如下：
+
+views/index.html 文件如下：
+
 ```html
 <!DOCTYPE html>
 <html lang="zh-CN">
-    <head>
-        <title>上传⽂件⽰例</title>
-    </head>
-    <body>
-        <form action="http://127.0.0.1:8080/excel/import" method="post" enctype="multipart/form-data">
-           <input type="file" name="uploadFile">
-           <input type="submit" value="上传">
-        </form>
-    </body>
+  <head>
+    <title>上传⽂件⽰例</title>
+  </head>
+  <body>
+    <form
+      action="http://127.0.0.1:8080/excel/import"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      <input type="file" name="uploadFile" />
+      <input type="submit" value="上传" />
+    </form>
+  </body>
 </html>
 ```
-在excel_user_service.go文件中，定义ImportUser()方法，代码如下：
+
+在 excel_user_service.go 文件中，定义 ImportUser()方法，代码如下：
+
 ```go
 // ImportUser 导入文件
 func (svc *excelUserService) ImportUser(c *gin.Context, file io.Reader) ([]MysqlModel.User, error) {
@@ -1455,8 +1610,10 @@ func (svc *excelUserService) ImportUser(c *gin.Context, file io.Reader) ([]Mysql
 	return userList, err
 }
 ```
-调用了文件导入公共方法，新增文件common/excelHandler/excel_import.go文件，该文件从上传文件uploadFile文件打开Excel，读取文件内容，并根据表头判断文件内容格式，
+
+调用了文件导入公共方法，新增文件 common/excelHandler/excel_import.go 文件，该文件从上传文件 uploadFile 文件打开 Excel，读取文件内容，并根据表头判断文件内容格式，
 代码如下：
+
 ```go
 package excelHandler
 
@@ -1517,12 +1674,15 @@ func (excel *excelImportHandler) Import(c *gin.Context, uploadFile io.Reader, sh
 	return rows, err
 }
 ```
+
 ## 优雅关机处理
-热更新时为了不影响正在访问的用户，需要进行优雅关机处理，将Gin通过一个groutine启动服务，不影响下面的优雅关机处理；
+
+热更新时为了不影响正在访问的用户，需要进行优雅关机处理，将 Gin 通过一个 groutine 启动服务，不影响下面的优雅关机处理；
 
 在优雅关机处理中，通过通道接收指定的终止信号量，并读取通道实现是否执行关机操作；
 
 在关机处理中，定义了一个带超时时间的上下文，旧请求应该在超时时间内完成响应，超时后执行关闭服务；
+
 ```go
 Run: func(cmd *cobra.Command, args []string) {
     // 读取证书内容
@@ -1562,7 +1722,7 @@ Run: func(cmd *cobra.Command, args []string) {
     quit := make(chan os.Signal)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit
-    
+
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
     if err := srv.Shutdown(ctx); err != nil {
@@ -1571,8 +1731,11 @@ Run: func(cmd *cobra.Command, args []string) {
     log.Println("Server exiting")
 },
 ```
+
 ### 测试效果
-在hello_controller.go文件中，增加一个超时时间
+
+在 hello_controller.go 文件中，增加一个超时时间
+
 ```go
 func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
 	time.Sleep(5 * time.Second)
@@ -1580,22 +1743,32 @@ func (ctr *helloController) Say(c *gin.Context) (int, gin.Negotiate) {
 	return negotiate.JSON(http.StatusOK, data)
 }
 ```
-运行服务，访问127.0.0.1:8080/hello，立即执行Ctrl+C停止http服务，此时可以看到http服务不会立即停止，访问正常响应后服务关闭。
-## WebSocket服务
-Socket是实现TCP/IP连接的API接口，调用Socket提供的接口，可以实现一次TCP连接，客户端和服务端全双工数据交互，主要应用场景如游戏。
 
-### 创建子入口构建Socket服务
-通过cobra生成socket服务入口，在项目根目录下执行以下命令：
+运行服务，访问 127.0.0.1:8080/hello，立即执行 Ctrl+C 停止 http 服务，此时可以看到 http 服务不会立即停止，访问正常响应后服务关闭。
+
+## WebSocket 服务
+
+Socket 是实现 TCP/IP 连接的 API 接口，调用 Socket 提供的接口，可以实现一次 TCP 连接，客户端和服务端全双工数据交互，主要应用场景如游戏。
+
+### 创建子入口构建 Socket 服务
+
+通过 cobra 生成 socket 服务入口，在项目根目录下执行以下命令：
+
 ```shell
 cobra add socket
 ```
-同http服务构建类似，创建或编辑以下文件，并执行wire重新生成wire_gen.go文件：
-+ internal/server/socket.go
-+ internal/controller/socket_controller.go
-+ internal/assembly/controller.go
-+ internal/assembly/server.go
-### Socket服务端
-在socket_controller.go文件中，通过github.com/gorilla/websocket库升级http连接为websocket连接，并提供服务端服务。
+
+同 http 服务构建类似，创建或编辑以下文件，并执行 wire 重新生成 wire_gen.go 文件：
+
+- internal/server/socket.go
+- internal/controller/socket_controller.go
+- internal/assembly/controller.go
+- internal/assembly/server.go
+
+### Socket 服务端
+
+在 socket_controller.go 文件中，通过 github.com/gorilla/websocket 库升级 http 连接为 websocket 连接，并提供服务端服务。
+
 ```go
 package controller
 
@@ -1642,17 +1815,20 @@ func (ctr *socketController) SocketServer(c *gin.Context) {
 		if err != nil {
 			break
 		}
-		
+
 		// 响应客户端的数据也为字符串消息类型
 		resData := "recv data:" + string(message)
 		ws.WriteMessage(messageType, []byte(resData))
 	}
 }
 ```
-### 浏览器客户端
-在http服务中，增加html页面，通过前端发起websocket连接。
 
-在路由增加加载的html文件，代码如下：
+### 浏览器客户端
+
+在 http 服务中，增加 html 页面，通过前端发起 websocket 连接。
+
+在路由增加加载的 html 文件，代码如下：
+
 ```go
 func (srv *httpServer) Register(router *gin.Engine) {
     // 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
@@ -1668,83 +1844,96 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	// ......
 }
 ```
-views/socket2.html文件内容如下：
+
+views/socket2.html 文件内容如下：
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <script>
-        window.addEventListener("load", function(evt) {
-            var output = document.getElementById("output");
-            var input = document.getElementById("input");
-            var ws;
-            var print = function(message) {
-                var d = document.createElement("div");
-                d.textContent = message;
-                output.appendChild(d);
-                output.scroll(0, output.scrollHeight);
-            };
-            document.getElementById("open").onclick = function(evt) {
-                if (ws) {
-                    return false;
-                }
-                ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
-                ws.onopen = function(evt) {
-                    print("OPEN");
-                }
-                ws.onclose = function(evt) {
-                    print("CLOSE");
-                    ws = null;
-                }
-                ws.onmessage = function(evt) {
-                    print("RESPONSE: " + evt.data);
-                }
-                ws.onerror = function(evt) {
-                    print("ERROR: " + evt.data);
-                }
-                return false;
-            };
-            document.getElementById("send").onclick = function(evt) {
-                if (!ws) {
-                    return false;
-                }
-                print("SEND: " + input.value);
-                ws.send(input.value);
-                return false;
-            };
-            document.getElementById("close").onclick = function(evt) {
-                if (!ws) {
-                    return false;
-                }
-                ws.close();
-                return false;
-            };
-        });
+      window.addEventListener("load", function (evt) {
+        var output = document.getElementById("output");
+        var input = document.getElementById("input");
+        var ws;
+        var print = function (message) {
+          var d = document.createElement("div");
+          d.textContent = message;
+          output.appendChild(d);
+          output.scroll(0, output.scrollHeight);
+        };
+        document.getElementById("open").onclick = function (evt) {
+          if (ws) {
+            return false;
+          }
+          ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
+          ws.onopen = function (evt) {
+            print("OPEN");
+          };
+          ws.onclose = function (evt) {
+            print("CLOSE");
+            ws = null;
+          };
+          ws.onmessage = function (evt) {
+            print("RESPONSE: " + evt.data);
+          };
+          ws.onerror = function (evt) {
+            print("ERROR: " + evt.data);
+          };
+          return false;
+        };
+        document.getElementById("send").onclick = function (evt) {
+          if (!ws) {
+            return false;
+          }
+          print("SEND: " + input.value);
+          ws.send(input.value);
+          return false;
+        };
+        document.getElementById("close").onclick = function (evt) {
+          if (!ws) {
+            return false;
+          }
+          ws.close();
+          return false;
+        };
+      });
     </script>
-</head>
-<body>
-<table>
-    <tr><td valign="top" width="50%">
-        <p>Click "Open" to create a connection to the server,
-            "Send" to send a message to the server and "Close" to close the connection.
-            You can change the message and send multiple times.
-        <p>
-        <form>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <td valign="top" width="50%">
+          <p>
+            Click "Open" to create a connection to the server, "Send" to send a
+            message to the server and "Close" to close the connection. You can
+            change the message and send multiple times.
+          </p>
+
+          <p></p>
+          <form>
             <button id="open">Open</button>
             <button id="close">Close</button>
-            <p><input id="input" type="text" value="Hello world!">
-                <button id="send">Send</button>
-        </form>
-    </td><td valign="top" width="50%">
-        <div id="output" style="max-height: 70vh;overflow-y: scroll;"></div>
-    </td></tr></table>
-</body>
+            <p>
+              <input id="input" type="text" value="Hello world!" />
+              <button id="send">Send</button>
+            </p>
+          </form>
+        </td>
+        <td valign="top" width="50%">
+          <div id="output" style="max-height: 70vh;overflow-y: scroll;"></div>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>
 ```
-访问127.0.0.1:8080/socket/index2即可展示页面，点击发送socket请求；
 
-以上使用的数据格式为普通字符串类型，一般使用采用json数据格式，因此需要对服务端代码进行如下修改：
+访问 127.0.0.1:8080/socket/index2 即可展示页面，点击发送 socket 请求；
+
+以上使用的数据格式为普通字符串类型，一般使用采用 json 数据格式，因此需要对服务端代码进行如下修改：
+
 ```go
 for {
     // 从ws中读取数据
@@ -1753,7 +1942,7 @@ for {
     if err != nil {
         break
     }
-    
+
     message := reqData["name"] + "_" + reqData["age"]
 
     _, resData := negotiate.JSON(http.StatusOK, gin.H{
@@ -1765,37 +1954,42 @@ for {
     ws.WriteJSON(resData.Data)
 }
 ```
-客户端代码也需要进行修改，发送为json数据，接收也是json数据，如下所示：
+
+客户端代码也需要进行修改，发送为 json 数据，接收也是 json 数据，如下所示：
+
 ```html
 <html>
-<head>
+  <head>
     <title>test</title>
-</head>
-<body>
-test ....
-</body>
-<script>
+  </head>
+  <body>
+    test ....
+  </body>
+  <script>
     var ws = new WebSocket("ws://192.168.163.1:30000/socket_server");
-    var data = `{"name":"张三","age":"18"}`
+    var data = `{"name":"张三","age":"18"}`;
 
     //连接打开时触发
-    ws.onopen = function(evt) {
-        console.log("Connection open ...");
-        ws.send(data);
+    ws.onopen = function (evt) {
+      console.log("Connection open ...");
+      ws.send(data);
     };
     //接收到消息时触发
-    ws.onmessage = function(evt) {
-        console.log("Received Message: " + evt.data);
+    ws.onmessage = function (evt) {
+      console.log("Received Message: " + evt.data);
     };
     //连接关闭时触发
-    ws.onclose = function(evt) {
-        console.log("Connection closed.");
+    ws.onclose = function (evt) {
+      console.log("Connection closed.");
     };
-</script>
+  </script>
 </html>
 ```
+
 ### 客户端
-当需要连接其他项目提供的socket服务时，需要编写客户端代码，代码如下：
+
+当需要连接其他项目提供的 socket 服务时，需要编写客户端代码，代码如下：
+
 ```go
 package main
 
@@ -1880,14 +2074,18 @@ func main() {
 	}
 }
 ```
-### WebSocket服务增加心跳检测
-WebSocket服务启动后，若客户端不关闭连接且长时间不通信，服务端TCP连接会一直保持。当Socket连接数不断增多时，对服务器资源是个巨大的消耗，因此需要及时关闭连接。
 
-golang并没有提供针对长连接的方法，因此可以通过心跳检测策略来实现：
-+ 当客户端有数据请求时，则重新设置服务端连接的超时时间为30秒；
-+ 当客户端超过30秒未请求，则会超时并关闭服务端TCP连接；
+### WebSocket 服务增加心跳检测
 
-通过定义一个channel，定义一个goroutine若有数据则写入通道，另定义一个goroutine从通道里取值，若能取出，则重新设置连接超时时间，代码如下：
+WebSocket 服务启动后，若客户端不关闭连接且长时间不通信，服务端 TCP 连接会一直保持。当 Socket 连接数不断增多时，对服务器资源是个巨大的消耗，因此需要及时关闭连接。
+
+golang 并没有提供针对长连接的方法，因此可以通过心跳检测策略来实现：
+
+- 当客户端有数据请求时，则重新设置服务端连接的超时时间为 30 秒；
+- 当客户端超过 30 秒未请求，则会超时并关闭服务端 TCP 连接；
+
+通过定义一个 channel，定义一个 goroutine 若有数据则写入通道，另定义一个 goroutine 从通道里取值，若能取出，则重新设置连接超时时间，代码如下：
+
 ```go
 func (ctr *socketController) SocketServer(c *gin.Context) {
 	// 升级为WebSocket
@@ -1934,8 +2132,10 @@ func heartHandler(conn *websocket.Conn, heartChan chan byte, timeout int) {
 
 ```
 
-### WebSocket增加客户端来源检查
-Socket服务端启动后，只需要知道IP和Port后，就可以连接，这样就不安全，可以增加一个来源检查。以下代码通过IP地址进行判断：
+### WebSocket 增加客户端来源检查
+
+Socket 服务端启动后，只需要知道 IP 和 Port 后，就可以连接，这样就不安全，可以增加一个来源检查。以下代码通过 IP 地址进行判断：
+
 ```go
 var upGrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -1954,10 +2154,15 @@ var upGrader = websocket.Upgrader{
 	},
 }
 ```
-## gRPC服务
-gRPC是一种实现rpc框架，gRPC能让我们更容易编写跨语言的分布式代码，使用protobuf协议效率更高、更规范。
-### 编写proto文件
-gRPC使用protobuf协议进行通信，在项目目录下创建common/protobuf/hello/hello.proto文件，代码如下：
+
+## gRPC 服务
+
+gRPC 是一种实现 rpc 框架，gRPC 能让我们更容易编写跨语言的分布式代码，使用 protobuf 协议效率更高、更规范。
+
+### 编写 proto 文件
+
+gRPC 使用 protobuf 协议进行通信，在项目目录下创建 common/protobuf/hello/hello.proto 文件，代码如下：
+
 ```protobuf
 syntax = "proto3";
 
@@ -1978,24 +2183,34 @@ service HelloService{
   rpc SayHello(HelloRequest) returns (HelloResponse);
 }
 ```
-### 生成pb.go文件
+
+### 生成 pb.go 文件
+
 从https://github.com/protocolbuffers/protobuf/releases下载对应的protoc编译器，解压拷贝到$GOPATH/bin目录下；
-安装生成go语言代码插件
+安装生成 go 语言代码插件
+
 ```shell
 go get -u github.com/golang/protobuf/protoc-gen-go
 ```
+
 在项目根目录下执行命令：
+
 ```shell
 protoc  --go_out=plugins=grpc:. common/protobuf/hello/hello.proto
 ```
-这样就在common/protobuf/hello目录下生成了hello.pb.go文件。
 
-### 创建gRPC服务入口
-使用cobra增加子命令：
+这样就在 common/protobuf/hello 目录下生成了 hello.pb.go 文件。
+
+### 创建 gRPC 服务入口
+
+使用 cobra 增加子命令：
+
 ```shell
 cobra add grpc
 ```
-在internal/server目录下创建一个grpc.go文件，该文件定义了一个grpcServer，包含注册服务到grpc及服务的一个实现方法，代码如下：
+
+在 internal/server 目录下创建一个 grpc.go 文件，该文件定义了一个 grpcServer，包含注册服务到 grpc 及服务的一个实现方法，代码如下：
+
 ```go
 package server
 
@@ -2035,8 +2250,11 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
 	}, nil
 }
 ```
-### 启动grpc服务
-将protobuf定义的service服务注册到grpc中，并启动服务。代码如下：
+
+### 启动 grpc 服务
+
+将 protobuf 定义的 service 服务注册到 grpc 中，并启动服务。代码如下：
+
 ```go
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
@@ -2104,7 +2322,9 @@ func init() {
 	rootCmd.AddCommand(grpcCmd)
 }
 ```
-对internal/assembly/server.go文件增加NewGrpcServer方法后，执行wire重新生成文件：
+
+对 internal/assembly/server.go 文件增加 NewGrpcServer 方法后，执行 wire 重新生成文件：
+
 ```go
 func NewGrpcServer() (server.GrpcServer, func(), error) {
 	panic(wire.Build(
@@ -2112,10 +2332,13 @@ func NewGrpcServer() (server.GrpcServer, func(), error) {
 	))
 }
 ```
-这样就完成了grpc服务端，执行go run main.go grpc即可。
 
-### gRPC客户端
-创建一个controller，对其进行wire注入，配置http服务的路由，最终代码如下：
+这样就完成了 grpc 服务端，执行 go run main.go grpc 即可。
+
+### gRPC 客户端
+
+创建一个 controller，对其进行 wire 注入，配置 http 服务的路由，最终代码如下：
+
 ```go
 package controller
 
@@ -2175,13 +2398,18 @@ func (ctr *grpcClientController) HelloGrpc(c *gin.Context) (int, gin.Negotiate) 
 	})
 }
 ```
-启动http服务，访问对应的路由即可连接gRPC服务。
 
-### TLS加密认证
-在上面的示例中，服务端未使用加密认证，客户端通过指定insecure.NewCredentials()跳过加密认证，这样安全性不高，为此这里使用TLS证书加密。
-在1.15版本后，需要执行SAN证书通信。
+启动 http 服务，访问对应的路由即可连接 gRPC 服务。
+
+### TLS 加密认证
+
+在上面的示例中，服务端未使用加密认证，客户端通过指定 insecure.NewCredentials()跳过加密认证，这样安全性不高，为此这里使用 TLS 证书加密。
+在 1.15 版本后，需要执行 SAN 证书通信。
+
 #### 生成证书
-copy一份openssl.cnf文件到要生成证书的目录下，对文件做如下修改：
+
+copy 一份 openssl.cnf 文件到要生成证书的目录下，对文件做如下修改：
+
 ```text
 [ CA_default ]
 ...
@@ -2204,7 +2432,9 @@ subjectAltName = @alt_names
 DNS.1 = *.org.example.com
 DNS.2 = *.example.com
 ```
+
 生成根证书
+
 ```shell
 # 生成根证书私钥
 openssl genrsa -out ca.key 2048
@@ -2213,7 +2443,9 @@ openssl req -new -key ca.key -out ca.csr -subj "/C=cn/OU=myorg/O=mytest/CN=mynam
 # 自签名得到根证书
 openssl x509 -req -days 3650 -in ca.csr -signkey ca.key -out ca.crt
 ```
+
 生成服务端证书
+
 ```shell
 # 生成服务端证书私钥
 openssl genrsa -out server.key 2048
@@ -2222,21 +2454,29 @@ openssl req -new -nodes -key server.key -out server.csr -subj "/C=cn/OU=myserver
 # 请求CA对证书请求文件签名，生成最终的证书文件
 openssl x509 -req -days 365 -in server.csr -out server.pem -CA ca.crt -CAkey ca.key -CAcreateserial -extfile ./openssl.cnf -extensions v3_req
 ```
+
 #### 代码实现
-下面将使用到ca.crt、server.key、server.pem文件，复制到/assets/certs/grpc_tls/目录下；
+
+下面将使用到 ca.crt、server.key、server.pem 文件，复制到/assets/certs/grpc_tls/目录下；
 服务端代码修改
+
 ```go
 creds, _ := credentials.NewServerTLSFromFile("./assets/certs/grpc_tls/server.pem", "./assets/certs/grpc_tls/server.key")
 app := grpc.NewServer(grpc.Creds(creds))
 ```
+
 客户端代码修改
+
 ```go
 creds, err := credentials.NewClientTLSFromFile("./assets/certs/grpc_tls/server.pem", "a.example.com")
 conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
 ```
+
 运行服务端和客户端即可。
-### TLS加密证书认证升级
-同样的方式生成客户端证书，得到client.key、client.crs、client.pem文件，复制文件到grpc_tls目录下；
+
+### TLS 加密证书认证升级
+
+同样的方式生成客户端证书，得到 client.key、client.crs、client.pem 文件，复制文件到 grpc_tls 目录下；
 
 ```Bash
 openssl genrsa -out client.key 2048
@@ -2303,9 +2543,10 @@ conn, err := grpc.Dial("127.0.0.1:9090", grpc.WithTransportCredentials(creds))
 
 这样我们使用 CA 颁发的根证书对客户端、服务端的证书进行了签发。进一步的提高了两者的通讯安全。
 
-### gRPC基于Token认证
-gRPC还为每个gRPC方法调用提供了认证支持，这样就基于用户Token对不同的方法访问进行权限管理。
-要实现对每个gRPC方法进行认证，需要实现`grpc.PerRPCCredentials`接口，在internal/lib/auth下创建一个grpc.go文件，代码如下：
+### gRPC 基于 Token 认证
+
+gRPC 还为每个 gRPC 方法调用提供了认证支持，这样就基于用户 Token 对不同的方法访问进行权限管理。
+要实现对每个 gRPC 方法进行认证，需要实现`grpc.PerRPCCredentials`接口，在 internal/lib/auth 下创建一个 grpc.go 文件，代码如下：
 
 ```Go
 package auth
@@ -2392,14 +2633,21 @@ func (srv *grpcServer) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.H
   }, nil
 }
 ```
+
 ## 服务注册与服务发现
-Consul提供服务注册与服务发现API接口，可实现gRPC分布式服务负载均衡。
+
+Consul 提供服务注册与服务发现 API 接口，可实现 gRPC 分布式服务负载均衡。
+
 ### 安装
-官方提供了golang版本的库，通过下面命令进行安装：
+
+官方提供了 golang 版本的库，通过下面命令进行安装：
+
 ```shell
 go get github.com/hashicorp/consul/api
 ```
-创建common/consulClient/consulClient.go文件，通过consul官方提供的api包调用对应的服务注册与发现接口。
+
+创建 common/consulClient/consulClient.go 文件，通过 consul 官方提供的 api 包调用对应的服务注册与发现接口。
+
 ```go
 package consulClient
 
@@ -2456,25 +2704,27 @@ func (cli *consulClient) DeregisterService(serviceId string) error {
 	return cli.Client.Agent().ServiceDeregister(serviceId)
 }
 ```
-在cmd/grpc.go文件中，添加服务注册与服务注销，同时增加健康检查。
+
+在 cmd/grpc.go 文件中，添加服务注册与服务注销，同时增加健康检查。
+
 ```go
 Run: func(cmd *cobra.Command, args []string) {
     app := grpc.NewServer(grpc.Creds(creds))
-    
+
     // 开启健康检查
     healthServer := health.NewServer()
     healthServer.SetServingStatus(meta.HEALTHCHECK_SERVICE, healthpb.HealthCheckResponse_SERVING)
     healthpb.RegisterHealthServer(app, healthServer)
-    
+
     // 3.注册服务
     grpcSrv.Register(app)
-    
+
     // 注册服务到consul
     consulClient, serviceIdArr, err := grpcSrv.RegisterConsul()
     if err != nil {
         log.Fatalf("RegisterConsul err%+v\n", err)
     }
-    
+
     // 4.启动服务
     go func() {
         err = app.Serve(listen)
@@ -2482,14 +2732,14 @@ Run: func(cmd *cobra.Command, args []string) {
         log.Fatalf("Serve err:%+v\n", err)
         }
     }()
-    
+
     // 优雅关闭服务
     quit := make(chan os.Signal)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
     <-quit
-    
+
     app.GracefulStop()
-    
+
     // 注销consul服务
     for _, serviceId := range serviceIdArr {
         if err := consulClient.DeregisterService(serviceId); err != nil {
@@ -2498,24 +2748,32 @@ Run: func(cmd *cobra.Command, args []string) {
     }
 }
 ```
-客户端修改连接地址为consul地址，并指定负载均衡及服务健康检查。
+
+客户端修改连接地址为 consul 地址，并指定负载均衡及服务健康检查。
+
 ```go
 conn, err := grpc.Dial("consul://192.168.163.131:8500/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth))
 ```
 
 ## 内存缓存
-项目选用go-cache作为内存缓存。
-###安装
+
+项目选用 go-cache 作为内存缓存。 ###安装
+
 ```shell
 go get github.com/patrickmn/go-cache
 ```
+
 ### 代码实现
-在meta.go文件中定义全局变量
+
+在 meta.go 文件中定义全局变量
+
 ```go
 // CacheDriver go-cache缓存对象
 var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
 ```
-在internal/repository/cache/创建cache_repository.go，文件定义了获取key的方法及其他公共方法。
+
+在 internal/repository/cache/创建 cache_repository.go，文件定义了获取 key 的方法及其他公共方法。
+
 ```go
 package cache
 
@@ -2536,7 +2794,9 @@ func GetCacheKey(key string, vals ...interface{}) (string, error) {
 	return fmt.Sprintf(cacheKey, vals...), nil
 }
 ```
-创建一个user_repository.go文件，包含读取和写入go-cache。
+
+创建一个 user_repository.go 文件，包含读取和写入 go-cache。
+
 ```go
 package cache
 
@@ -2581,7 +2841,9 @@ func (repo *userRepository) GetUserInfo(uid int) (MysqlModel.User, error) {
 	return data.(MysqlModel.User), nil
 }
 ```
-在hello_service.go文件中使用，代码如下：
+
+在 hello_service.go 文件中使用，代码如下：
+
 ```go
 func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	uid := cast.ToInt(c.DefaultQuery("id", "0"))
@@ -2604,19 +2866,25 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 }
 ```
 
-## 实现MongoDB连接
-安装MongoDB Go驱动包
+## 实现 MongoDB 连接
+
+安装 MongoDB Go 驱动包
+
 ```shell
 go get go.mongodb.org/mongo-driver/mongo
 ```
-添加mongodb连接配置，如果是分片集群则为多个地址以逗号隔开，若为replicas集群在后面还要加/?replicaSet=myRepl
+
+添加 mongodb 连接配置，如果是分片集群则为多个地址以逗号隔开，若为 replicas 集群在后面还要加/?replicaSet=myRepl
+
 ```yaml
 mongodb:
   # addr格式：mongodb://username:password@addr1:port2,addr2:port2
   addr: "mongodb://192.168.163.131:27017"
   max_open: 20
 ```
-创建common/mongoClient/mongo.go文件，定义了连接Mongo的方法，由于mongo包中没有提供方法的interface，需要将mongo包client.go定义的方法定义复制到SingleClient interface，代码如下：
+
+创建 common/mongoClient/mongo.go 文件，定义了连接 Mongo 的方法，由于 mongo 包中没有提供方法的 interface，需要将 mongo 包 client.go 定义的方法定义复制到 SingleClient interface，代码如下：
+
 ```go
 package mongoClient
 
@@ -2685,7 +2953,9 @@ func NewMongoClient(cfg MongoConfig) (MongoClient, func(), error) {
 }
 
 ```
-在internal/respository/mongodb目录下创建user_repository.go文件，该文件依赖mongo连接，定义了mongo CRUD文档的具体操作。
+
+在 internal/respository/mongodb 目录下创建 user_repository.go 文件，该文件依赖 mongo 连接，定义了 mongo CRUD 文档的具体操作。
+
 ```go
 package mongodb
 
@@ -2741,7 +3011,9 @@ func (repo *userRepository) GetUserInfo(uid int) (MongoModel.User, error) {
 }
 
 ```
-最后，在hello_service.go文件中使用，代码如下：
+
+最后，在 hello_service.go 文件中使用，代码如下：
+
 ```go
 // mongodb操作数据
 if user.Username != "" {
@@ -2749,13 +3021,19 @@ if user.Username != "" {
 }
 userInfo, _ := svc.userMongoRepo.GetUserInfo(uid)
 ```
-这样就可以愉快地使用mongodb了。
-## pprof性能分析器
+
+这样就可以愉快地使用 mongodb 了。
+
+## pprof 性能分析器
+
 安装
+
 ```shell
 go get -u github.com/felixge/fgprof
 ```
-采用fgprof包代替官方提供的pprof，仅需在cmd/http.go文件中添加如下代码：
+
+采用 fgprof 包代替官方提供的 pprof，仅需在 cmd/http.go 文件中添加如下代码：
+
 ```go
 import(
     _ "net/http/pprof"
@@ -2772,20 +3050,30 @@ Run: func(cmd *cobra.Command, args []string) {
     }
 }
 ```
-打开浏览器访问http://127.0.0.1:6060/debug/pprof/ 即可查看概览。若要显示图形化界面，需要安装Graphviz，安装完成后执行如下代码：
+
+打开浏览器访问http://127.0.0.1:6060/debug/pprof/ 即可查看概览。若要显示图形化界面，需要安装 Graphviz，安装完成后执行如下代码：
+
 ```Bash
 go tool pprof -http=:6061 http://localhost:6060/debug/pprof/profile?seconds=60
 ```
-等待60秒后，会自动跳转到图形界面。
-## RPC熔断和降级
+
+等待 60 秒后，会自动跳转到图形界面。
+
+## RPC 熔断和降级
+
 微服务架构，服务间调用，当一个服务发生故障，若不对其进行熔断或降级处理，容易导致整个系统崩溃，造成雪崩。
-这里使用hystrix-go来实现服务熔断和降级。
+这里使用 hystrix-go 来实现服务熔断和降级。
+
 ### 安装
+
 ```shell
 go get github.com/afex/hystrix-go
 ```
+
 ### 代码实现
-在gRPC调用方，增加拦截器，在拦截器中实现断路器的作用。增加一个拦截器方法，并在grpc.Dail()方法增加拦截器。
+
+在 gRPC 调用方，增加拦截器，在拦截器中实现断路器的作用。增加一个拦截器方法，并在 grpc.Dail()方法增加拦截器。
+
 ```go
 // UnaryClientInterceptor grpc拦截器
 func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
@@ -2808,10 +3096,15 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 // ...省略代码
 conn, err := grpc.Dial("consul://"+consulAddr+"/hello?wait=10s", grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy": "round_robin"}`), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"HealthCheckConfig": {"ServiceName": "%s"}}`, meta.HEALTHCHECK_SERVICE)), grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(grpcAuth), grpc.WithUnaryInterceptor(UnaryClientInterceptor()))
 ```
+
 ## 统一错误码
+
 当前返回错误码与成功返回公用一个结构体，存在冗余等问题。为了更加清晰的分辨错误返回和成功返回，使用两种结构体分别处理，并统一错误码。
+
 ### 错误码服务
-在目录internal/lib/errorAssets下，创建error_list.go，该文件规定了哪些错误码
+
+在目录 internal/lib/errorAssets 下，创建 error_list.go，该文件规定了哪些错误码
+
 ```go
 package errorAssets
 
@@ -2837,7 +3130,9 @@ var (
 	ERR_FILE_PARSE = errorAssets.NewError(30002, "文件解析失败")
 )
 ```
-创建error_no.go文件，定义了返回错误的结构体及方法。
+
+创建 error_no.go 文件，定义了返回错误的结构体及方法。
+
 ```go
 package errorAssets
 
@@ -2911,16 +3206,23 @@ func (err *errorNo) PopupError(popupTitle, popupContent string, popupStyle int) 
 ```
 
 ### 错误码调用
+
 ```go
 return negotiate.JSON(http.StatusOK, errorAssets.ERR_REFRESH_TOKEN.ToastError())
 ```
-## 引用自有包
-将项目目录下的common目录替换成github.com/ken-house/go-contrib库，在internal/lib目录下增加errorAssets错误码包，实现项目可自定义错误码。
 
-## zap高性能日志
-zap是uber开源的Go高性能日志库，是非常快的、结构化的，分日志级别的Go日志库。
+## 引用自有包
+
+将项目目录下的 common 目录替换成 github.com/ken-house/go-contrib 库，在 internal/lib 目录下增加 errorAssets 错误码包，实现项目可自定义错误码。
+
+## zap 高性能日志
+
+zap 是 uber 开源的 Go 高性能日志库，是非常快的、结构化的，分日志级别的 Go 日志库。
+
 ### 默认使用
-使用zap提供的配置
+
+使用 zap 提供的配置
+
 ```go
 // SimpleLogger 使用zap包自带的配置文件
 func SimpleLogger(outPutPaths []string) {
@@ -2971,8 +3273,11 @@ func SimpleLogger(outPutPaths []string) {
 	zap.RedirectStdLog(logger)
 }
 ```
+
 ### 自定义配置
+
 支持日志文件切割归档
+
 ```go
 // CustomLogger 自定义zap日志，支持日志切割归档
 func CustomLogger(lumberjackLogger *lumberjack.Logger, outPutFile string) {
@@ -3019,14 +3324,16 @@ func getWriteSyncer(lumberjackLogger *lumberjack.Logger, outPutFile string) zapc
 	}
 }
 ```
-在cmd/root.go中，初始化日志。
+
+在 cmd/root.go 中，初始化日志。
+
 ```go
 // 初始化日志
 func initLog() {
     // 普通日志记录
     outputFile := fmt.Sprintf("./logs/log_%s.log", time.Now().Format("20060102"))
     //zapLogger.SimpleLogger([]string{outputFile})
-    
+
     // 支持日志文件切割
     zapLogger.CustomLogger(&lumberjack.Logger{
     Filename:   outputFile,
@@ -3038,10 +3345,13 @@ func initLog() {
     }, "")
 }
 ```
-在其他要记录日志的地方可以直接使用zap.L()写日志信息。
 
-## Gin框架参数验证
-接口接收参数，控制器使用参数绑定，gin框架自动通过binding标签对字段进行参数验证，使用系统自带验证器，也可以自定义验证器如validatePassword。
+在其他要记录日志的地方可以直接使用 zap.L()写日志信息。
+
+## Gin 框架参数验证
+
+接口接收参数，控制器使用参数绑定，gin 框架自动通过 binding 标签对字段进行参数验证，使用系统自带验证器，也可以自定义验证器如 validatePassword。
+
 ```go
 // LoginForm 登录表单数据
 type LoginForm struct {
@@ -3057,9 +3367,12 @@ func (ctr *authController) Login(c *gin.Context) (int, gin.Negotiate) {
 	// ...
 }
 ```
+
 ### 自定义验证器
-上面示例使用了validatePassword自定义验证器，需要对验证器进行定义并注册。
-定义验证器方法，在internal/meta目录下创建validator.go，内容如下：
+
+上面示例使用了 validatePassword 自定义验证器，需要对验证器进行定义并注册。
+定义验证器方法，在 internal/meta 目录下创建 validator.go，内容如下：
+
 ```go
 package meta
 
@@ -3091,12 +3404,14 @@ var ValidateUsername = regexpStringValidatorFunc(`^[0-9A-Za-z]{6,30}$`)
 var ValidateVerifyCode = regexpStringValidatorFunc(`^[0-9]{6}$`)
 
 ```
-还需要将自定义验证器注册到gin框架中，修改cmd/root.go，改动如下：
+
+还需要将自定义验证器注册到 gin 框架中，修改 cmd/root.go，改动如下：
+
 ```go
 func init() {
     // 初始化配置文件
     cobra.OnInitialize(initConfig, initLog, initValidator)
-    
+
     rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 // ...
@@ -3111,15 +3426,20 @@ func initValidator() {
 }
 ```
 
+## Jenkins 服务
 
-## Jenkins服务
 Jenkins 是最流行的开源持续集成系统。
+
 ### 安装
+
 ```shell
 go get github.com/bndr/gojenkins
 ```
+
 ### 使用
-controller目录下创建jenkins_controller.go，代码如下：
+
+controller 目录下创建 jenkins_controller.go，代码如下：
+
 ```go
 package controller
 
@@ -3198,7 +3518,9 @@ func (ctr *jenkinsController) Index(c *gin.Context) (int, gin.Negotiate) {
 	})
 }
 ```
-在service/目录下创建jenkins_service.go文件，该文件仅封装了常用服务：
+
+在 service/目录下创建 jenkins_service.go 文件，该文件仅封装了常用服务：
+
 ```go
 package service
 
@@ -3356,7 +3678,9 @@ func (svc *jenkinsService) BuildJob(c *gin.Context, jobName string, params map[s
 	return svc.jenkinsClient.BuildJob(c, jobName, params)
 }
 ```
-jenkins_service.go文件依赖jenkinsClient，这个在assembly/common.go文件中定义：
+
+jenkins_service.go 文件依赖 jenkinsClient，这个在 assembly/common.go 文件中定义：
+
 ```go
 func NewJenkinsClient() (meta.JenkinsClient, error) {
 	var cfg jenkinsClient.JenkinsConfig
@@ -3366,7 +3690,9 @@ func NewJenkinsClient() (meta.JenkinsClient, error) {
 	return jenkinsClient.NewJenkinsClient(cfg)
 }
 ```
-引入公共库prototype/jenkinsClient/jenkinsClient.go提供了一系列jenkins服务：
+
+引入公共库 prototype/jenkinsClient/jenkinsClient.go 提供了一系列 jenkins 服务：
+
 ```go
 package jenkinsClient
 
@@ -3436,10 +3762,15 @@ func NewJenkinsClient(cfg JenkinsConfig) (JenkinsClient, error) {
 	}, nil
 }
 ```
+
 ## 阿里云短信服务
+
 使用阿里云短信服务接口，需要在阿里云短信服务商购买并获取到相应的配置。
+
 ### 使用
-在internal/assembly/common.go中添加方法获取到阿里云短信客户端
+
+在 internal/assembly/common.go 中添加方法获取到阿里云短信客户端
+
 ```go
 // NewAlibabaSmsClient alibaba短信连接
 func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
@@ -3450,7 +3781,9 @@ func NewAlibabaSmsClient() (meta.AlibabaSmsClient, error) {
 	return alibabaSmsClient.CreateClient(cfg)
 }
 ```
-在internal/service下新增sms_service.go文件，实现发送短信验证码的功能，代码如下：
+
+在 internal/service 下新增 sms_service.go 文件，实现发送短信验证码的功能，代码如下：
+
 ```go
 // SendCode 发送短信验证码
 func (svc *smsService) SendCode(ctx *gin.Context, phone string) (code string, err error) {
@@ -3478,8 +3811,11 @@ func (svc *smsService) SendCode(ctx *gin.Context, phone string) (code string, er
 	return code, nil
 }
 ```
+
 控制器层可直接调用，实现短信发送。
+
 ### 短信客户端实现
+
 ```go
 package alibabaSmsClient
 
@@ -3567,9 +3903,13 @@ func (cli *alibabaSmsClient) SendCode(params SendSmsParams) (err error) {
 	return err
 }
 ```
-## CRUD代码自动生成
+
+## CRUD 代码自动生成
+
 ### Makefile
-编写Crud_Makefile文件，其中相关变量需要根据项目实际情况进行修改，目前仅支持单个单词的控制器，并要求表名遵循相应规则，若有更高需求，可生成后再做相应修改，代码如下：
+
+编写 Crud_Makefile 文件，其中相关变量需要根据项目实际情况进行修改，目前仅支持单个单词的控制器，并要求表名遵循相应规则，若有更高需求，可生成后再做相应修改，代码如下：
+
 ```makefile
 goModule = github.com/go_example
 name = test
@@ -3689,8 +4029,11 @@ clean:
 	@echo "./internal/assembly/server.go"
 	@echo "./internal/server/http.go"
 ```
-### Makefile执行命令
-生成CRUD代码，根据输出提示进行操作。
+
+### Makefile 执行命令
+
+生成 CRUD 代码，根据输出提示进行操作。
+
 ```shell
 # name：控制器的名称，一般为业务名，例如：user、department等；
 # tableName：对应数据库表名；
@@ -3698,14 +4041,21 @@ clean:
 # -f Crud_Makefile：表示指定Crud_Makefile文件；
 make all name=user tableName=user_data tableModel=UserData -f Crud_Makefile
 ```
-删除CRUD代码，根据输出提示进行操作。
+
+删除 CRUD 代码，根据输出提示进行操作。
+
 ```shell
 make clean name=user tableName=user_data tableModel=UserData -f Crud_Makefile
 ```
-## Nacos配置中心
+
+## Nacos 配置中心
+
 Nacos 是阿里巴巴推出来的一个新开源项目。一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台。
+
 ### 配置文件修改
-configs/debug新增config_center.yaml配置文件，定义了连接nacos配置中心相关的配置信息：
+
+configs/debug 新增 config_center.yaml 配置文件，定义了连接 nacos 配置中心相关的配置信息：
+
 ```yaml
 config_center:
   server_ip_list:
@@ -3720,8 +4070,11 @@ config_center:
   group: "go_example"
   data_id: "debug-go_example-common.yaml"
 ```
-### root.go初始化项目配置
-支持本地调试可选择本地配置文件或配置中心获取项目配置，生产及测试环境使用配置中心配置。将配置信息解析到meta.GlobalConfig全局变量，并实现客户端监听，当配置发生变化，客户端通过OnChange回调修改meta.GlobalConfig全局变量。
+
+### root.go 初始化项目配置
+
+支持本地调试可选择本地配置文件或配置中心获取项目配置，生产及测试环境使用配置中心配置。将配置信息解析到 meta.GlobalConfig 全局变量，并实现客户端监听，当配置发生变化，客户端通过 OnChange 回调修改 meta.GlobalConfig 全局变量。
+
 ```go
 func initConfig() {
 	// 从系统环境变量中读取运行环境
@@ -3784,8 +4137,11 @@ func setGlobalConfigFromData(data string) {
     }
 }
 ```
+
 ### 从全局变量中读取配置信息
-新增全局变量结构体，对应文件为：internal/model/global_config.go，并在meta.go中定义全局变量。
+
+新增全局变量结构体，对应文件为：internal/model/global_config.go，并在 meta.go 中定义全局变量。
+
 ```go
 package model
 
@@ -3905,7 +4261,9 @@ type AlibabaSmsCode struct {
 }
 
 ```
-将从viper全局变量中读取改为从meta.GlobalConfig全局变量。如下示例：
+
+将从 viper 全局变量中读取改为从 meta.GlobalConfig 全局变量。如下示例：
+
 ```go
 // NewMysqlSingleClient 单机数据库连接
 func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
@@ -3919,7 +4277,9 @@ func NewMysqlSingleClient() (meta.MysqlSingleClient, func(), error) {
 	return mysqlClient.NewSingleClient(cfg)
 }
 ```
-### Nacos配置中心服务
+
+### Nacos 配置中心服务
+
 ```go
 package nacosClient
 
@@ -3994,13 +4354,19 @@ func getClientConfig(cfg Config) constant.ClientConfig {
 	return clientConfig
 }
 ```
-## Nacos服务注册与服务发现
-在Nacos配置中心的基础上，对Nacos提供的服务进行拆分为两个服务，配置中心与服务注册：
-+ 公共配置对应github.com/ken-house/go-contrib/prototype/nacosClient/common.go
-+ 配置中心对应github.com/ken-house/go-contrib/prototype/nacosClient/configCenterClient.go
-+ 服务注册对应github.com/ken-house/go-contrib/prototype/nacosClient/serviceClient.go
+
+## Nacos 服务注册与服务发现
+
+在 Nacos 配置中心的基础上，对 Nacos 提供的服务进行拆分为两个服务，配置中心与服务注册：
+
+- 公共配置对应 github.com/ken-house/go-contrib/prototype/nacosClient/common.go
+- 配置中心对应 github.com/ken-house/go-contrib/prototype/nacosClient/configCenterClient.go
+- 服务注册对应 github.com/ken-house/go-contrib/prototype/nacosClient/serviceClient.go
+
 ### 服务注册与服务发现
+
 获得服务注册与发现的客户端连接，代码如下：
+
 ```go
 package nacosClient
 
@@ -4054,8 +4420,11 @@ func (cli *serviceClient) FindHealthInstanceAddress(clusters []string, serviceNa
 	return fmt.Sprintf("%s:%d", serviceInfo.Ip, serviceInfo.Port), nil
 }
 ```
+
 ### 服务注册
-在cmd/grpc.go文件中调用RegisterNacos()方法，将服务注册到nacos。
+
+在 cmd/grpc.go 文件中调用 RegisterNacos()方法，将服务注册到 nacos。
+
 ```go
 func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.RegisterInstanceParam, error) {
 	ip := tools.GetOutBoundIp()
@@ -4085,8 +4454,11 @@ func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.Register
 	return srv.nacosServiceClient, serviceArr, nil
 }
 ```
+
 ### 服务发现
-通过健康检查获取到一个健康的Nacos服务节点，连接Nacos创建grpc客户端。
+
+通过健康检查获取到一个健康的 Nacos 服务节点，连接 Nacos 创建 grpc 客户端。
+
 ```go
 	// nacos 服务发现
 	nacosAddr, err := ctr.nacosServiceClient.FindHealthInstanceAddress(nil, "hello", "go_example")
@@ -4100,16 +4472,22 @@ func (srv *grpcServer) RegisterNacos() (nacosClient.ServiceClient, []vo.Register
 	}
 ```
 
-## Kafka服务
-Kafka是一个开源的分布式事件流平台，在大数据场景主要采用 Kafka 作为消息队列。
+## Kafka 服务
+
+Kafka 是一个开源的分布式事件流平台，在大数据场景主要采用 Kafka 作为消息队列。
+
 ### 安装
+
 ```shell
 go get github.com/Shopify/sarama
 ```
-### 生产者
-kafka生产者分为同步和异步，同步需要等待broker节点根据acks响应所有步骤完成返回；异步则将消息推送到队列后即返回。
 
-common.go文件整理了kafka相关配置及公共方法。
+### 生产者
+
+kafka 生产者分为同步和异步，同步需要等待 broker 节点根据 acks 响应所有步骤完成返回；异步则将消息推送到队列后即返回。
+
+common.go 文件整理了 kafka 相关配置及公共方法。
+
 ```go
 package kafkaClient
 
@@ -4148,8 +4526,11 @@ func setPartition(config *sarama.Config, partitionerType int) {
 	}
 }
 ```
+
 #### 同步生产者
+
 默认提供了发送单个消息和多个消息的方法，这里对这两个方法进行封装。
+
 ```go
 package kafkaClient
 
@@ -4225,7 +4606,9 @@ func (cli *producerSyncClient) SendMany(topic string, key string, messageList []
 	return cli.SendMessages(msgList)
 }
 ```
-在controller层，通过如下代码进行调用：
+
+在 controller 层，通过如下代码进行调用：
+
 ```go
 // ProducerSync 同步发送
 func (ctr kafkaController) ProducerSync(ctx *gin.Context) (int, gin.Negotiate) {
@@ -4260,8 +4643,11 @@ func (ctr kafkaController) ProducerSync(ctx *gin.Context) (int, gin.Negotiate) {
 	})
 }
 ```
+
 #### 异步生产者
+
 异步生产者为单独的对象连接，并封装了发送消息方法。
+
 ```go
 package kafkaClient
 
@@ -4319,7 +4705,9 @@ func (cli *producerAsyncClient) SendOne(topic string, key string, message string
 	cli.Input() <- msg
 }
 ```
-在controller层调用：
+
+在 controller 层调用：
+
 ```go
 // ProducerAsync 异步发送
 func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) {
@@ -4332,8 +4720,11 @@ func (ctr kafkaController) ProducerAsync(ctx *gin.Context) (int, gin.Negotiate) 
 	})
 }
 ```
+
 ### 消费
-kafka提供消费者，这里封装消费一个topic的方法：
+
+kafka 提供消费者，这里封装消费一个 topic 的方法：
+
 ```go
 package kafkaClient
 
@@ -4390,7 +4781,9 @@ func (cli *consumerClient) ConsumeTopic(topic string, isNew int64, ConsumerFunc 
 	return nil
 }
 ```
-在controller层调用：
+
+在 controller 层调用：
+
 ```go
 // Consumer 启动消费
 func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
@@ -4409,9 +4802,12 @@ func (ctr kafkaController) Consumer(ctx *gin.Context) (int, gin.Negotiate) {
 }
 ```
 
-### Docker容器化部署服务
-#### 编写Dockerfile文件
-在项目目录下新建Dockerfile文件，文件内容如下：
+### Docker 容器化部署服务
+
+#### 编写 Dockerfile 文件
+
+在项目目录下新建 Dockerfile 文件，文件内容如下：
+
 ```dockerfile
 FROM golang:1.18-alpine3.16
 
@@ -4454,22 +4850,31 @@ EXPOSE 8080
 ENTRYPOINT ["/dist/example-http-server","http"]
 
 ```
+
 #### 构建镜像
-生成的镜像会放在docker本地镜像仓库
+
+生成的镜像会放在 docker 本地镜像仓库
+
 ```shell
 docker build . -t example-http-server:latest
 ```
 
 #### 运行容器
-需要在挂在的配置目录下，创建配置文件，配置文件中的IP地址要改为可访问地址。
+
+需要在挂在的配置目录下，创建配置文件，配置文件中的 IP 地址要改为可访问地址。
+
 ```dockerfile
 docker run -d -p 8888:8080 -p 6666:6060 -v ~/dockerVolumes/exampleVolume/http/logs:/dist/logs -v ~/dockerVolumes/exampleVolume/http/nacos:/dist/nacos -v ~/dockerVolumes/exampleVolume/http/configs:/dist/configs --name example-http-server example-http-server
 ```
+
 打开浏览器，访问：http://127.0.0.1:8888/hello接口访问。
 
-### K8s容器编排部署
-#### 推送镜像到Docker Hub
-在上一节，我们将项目打包成镜像，并可启动容器运行。接下来，我们将镜像推送到Docker Hub。
+### K8s 容器编排部署
+
+#### 推送镜像到 Docker Hub
+
+在上一节，我们将项目打包成镜像，并可启动容器运行。接下来，我们将镜像推送到 Docker Hub。
+
 ```shell
 # 对镜像打标签
 docker tag example-http-server xudengtang/example-http-server:1.0
@@ -4480,10 +4885,13 @@ docker login
 # 推送镜像
 docker push xudengtang/example-http-server:1.0
 ```
-这样镜像就推送到Docker Hub，并且是Public。
 
-#### Pod部署
-这里通过Deployment控制器对Pod进行创建。在项目目录下创建/deploy/debug/example-http-server-deployment.yaml,代码如下：
+这样镜像就推送到 Docker Hub，并且是 Public。
+
+#### Pod 部署
+
+这里通过 Deployment 控制器对 Pod 进行创建。在项目目录下创建/deploy/debug/example-http-server-deployment.yaml,代码如下：
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment # 类型为deployment
@@ -4521,16 +4929,21 @@ spec: # deployment描述
           hostPath:
             path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
 ```
+
 执行创建命令：
+
 ```shell
 kubectl apply -f ./deploy/debug/example-http-server-deployment.yaml
 # 查看pod列表
 kubectl get pods -n dev
 ```
-到这里，项目在Pod下的容器中运行成功，但外部还无法访问。
 
-### Service服务
-K8s提供Service服务对Pod端口进行代理，这里使用NodePort，以便外部可以通过节点IP进行访问；创建example-http-server-service.yaml，代码如下：
+到这里，项目在 Pod 下的容器中运行成功，但外部还无法访问。
+
+### Service 服务
+
+K8s 提供 Service 服务对 Pod 端口进行代理，这里使用 NodePort，以便外部可以通过节点 IP 进行访问；创建 example-http-server-service.yaml，代码如下：
+
 ```yaml
 apiVersion: v1
 kind: Service # 类型为service
@@ -4546,16 +4959,20 @@ spec: # service描述
       nodePort: 30000 # service的NodePort端口（范围为30000-32767）
       targetPort: 8080 # pod节点暴露的端口
 ```
-执行如下命令创建Service:
+
+执行如下命令创建 Service:
+
 ```shell
 kubectl apply -f ./deploy/debug/example-http-server-service.yaml
 ```
-此时，可以通过127.0.0.1:30000/hello访问服务；
 
-### K8s容器化部署全面升级
-这里以go_example项目为例。由于go_example项目使用cobra做项目脚手架，支持一个项目多个服务。在前面构建镜像时，仅实现了一个http服务，因此需要对代码进行如下调整。
+此时，可以通过 127.0.0.1:30000/hello 访问服务；
 
-### Makefile文件
+### K8s 容器化部署全面升级
+
+这里以 go_example 项目为例。由于 go_example 项目使用 cobra 做项目脚手架，支持一个项目多个服务。在前面构建镜像时，仅实现了一个 http 服务，因此需要对代码进行如下调整。
+
+### Makefile 文件
 
 ```Makefile
 .PHONY: build
@@ -4573,15 +4990,15 @@ clean:
   docker image rm xudengtang/go-example:latest
 ```
 
-本地执行命令生成可执行文件到项目目录下的bin/go_example
+本地执行命令生成可执行文件到项目目录下的 bin/go_example
 
 ```Bash
 make build
 ```
 
-### Dockerfile文件
+### Dockerfile 文件
 
-上面通过make build已经生成了可执行文件，修改Dockerfile文件，基于alpine基础镜像（最小化的Liunx镜像），将可执行文件COPY到镜像中，同时加载一些所需静态文件，添加卷等。
+上面通过 make build 已经生成了可执行文件，修改 Dockerfile 文件，基于 alpine 基础镜像（最小化的 Liunx 镜像），将可执行文件 COPY 到镜像中，同时加载一些所需静态文件，添加卷等。
 
 ```Docker
 FROM alpine:latest
@@ -4606,15 +5023,15 @@ VOLUME ["/logs", "/nacos"]
 ENTRYPOINT ["/go-example"]
 ```
 
-本地执行如下命令，将打包镜像并推送到Docker Hub。
+本地执行如下命令，将打包镜像并推送到 Docker Hub。
 
 ```Bash
 make push
 ```
 
-### ConfigMap创建配置
+### ConfigMap 创建配置
 
-创建example-server-configmap.yaml文件将原configs/debug/common.yaml及config_center.yaml配置文件内容，通过k8s提供的ConfigMap配置存储到容器中。
+创建 example-server-configmap.yaml 文件将原 configs/debug/common.yaml 及 config_center.yaml 配置文件内容，通过 k8s 提供的 ConfigMap 配置存储到容器中。
 
 ```YAML
 apiVersion: v1
@@ -4750,9 +5167,9 @@ kubectl apply -f ./deploy/debug/example-server-configmap.yaml
 kubectl get configmap -n dev
 ```
 
-### Secret创建密钥配置
+### Secret 创建密钥配置
 
-对于一些比较敏感信息，如密码、密钥等。k8s提供了Secret来实现配置，创建example-server-secret.yaml文件，代码如下：
+对于一些比较敏感信息，如密码、密钥等。k8s 提供了 Secret 来实现配置，创建 example-server-secret.yaml 文件，代码如下：
 
 ```YAML
 apiVersion: v1
@@ -4921,9 +5338,9 @@ kubectl apply -f ./deploy/debug/example-server-secret.yaml
 kubectl get secret -n dev
 ```
 
-### HTTP服务下的Deployment
+### HTTP 服务下的 Deployment
 
-修改/deploy/debug/example-http-server-deployment.yaml文件代码，代码如下：
+修改/deploy/debug/example-http-server-deployment.yaml 文件代码，代码如下：
 
 ```YAML
 apiVersion: apps/v1
@@ -4989,7 +5406,7 @@ spec: # deployment描述
 
 #### 容器启动运行命令
 
-在上面代码中，指定了command，即当容器启动时会先执行/go-example http，这样服务就运行起来了。
+在上面代码中，指定了 command，即当容器启动时会先执行/go-example http，这样服务就运行起来了。
 
 ```YAML
 command: ["/go-example", "http"] # 容器运行后执行命令
@@ -5011,9 +5428,9 @@ ports: # 容器暴露端口
 
 这里定义了三种卷
 
-- config-volume：这里是configMap，通过如下代码实现将上面定义的configMap配置生成到/configs/debug目录下，即common.yaml和config_center.yaml文件；
-- jwt-certs-volume及grpc-certs-volume：这里是secret，同样将定义的配置生成到对应容器目录下；
-- logs-volume及nacos-volume：这里是HostPath，是将节点上的目录挂载到容器指定的目录下；
+- config-volume：这里是 configMap，通过如下代码实现将上面定义的 configMap 配置生成到/configs/debug 目录下，即 common.yaml 和 config_center.yaml 文件；
+- jwt-certs-volume 及 grpc-certs-volume：这里是 secret，同样将定义的配置生成到对应容器目录下；
+- logs-volume 及 nacos-volume：这里是 HostPath，是将节点上的目录挂载到容器指定的目录下；
 
 ```YAML
     volumeMounts: # 挂载目录
@@ -5045,21 +5462,21 @@ ports: # 容器暴露端口
         path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
 ```
 
-运行命令部署pod
+运行命令部署 pod
 
 ```Bash
 kubectl apply -f ./deploy/debug/example-http-server-deployment.yaml
 ```
 
-### Ingress进行转发请求
+### Ingress 进行转发请求
 
-kubernetes提供了Ingress资源对象，Ingress只需要一个NodePort或者一个LB就可以满足暴露多个Service的需求。
+kubernetes 提供了 Ingress 资源对象，Ingress 只需要一个 NodePort 或者一个 LB 就可以满足暴露多个 Service 的需求。
 
-#### Ingress环境部署
+#### Ingress 环境部署
 
-这里使用k8s版本为1.24.1，需要使用[https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml](https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml)对应的Ingress环境部署文件；
+这里使用 k8s 版本为 1.24.1，需要使用[https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml](https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.2.0/deploy/static/provider/cloud/deploy.yaml)对应的 Ingress 环境部署文件；
 
-若k8s版本为1.21以前，可以参考[Service详解](https://www.wolai.com/9wQir53epFBAAgQXNEc9D1)中ingress使用进行环境部署。
+若 k8s 版本为 1.21 以前，可以参考[Service 详解](https://www.wolai.com/9wQir53epFBAAgQXNEc9D1)中 ingress 使用进行环境部署。
 
 文件下载到项目目录下/deploy/ingress/controller/deploy.yaml，通过如下命令进行创建：
 
@@ -5077,11 +5494,11 @@ ingress-nginx-controller-admission   ClusterIP   10.104.136.230   <none>        
 
 ```
 
-至此，Ingress环境已经部署好了。
+至此，Ingress 环境已经部署好了。
 
-#### https密钥
+#### https 密钥
 
-在/deploy/ingress/tls生成证书tls.crt和tls.key
+在/deploy/ingress/tls 生成证书 tls.crt 和 tls.key
 
 ```YAML
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/C=CN/ST=BJ/L=BJ/O=nginx/CN=goexample.com"
@@ -5095,9 +5512,9 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out
 kubectl create secret tls tls-secret --key tls.key --cert tls.crt
 ```
 
-#### service服务
+#### service 服务
 
-更改类型为ClusterIP。
+更改类型为 ClusterIP。
 
 ```YAML
 apiVersion: v1
@@ -5120,9 +5537,9 @@ spec: # service描述
 kubectl apply -f ./deploy/debug/example-http-server-service.yaml
 ```
 
-#### Ingress代理服务
+#### Ingress 代理服务
 
-创建example-http-server-ingress.yaml文件，实现goexample.com域名代理example-http-server-service服务。
+创建 example-http-server-ingress.yaml 文件，实现 goexample.com 域名代理 example-http-server-service 服务。
 
 ```YAML
 apiVersion: networking.k8s.io/v1
@@ -5149,7 +5566,7 @@ spec:
                   number: 8080
 ```
 
-执行命令，生成ingress。
+执行命令，生成 ingress。
 
 ```YAML
 kubectl apply -f ./deploy/debug/example-http-server-ingress.yaml
@@ -5162,15 +5579,15 @@ example-http-server-ingress   nginx   goexample.com   10.96.233.75   80      41h
 
 #### 请求访问
 
-使用Ingress部署环境生成的ingress-nginx-controller下暴露的端口+域名进行访问。
+使用 Ingress 部署环境生成的 ingress-nginx-controller 下暴露的端口+域名进行访问。
 
 ```YAML
 https://goexample.com:30806/hello
 ```
 
-### GRPC服务下的Deployment
+### GRPC 服务下的 Deployment
 
-和http服务类似，创建example-grpc-server-deployment.yaml文件，代码如下：
+和 http 服务类似，创建 example-grpc-server-deployment.yaml 文件，代码如下：
 
 ```YAML
 apiVersion: apps/v1
@@ -5230,7 +5647,7 @@ spec:
             path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos
 ```
 
-运行命令部署pod
+运行命令部署 pod
 
 ```Bash
 kubectl apply -f ./deploy/debug/example-grpc-server-deployment.yaml
@@ -5238,9 +5655,9 @@ kubectl apply -f ./deploy/debug/example-grpc-server-deployment.yaml
 
 测试请求：[https://goexample.com:30806/grpc/hello](https://goexample.com:30806/grpc/hello)
 
-### Crontab定时任务
+### Crontab 定时任务
 
-创建example-cronjob.yaml，代码如下：
+创建 example-cronjob.yaml，代码如下：
 
 ```YAML
 apiVersion: batch/v1
@@ -5285,15 +5702,15 @@ spec:
 
 ```
 
-运行命令创建cronjob
+运行命令创建 cronjob
 
 ```YAML
 kubectl apply -f ./deploy/debug/example-cronjob.yaml
 ```
 
-### Job一次性任务
+### Job 一次性任务
 
-创建example-job.yaml文件，代码如下：
+创建 example-job.yaml 文件，代码如下：
 
 ```YAML
 apiVersion: batch/v1
@@ -5334,17 +5751,17 @@ spec:
             path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/job
 ```
 
-运行命令创建job
+运行命令创建 job
 
 ```YAML
 kubectl apply -f ./deploy/debug/example-job.yaml
 ```
 
-### 消费者下的Deployment
+### 消费者下的 Deployment
 
-注意：由于kafka是通过docker进行部署的，代码部署到k8s后，需要访问到kafka集群，此时需要修改/etc/hosts中kafka节点的IP地址为本机内网IP地址。
+注意：由于 kafka 是通过 docker 进行部署的，代码部署到 k8s 后，需要访问到 kafka 集群，此时需要修改/etc/hosts 中 kafka 节点的 IP 地址为本机内网 IP 地址。
 
-创建example-consumer-server-deployment.yaml，代码如下：
+创建 example-consumer-server-deployment.yaml，代码如下：
 
 ```YAML
 apiVersion: apps/v1
@@ -5390,19 +5807,19 @@ spec:
             path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/consumer
 ```
 
-运行命令部署pod
+运行命令部署 pod
 
 ```Bash
 kubectl apply -f ./deploy/debug/example-consumer-server-deployment.yaml
 ```
 
-测试请求：[https://goexample.com:30806/kafka/producer-async](https://goexample.com:30806/kafka/producer-async)，查看pod日志。
+测试请求：[https://goexample.com:30806/kafka/producer-async](https://goexample.com:30806/kafka/producer-async)，查看 pod 日志。
 
-### Socket服务下的Deployment
+### Socket 服务下的 Deployment
 
-#### deployment配置
+#### deployment 配置
 
-和http服务的deployment配置类似，端口和执行命令不同。
+和 http 服务的 deployment 配置类似，端口和执行命令不同。
 
 ```YAML
 apiVersion: apps/v1
@@ -5462,9 +5879,9 @@ spec:
             path: /Users/zonst/dockerVolumes/exampleVolume/http/nacos/socket
 ```
 
-#### NodePort类型Service
+#### NodePort 类型 Service
 
-与http服务类似，若直接通过NodePort类型的service，可以直接创建
+与 http 服务类似，若直接通过 NodePort 类型的 service，可以直接创建
 
 ```YAML
 apiVersion: v1
@@ -5482,13 +5899,13 @@ spec: # service描述
       targetPort: 30000 # pod节点暴露的端口
 ```
 
-修改项目目录下的views/socket2.html中的socket地址为：127.0.0.1:30000/socket_server即可。
+修改项目目录下的 views/socket2.html 中的 socket 地址为：127.0.0.1:30000/socket_server 即可。
 
-本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击OPEN - SEND即可发起socket请求。
+本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击 OPEN - SEND 即可发起 socket 请求。
 
-#### Ingress代理服务
+#### Ingress 代理服务
 
-同样可以实现ingress代理服务。修改service为ClusterIP类型
+同样可以实现 ingress 代理服务。修改 service 为 ClusterIP 类型
 
 ```YAML
 apiVersion: v1
@@ -5505,7 +5922,7 @@ spec: # service描述
       targetPort: 30000 # pod节点暴露的端口
 ```
 
-创建一个socket服务的ingress，新建example-socket-server-ingress.yaml文件，代码如下：
+创建一个 socket 服务的 ingress，新建 example-socket-server-ingress.yaml 文件，代码如下：
 
 ```YAML
 apiVersion: networking.k8s.io/v1
@@ -5528,25 +5945,25 @@ spec:
                   number: 30000
 ```
 
-注意这里绑定的host不能和其他ingress重名。
+注意这里绑定的 host 不能和其他 ingress 重名。
 
-修改项目目录下的views/socket2.html中的socket地址为：goexample.socket.com:30060/socket_server即可。
+修改项目目录下的 views/socket2.html 中的 socket 地址为：goexample.socket.com:30060/socket_server 即可。
 
-本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击OPEN - SEND即可发起socket请求。
+本地访问[http://127.0.0.1:8080/socket/index2](http://127.0.0.1:8080/socket/index2)，点击 OPEN - SEND 即可发起 socket 请求。
 
 ### 其他补充
 
-#### pod动态扩缩容
+#### pod 动态扩缩容
 
-以http服务为例，k8s的deployment支持动态扩缩容
+以 http 服务为例，k8s 的 deployment 支持动态扩缩容
 
 ```Bash
 kubectl scale deploy example-http-server-deploy --replicas=5  -n dev
 ```
 
-#### pod滚动更新
+#### pod 滚动更新
 
-以http服务为例，k8s的deployment支持滚动更新。
+以 http 服务为例，k8s 的 deployment 支持滚动更新。
 
 ```Bash
 kubectl rollout restart deploy example-http-server-deploy -n dev
@@ -5556,11 +5973,11 @@ kubectl rollout status deploy example-http-server-deploy -n dev
 
 ```
 
-#### pod回退
+#### pod 回退
 
-k8s的deployment支持版本回退是基于deployment.yaml配置信息进行回退的。k8s会记录每次部署的配置信息，回退到指定版本，则重新执行指定版本的deployment.yaml配置信息。
+k8s 的 deployment 支持版本回退是基于 deployment.yaml 配置信息进行回退的。k8s 会记录每次部署的配置信息，回退到指定版本，则重新执行指定版本的 deployment.yaml 配置信息。
 
-因此，若要实现版本回退，需要设置deployment部署时拉取不同的镜像版本，例如已部署了版本1.0、2.0、3.0，当前版本为3.0。若此时要回退到其他版本，则可以执行如下命令：
+因此，若要实现版本回退，需要设置 deployment 部署时拉取不同的镜像版本，例如已部署了版本 1.0、2.0、3.0，当前版本为 3.0。若此时要回退到其他版本，则可以执行如下命令：
 
 ```Bash
 # 查看升级历史记录
@@ -5573,7 +5990,7 @@ k8s的deployment支持版本回退是基于deployment.yaml配置信息进行回�
 
 #### 金丝雀发布
 
-Deployment控制器支持控制更新过程中的控制，如“暂停(pause)”或“继续(resume)”更新操作。
+Deployment 控制器支持控制更新过程中的控制，如“暂停(pause)”或“继续(resume)”更新操作。
 
 ```Bash
 # 1.先更新一小部分pod后，立即停止更新；
@@ -5590,8 +6007,11 @@ Waiting for deployment "pc-deployment" rollout to finish: 2 out of 4 new replica
 deployment.apps/pc-deployment resumed
 
 ```
+
 ## 单元测试
-一般对service中的方法写单元测试，这里给一个小示例，项目目录下创建internal/service/unit_test/user_service_test.go文件，代码如下：
+
+一般对 service 中的方法写单元测试，这里给一个小示例，项目目录下创建 internal/service/unit_test/user_service_test.go 文件，代码如下：
+
 ```go
 package unit_test
 
@@ -5713,7 +6133,9 @@ func TestInsertUserList(t *testing.T) {
 	assert.Equal(t, "zhangsan", user.Password)
 }
 ```
+
 执行单元测试命令：
+
 ```shell
 ➜  unit_test git:(master) ✗ go test -v -run TestInsertUserList
 === RUN   TestInsertUserList
@@ -5723,15 +6145,22 @@ func TestInsertUserList(t *testing.T) {
 PASS
 ok      github.com/go_example/internal/service/unit_test        0.825s
 ```
-## 完全自动化生成CRUD代码
-之前编写的Crud_Makefile自动生成CRUD代码，需要手动复制代码，执行wire后才可以进行编译。且不支持多个单词组合的名称。
+
+## 完全自动化生成 CRUD 代码
+
+之前编写的 Crud_Makefile 自动生成 CRUD 代码，需要手动复制代码，执行 wire 后才可以进行编译。且不支持多个单词组合的名称。
 本次升级为完全自动化，仅需执行一条命令，就可以直接编译。
-### 安装gsed
-由于Mac和Linux有一些差异，在使用sed命令时，需要做特殊处理，为了和linux命令一致，安装gsed，命令如下：
+
+### 安装 gsed
+
+由于 Mac 和 Linux 有一些差异，在使用 sed 命令时，需要做特殊处理，为了和 linux 命令一致，安装 gsed，命令如下：
+
 ```shell
 brew install gnu-sed
 ```
-### 升级Makefile文件
+
+### 升级 Makefile 文件
+
 ```makefile
 # 以下内容根据实际情况修改，也可指定参数来覆盖默认值
 # 项目名
@@ -5897,14 +6326,322 @@ clean:
 	@echo $(targetServerHttpPath)
 	@echo "最后请切换到./internal/assembly目录下执行wire命令"
 ```
+
 ### 其他
-+ 在internal/assembly/server.go和internal/server/http.go文件中增加了如下插入点：
+
+- 在 internal/assembly/server.go 和 internal/server/http.go 文件中增加了如下插入点：
+
 ```go
 // Crud Makefile Point5
 ```
-+ 增加了templates/crud/wire/router.template和templates/crud/wire/router_func.template模板文件；
+
+- 增加了 templates/crud/wire/router.template 和 templates/crud/wire/router_func.template 模板文件；
+
 ### 一键生成
+
 ```shell
 make all name=global_setting tableName=global_setting  -f Crud_Makefile
 ```
+
 执行成功后，可直接进行编译。
+
+## 邮件服务
+
+当服务出现异常或需要发送邮件通知时，可直接调用下面两个方法即可实现邮件发送。
+
+### 邮箱开启 SMTP 服务
+
+以 QQ 邮箱为例，需要在设置-账户开启 IMAP/SMTP 服务，并获取授权码作为服务器邮箱账户密码。
+发送邮件服务器：smtp.qq.com，使用 SSL，端口号 465 或 587
+账户名：您的 QQ 邮箱账户名
+密码：这里需要获取授权码
+
+### 安装
+
+```bash
+go get gopkg.in/gomail.v2
+```
+
+### 封装邮件发送方法
+
+这里提供了两个方法 Send()和 SendSpecial()；
+Send()方法用于发送邮件内容相同的邮件；
+SendSpecial()方法用于发送邮件内容个性化的邮件；
+
+```go
+package emailClient
+
+import (
+	"log"
+
+	"github.com/pkg/errors"
+	"gopkg.in/gomail.v2"
+)
+
+type EmailClient interface {
+	Send(receiveUserList []EmailUser, message EmailMessage) error
+	SendSpecial(receiveUserList []EmailUser) error
+}
+
+type emailClient struct {
+	cfg EmailConf
+}
+
+type EmailConf struct {
+	SendEmail string `json:"send_email" mapstructure:"send_email"`
+	Host      string `json:"host" mapstructure:"host"`
+	Port      int    `json:"port" mapstructure:"port"`
+	Account   string `json:"account" mapstructure:"account"`
+	Password  string `json:"password" mapstructure:"password"`
+}
+
+func NewEmailClient(cfg EmailConf) (EmailClient, func(), error) {
+	return &emailClient{
+		cfg: cfg,
+	}, nil, nil
+}
+
+// EmailUser 用户邮箱
+type EmailUser struct {
+	Name         string
+	EmailAddress string
+	EmailMessage
+}
+
+type EmailMessage struct {
+	Subject            string
+	ContentType        string
+	Body               string
+	AttachFilePathList []string
+}
+
+// 设置邮箱发送方
+func (cli *emailClient) setSender(m *gomail.Message) error {
+	if cli.cfg.SendEmail == "" {
+		return errors.New("发送地址")
+	}
+	m.SetHeader("From", cli.cfg.SendEmail)
+	return nil
+}
+
+// 设置邮件标题
+func (cli *emailClient) setSubject(m *gomail.Message, subject string) {
+	m.SetHeader("Subject", subject)
+}
+
+// 设置邮件内容
+func (cli *emailClient) setBody(m *gomail.Message, contentType string, body string) {
+	m.SetBody(contentType, body)
+}
+
+// 设置邮件附件
+func (cli *emailClient) setAttach(m *gomail.Message, attachFilePathList []string) {
+	if len(attachFilePathList) == 0 {
+		return
+	}
+	for _, filePath := range attachFilePathList {
+		m.Attach(filePath)
+	}
+}
+
+// Send 发送邮箱，邮件内容相同
+func (cli *emailClient) Send(receiveUserList []EmailUser, message EmailMessage) error {
+	m := gomail.NewMessage()
+	if err := cli.setSender(m); err != nil {
+		return err
+	}
+
+	if len(receiveUserList) == 0 {
+		return errors.New("接收用户列表为空")
+	}
+	// 接收方
+	addressList := make([]string, 0, len(receiveUserList))
+	for _, user := range receiveUserList {
+		addressList = append(addressList, user.EmailAddress)
+	}
+	m.SetHeader("To", addressList...)
+
+	// 邮件标题
+	cli.setSubject(m, message.Subject)
+	// 邮件内容
+	cli.setBody(m, message.ContentType, message.Body)
+	// 邮件附件
+	cli.setAttach(m, message.AttachFilePathList)
+
+	// 连接并发送邮箱
+	dialer := gomail.NewDialer(cli.cfg.Host, cli.cfg.Port, cli.cfg.Account, cli.cfg.Password)
+	if err := dialer.DialAndSend(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SendSpecial 给对应用户发送专属邮件，每个邮件内容不同
+func (cli *emailClient) SendSpecial(receiveUserList []EmailUser) error {
+	m := gomail.NewMessage()
+	if err := cli.setSender(m); err != nil {
+		return err
+	}
+
+	dialer := gomail.NewDialer(cli.cfg.Host, cli.cfg.Port, cli.cfg.Account, cli.cfg.Password)
+	dial, err := dialer.Dial()
+	if err != nil {
+		return err
+	}
+	for _, user := range receiveUserList {
+		// 设置发送者
+		if err := cli.setSender(m); err != nil {
+			return err
+		}
+		// 设置接收者，指定邮件接收者名称，若使用SetHeader则默认使用邮箱名
+		m.SetAddressHeader("To", user.EmailAddress, user.Name)
+		// 邮件标题
+		cli.setSubject(m, user.Subject)
+		// 邮件内容
+		cli.setBody(m, user.ContentType, user.Body)
+		// 邮件附件
+		cli.setAttach(m, user.AttachFilePathList)
+
+		if err := gomail.Send(dial, m); err != nil {
+			log.Printf("Could not send email to %q: %v", user.EmailAddress, err)
+		}
+		m.Reset()
+	}
+	return nil
+}
+
+```
+
+调用方式可查看测试用例。
+
+## IP 查询地区
+
+通过 Ip 查询用户所在的省市区，方便用户画像分析及个性化处理。
+
+### 安装
+
+```bash
+go get github.com/lionsoul2014/ip2region
+```
+
+### 封装方法
+
+ip2region 通过提供的 ip 地址库（ip2region.xdb）进行查询，若有新版本，可以更新到最新版本，该文件可直接从仓库中复制或按照文档说明进行生成。
+ip2region 库提供了多种方式加载，包括文件、vecotorIndex、内存缓存。这里主要介绍内存缓存的方式。创建 utils/ip2region/ipregion.go，代码如下：
+
+```go
+package ip2region
+
+import (
+	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
+)
+
+var regionSearcher *xdb.Searcher
+
+func init() {
+	var err error
+	// 将文件读取加载到内存
+	file, err := xdb.LoadContentFromFile("./data/ip2region.xdb")
+	if err != nil {
+		panic(err)
+	}
+	regionSearcher, err = xdb.NewWithBuffer(file)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func GetRegionByIpList(ipList []string) (map[string]string, error) {
+	regionMap := make(map[string]string, len(ipList))
+	for _, ip := range ipList {
+		res, err := regionSearcher.SearchByStr(ip)
+		if err != nil {
+			return regionMap, err
+		}
+		regionMap[ip] = res
+	}
+	return regionMap, nil
+}
+```
+
+## jsoniter 替代 encoding/json
+
+jsoniter 使用 iterator api 遍历 json，0 内存分配，速度是 encoding/json 的 6 倍。
+
+### 封装
+
+为了实现项目使用 jsoniter 进行格式化和反格式化，不改变原有调用方式，这里封装了两个 json 包，在编译时看是否带有-tags=jsoniter 标识。
+创建 utils/json/json.go 文件，当没有指定标识 jsoniter 时使用，代码如下：
+
+```go
+// Copyright 2017 Bo-Yi Wu.  All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
+//go:build !jsoniter
+// +build !jsoniter
+
+package json
+
+import "encoding/json"
+
+var (
+	// Marshal is exported by gin/json package.
+	Marshal = json.Marshal
+	// Unmarshal is exported by gin/json package.
+	Unmarshal = json.Unmarshal
+	// MarshalIndent is exported by gin/json package.
+	MarshalIndent = json.MarshalIndent
+	// NewDecoder is exported by gin/json package.
+	NewDecoder = json.NewDecoder
+	// NewEncoder is exported by gin/json package.
+	NewEncoder = json.NewEncoder
+)
+
+```
+
+创建 utils/json/jsoniter.go 文件，当制定标识为 jsoniter 时使用，代码如下：
+
+```go
+// Copyright 2017 Bo-Yi Wu.  All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
+//go:build jsoniter
+// +build jsoniter
+
+package json
+
+import (
+	jsoniter "github.com/json-iterator/go"
+)
+
+var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
+	// Marshal is exported by gin/json package.
+	Marshal = json.Marshal
+	// Unmarshal is exported by gin/json package.
+	Unmarshal = json.Unmarshal
+	// MarshalIndent is exported by gin/json package.
+	MarshalIndent = json.MarshalIndent
+	// NewDecoder is exported by gin/json package.
+	NewDecoder = json.NewDecoder
+	// NewEncoder is exported by gin/json package.
+	NewEncoder = json.NewEncoder
+)
+
+```
+
+### 配置与使用
+
+调用方式依然保持不变
+
+```go
+json.Unmarshal(data,&user)
+```
+
+在编译时，若指定-tags=jsoniter 时，则会使用 jsoniter 进行格式话。
+
+```bash
+go build -tags=jsoniter main.go
+```
