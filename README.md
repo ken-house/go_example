@@ -3,7 +3,7 @@
 ## 简介
 
 本项目为基础的 web 开发架构设计，主要采用 gin 框架，使用 cobra 生成应用和命令文件的脚手架，使用 wire 解决依赖注入问题，
-最终实现一个高性能、可扩展、多应用的 web 框架。 除 HTTP 服务外，还包含 Socket 服务、GRPC 服务、Consul/Nacos 服务注册与服务发现、配置中心、Kafka 等功能。
+最终实现一个高性能、可扩展、多应用的 web 框架。 除 HTTP 服务外，还包含 Socket 服务、GRPC 服务、Consul/Nacos 服务注册与服务发现、配置中心、Kafka 等功能。还支持 zap 日志、pprof 性能分析、sentry 异常监控。
 支持 Docker 容器化部署、K8s 部署；
 
 ## 功能
@@ -32,6 +32,7 @@
 - 支持邮件服务；
 - 提供 ip 查询地区服务；
 - 增加 jsoniter 优化 json 格式化；
+- 支持 sentry 异常监控；
 
 ## 主要贡献
 
@@ -61,6 +62,7 @@
 - https://github.com/go-gomail/gomail/tree/v2
 - https://github.com/lionsoul2014/ip2region
 - https://github.com/json-iterator/go
+- https://github.com/getsentry/sentry-go
 
 ## 版本
 
@@ -103,6 +105,7 @@
 - 版本 v3.2.0 增加单元测试示例；
 - 版本 v3.3.0 对自动生成 CRUD 代码升级，实现完全自动化；
 - 版本 v3.4.0 增加邮件服务、ip 查询地区、优化 json 格式化；
+- 版本 v3.4.1 支持 sentry 异常监控；
 
 ## 环境安装
 
@@ -6644,4 +6647,147 @@ json.Unmarshal(data,&user)
 
 ```bash
 go build -tags=jsoniter main.go
+```
+
+## Sentry 异常监控
+
+当程序发生错误时，除了查询日志外，还可以添加 Sentry 异常监控，以页面渲染的方式展现，更加直观，且支持邮件提醒。
+
+### 创建 sentry 项目
+
+首先需要到 sentry.io 官网地址注册一个账号，创建项目，选择 go 项目。创建完成之后，就可以拿到 dsn 地址。
+
+### 安装
+
+目前官方 Sentry 推荐 sentry-go 来替代 raven-go 包。
+
+```bash
+$ go get github.com/getsentry/sentry-go@latest
+```
+
+### 封装包
+
+封装一个 sentry 包，实现 sentry 初始化配置，提供捕获自定义错误和自定义消息，同时支持 Gin 框架中间件和捕获方法。
+
+```go
+package sentryClient
+
+import (
+	"time"
+
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-gonic/gin"
+	"github.com/ken-house/go-contrib/utils/env"
+)
+
+type SentryClient interface {
+	CaptureException(err error)
+	CaptureMessage(message string)
+	Flush(duration time.Duration)
+	CaptureExceptionForGin(ctx *gin.Context, err error)
+	CaptureMessageForGin(ctx *gin.Context, message string)
+	SentryMiddlewareForGin() gin.HandlerFunc
+}
+
+type sentryClient struct {
+}
+
+func NewSentryClient(cfg SentryConfig) (SentryClient, func(), error) {
+	err := initSentry(cfg)
+	return &sentryClient{}, func() {
+		sentry.Flush(time.Second)
+	}, err
+}
+
+// 初始化Sentry
+func initSentry(cfg SentryConfig) error {
+	err := sentry.Init(
+		sentry.ClientOptions{
+			Dsn:              cfg.Dsn,
+			Debug:            !env.IsReleasing(),            // 线上环境为false 其他环境为true
+			Transport:        sentry.NewHTTPSyncTransport(), // 同步发送到sentry
+			SampleRate:       cfg.SampleRate,
+			TracesSampleRate: cfg.TracesSampleRate,
+			AttachStacktrace: cfg.AttachStacktrace,
+			IgnoreErrors:     cfg.IgnoreErrors,
+			ServerName:       cfg.ServerName,
+			Environment:      env.Mode(),
+		},
+	)
+
+	return err
+}
+
+type SentryConfig struct {
+	Dsn              string   `json:"dsn" mapstructure:"dsn"`
+	ServerName       string   `json:"server_name" mapstructure:"server_name"`
+	SampleRate       float64  `json:"sample_rate" mapstructure:"sample_rate"`
+	AttachStacktrace bool     `json:"attach_stacktrace" mapstructure:"attach_stacktrace"`
+	TracesSampleRate float64  `json:"traces_sample_rate" mapstructure:"traces_sample_rate"`
+	IgnoreErrors     []string `json:"ignore_errors" mapstructure:"ignore_errors"`
+}
+
+// CaptureException 捕获异常错误
+func (cli *sentryClient) CaptureException(err error) {
+	sentry.CaptureException(err)
+}
+
+// CaptureMessage 捕获异常信息
+func (cli *sentryClient) CaptureMessage(message string) {
+	sentry.CaptureMessage(message)
+}
+
+// Flush 刷新sentry缓存
+func (cli *sentryClient) Flush(duration time.Duration) {
+	sentry.Flush(duration)
+}
+
+// CaptureExceptionForGin Gin捕获自定义错误
+func (cli *sentryClient) CaptureExceptionForGin(ctx *gin.Context, err error) {
+	if hub := sentrygin.GetHubFromContext(ctx); hub != nil {
+		hub.CaptureException(err)
+	}
+}
+
+// CaptureMessageForGin  Gin捕获自定义信息
+func (cli *sentryClient) CaptureMessageForGin(ctx *gin.Context, message string) {
+	if hub := sentrygin.GetHubFromContext(ctx); hub != nil {
+		hub.CaptureMessage(message)
+	}
+}
+
+// SentryMiddlewareForGin Gin中间件
+func (cli *sentryClient) SentryMiddlewareForGin() gin.HandlerFunc {
+	return sentrygin.New(sentrygin.Options{Repanic: true})
+}
+
+```
+
+### 代码使用
+
+在入口文件 cmd/http.go 文件中，初始化 sentry 配置，并设置为全局变量。
+
+```go
+// 初始化sentry
+		sentryClient, clean, err := sentryClient.NewSentryClient(meta.GlobalConfig.Sentry)
+		if err != nil {
+			log.Fatalf("%+v\n", err)
+		}
+		defer clean()
+		meta.SentryClient = sentryClient
+```
+
+注册中间件
+
+```go
+router.Use(meta.SentryClient.SentryMiddlewareForGin())
+```
+
+除了可以之间监控 panic 错误外，还能自定义捕获错误。
+
+```go
+panic(err)
+meta.SentryClient.CaptureMessageForGin(c, message)
+meta.SentryClient.CaptureExceptionForGin(c, err)
 ```

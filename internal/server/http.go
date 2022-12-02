@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/go_example/internal/meta"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,8 @@ func NewHttpServer(
 
 func (srv *httpServer) Register(router *gin.Engine) {
 	// 若为后台调用，避免跨域
-	router.Use(middleware.CrossDomainMiddleware())
+	// 加载sentry中间件
+	router.Use(middleware.CrossDomainMiddleware(), meta.SentryClient.SentryMiddlewareForGin())
 
 	// 告诉gin框架去哪加载讲台⽂件此处可以使⽤正则表达式
 	router.LoadHTMLGlob("views/*.html")

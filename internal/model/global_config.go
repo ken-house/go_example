@@ -8,6 +8,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
+	"github.com/ken-house/go-contrib/prototype/sentryClient"
 )
 
 // GlobalConfig 项目全局配置
@@ -44,6 +45,8 @@ type GlobalConfig struct {
 	AlibabaSmsCode AlibabaSmsCode `json:"alibaba_sms_code" mapstructure:"alibaba_sms_code"`
 
 	Kafka kafkaClient.Config `json:"kafka" mapstructure:"kafka"`
+
+	Sentry sentryClient.SentryConfig `json:"sentry" mapstructure:"sentry"`
 }
 
 // ServerInfo 服务信息

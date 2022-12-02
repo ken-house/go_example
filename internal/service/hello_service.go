@@ -8,8 +8,10 @@ import (
 	MongoRepo "github.com/go_example/internal/repository/mongodb"
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
+	"github.com/ken-house/go-contrib/prototype/requester"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type HelloService interface {
@@ -63,16 +65,17 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	fmt.Println(meta.GlobalConfig.Redis.Single.PoolSize)
 
 	// http请求
-	//responseData := struct {
-	//	Hello string `json:"hello"`
-	//}{}
-	//httpClient := requester.NewRequestClient("http://127.0.0.1:8081", nil, nil)
-	//response, err := httpClient.Get(c, "/hello", &responseData, nil)
-	//if err != nil {
-	//	zap.L().Error("请求失败", zap.Error(err))
-	//}
-	//fmt.Println(response)
-	//fmt.Printf("responseData：%+v\n", responseData)
+	responseData := struct {
+		Hello string `json:"hello"`
+	}{}
+	httpClient := requester.NewRequestClient("http://127.0.0.1:8081", nil, nil)
+	response, err := httpClient.Get(c, "/hello", &responseData, nil)
+	if err != nil {
+		zap.L().Error("请求失败", zap.Error(err))
+		meta.SentryClient.CaptureExceptionForGin(c, err)
+	}
+	fmt.Println(response)
+	fmt.Printf("responseData：%+v\n", responseData)
 
 	return map[string]string{
 		"hello":          "world，golang",

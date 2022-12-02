@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/felixge/fgprof"
+	"github.com/ken-house/go-contrib/prototype/sentryClient"
 	"github.com/ken-house/go-contrib/utils/env"
 
 	"github.com/go_example/internal/lib/auth"
@@ -43,6 +44,14 @@ var httpCmd = &cobra.Command{
 				log.Println(http.ListenAndServe(fmt.Sprintf("%s:%s", pprofAddr, pprofPort), nil))
 			}()
 		}
+
+		// 初始化sentry
+		sentryClient, clean, err := sentryClient.NewSentryClient(meta.GlobalConfig.Sentry)
+		if err != nil {
+			log.Fatalf("%+v\n", err)
+		}
+		defer clean()
+		meta.SentryClient = sentryClient
 
 		// 读取证书内容
 		auth.SetCerts()

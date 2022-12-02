@@ -64,6 +64,7 @@ func initConfig() {
 		if err := viper.Unmarshal(&meta.GlobalConfig); err != nil {
 			log.Fatalln(err)
 		}
+		fmt.Printf("%+v\n", meta.GlobalConfig.Sentry)
 	} else { // 测试环境、生产环境从配置中心读取
 		configCenterClient, clean, err := nacosClient.NewConfigClient(meta.NacosConfig)
 		if err != nil {

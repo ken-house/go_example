@@ -106,4 +106,11 @@ kafka:
       - topic: "second"
         partition: 0
         offset: 10
+sentry:
+  dsn: "https://789e8b4d389e40c5994f6b09bd89d519@o435470.ingest.sentry.io/4504257001422848"
+  server_name: "go_example"
+  sample_rate: 1.0
+  traces_sample_rate: 1.0
+  attach_stacktrace: true
+
 

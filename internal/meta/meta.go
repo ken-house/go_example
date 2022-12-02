@@ -6,6 +6,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/ken-house/go-contrib/prototype/sentryClient"
 	"time"
 
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -42,6 +43,9 @@ const HEALTHCHECK_SERVICE = "grpc.health.v1.Health"
 
 // CacheDriver go-cache缓存对象
 var CacheDriver = cache.New(5*time.Minute, 10*time.Minute)
+
+// SentryClient sentry异常监控
+var SentryClient sentryClient.SentryClient
 
 // MysqlGroupClient 主从数据库连接
 type MysqlGroupClient mysqlClient.GroupClient
