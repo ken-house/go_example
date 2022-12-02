@@ -4,6 +4,7 @@ import (
 	"github.com/go_example/internal/meta"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
+	"github.com/ken-house/go-contrib/prototype/emailClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -80,4 +81,9 @@ func NewConsumerClient() (meta.KafkaConsumerClient, func(), error) {
 // NewConsumerGroupClient kafka消费者组
 func NewConsumerGroupClient() (meta.KafkaConsumerGroupClient, func(), error) {
 	return kafkaClient.NewConsumerGroupClient(meta.GlobalConfig.Kafka)
+}
+
+// NewEmailClient 邮件服务
+func NewEmailClient() (meta.EmailClient, func(), error) {
+	return emailClient.NewEmailClient(meta.GlobalConfig.Email)
 }

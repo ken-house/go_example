@@ -3,6 +3,7 @@ package meta
 import (
 	"github.com/go_example/internal/model"
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
+	"github.com/ken-house/go-contrib/prototype/emailClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
@@ -85,3 +86,6 @@ type KafkaConsumerClient kafkaClient.ConsumerClient
 
 // KafkaConsumerGroupClient kafka消费者组
 type KafkaConsumerGroupClient kafkaClient.ConsumerGroupClient
+
+// EmailClient 邮件服务对象
+type EmailClient emailClient.EmailClient

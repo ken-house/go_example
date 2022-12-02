@@ -11,6 +11,7 @@ import (
 func NewHelloController() (controller.HelloController, func(), error) {
 	panic(wire.Build(
 		NewHelloService,
+		NewEmailService,
 		controller.NewHelloController,
 	))
 }

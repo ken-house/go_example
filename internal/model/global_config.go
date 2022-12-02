@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/ken-house/go-contrib/prototype/alibabaSmsClient"
 	"github.com/ken-house/go-contrib/prototype/consulClient"
+	"github.com/ken-house/go-contrib/prototype/emailClient"
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
@@ -45,6 +46,8 @@ type GlobalConfig struct {
 	AlibabaSmsCode AlibabaSmsCode `json:"alibaba_sms_code" mapstructure:"alibaba_sms_code"`
 
 	Kafka kafkaClient.Config `json:"kafka" mapstructure:"kafka"`
+
+	Email emailClient.EmailConf `json:"email" mapstructure:"email"`
 
 	Sentry sentryClient.SentryConfig `json:"sentry" mapstructure:"sentry"`
 }

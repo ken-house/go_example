@@ -24,8 +24,14 @@ func NewHelloController() (controller.HelloController, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	helloController := controller.NewHelloController(helloService)
+	emailService, cleanup2, err := NewEmailService()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	helloController := controller.NewHelloController(helloService, emailService)
 	return helloController, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }
@@ -344,6 +350,22 @@ func NewKafkaService() (service.KafkaService, func(), error) {
 	}
 	kafkaService := service.NewKafkaService(kafkaConsumerClient, kafkaConsumerGroupClient)
 	return kafkaService, func() {
+		cleanup2()
+		cleanup()
+	}, nil
+}
+
+func NewEmailService() (service.EmailService, func(), error) {
+	emailClient, cleanup, err := NewEmailClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	emailService, cleanup2, err := service.NewEmailService(emailClient)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	return emailService, func() {
 		cleanup2()
 		cleanup()
 	}, nil

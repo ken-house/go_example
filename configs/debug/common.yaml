@@ -106,6 +106,12 @@ kafka:
       - topic: "second"
         partition: 0
         offset: 10
+email:
+  send_email: "1136728155@qq.com"
+  host: "smtp.qq.com"
+  port: 465
+  account: "1136728155@qq.com"
+  password: "dqheqwuqpqociieb"
 sentry:
   dsn: "https://789e8b4d389e40c5994f6b09bd89d519@o435470.ingest.sentry.io/4504257001422848"
   server_name: "go_example"

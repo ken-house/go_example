@@ -72,3 +72,10 @@ func NewKafkaService() (service.KafkaService, func(), error) {
 		service.NewKafkaService,
 	))
 }
+
+func NewEmailService() (service.EmailService, func(), error) {
+	panic(wire.Build(
+		NewEmailClient,
+		service.NewEmailService,
+	))
+}
