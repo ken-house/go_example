@@ -26,6 +26,7 @@ common:
     - "192.168.163.*"
     - "10.0.98.*"
     - "10.1.0.1"
+  aes_key: "OSWEMdg9SracmN4a"
 
 mysql:
   group:
@@ -118,5 +119,4 @@ sentry:
   sample_rate: 1.0
   traces_sample_rate: 1.0
   attach_stacktrace: true
-
 

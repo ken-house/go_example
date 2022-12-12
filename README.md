@@ -106,6 +106,7 @@
 - 版本 v3.3.0 对自动生成 CRUD 代码升级，实现完全自动化；
 - 版本 v3.4.0 增加邮件服务、ip 查询地区、优化 json 格式化；
 - 版本 v3.4.1 支持 sentry 异常监控；
+- 版本 v3.4.2 支持 AES 对称加密；
 
 ## 环境安装
 
@@ -6790,4 +6791,82 @@ router.Use(meta.SentryClient.SentryMiddlewareForGin())
 panic(err)
 meta.SentryClient.CaptureMessageForGin(c, message)
 meta.SentryClient.CaptureExceptionForGin(c, err)
+```
+
+## AES 对称加密
+
+### 加密解密代码封装
+
+以下代码为 AES 加密，使用 CBC 加密模式，PKCS5Padding 填充模式。
+
+```go
+package encrypt
+
+import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
+)
+
+// AesEncrypt AES加密
+func AesEncrypt(contentStr string, key string, iv string) (string, error) {
+	// 1.创建AES加密对象
+	block, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return "", nil
+	}
+	// 2.CBC加密模式
+	blockMode := cipher.NewCBCEncrypter(block, []byte(iv))
+
+	// 3.对原文分块并设置PKCS5Padding填充模式对数据进行填充
+	// a.获取数据块大小为8位
+	blockSize := block.BlockSize()
+	// b.获取要填充的位数
+	padNum := blockSize - len(contentStr)%blockSize
+	// c.生成要填充的字节数组
+	padByte := bytes.Repeat([]byte{byte(padNum)}, padNum)
+	// d.加入到原文中
+	contentByte := append([]byte(contentStr), padByte...)
+	// 4.加密
+	cryptByte := make([]byte, len(contentByte))
+	blockMode.CryptBlocks(cryptByte, contentByte)
+	// 5.base编码返回
+	return base64.StdEncoding.EncodeToString(cryptByte), nil
+}
+
+// AesDecrypt AES解密
+func AesDecrypt(cryptStr string, key string, iv string) (string, error) {
+	// 1.创建AES加密对象
+	block, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return "", nil
+	}
+	// 2.CBC加密模式
+	blockMode := cipher.NewCBCDecrypter(block, []byte(iv))
+
+	// 3.Base64解码
+	cryptByte, err := base64.StdEncoding.DecodeString(cryptStr)
+	if err != nil {
+		return "", err
+	}
+	// 4.解码
+	contentByte := make([]byte, len(cryptByte))
+	blockMode.CryptBlocks(contentByte, cryptByte)
+	// 5.去除填充字节
+	length := len(contentByte)
+	unPadding := int(contentByte[length-1])
+	return string(contentByte[:length-unPadding]), nil
+}
+```
+
+### 示例代码
+
+在代码中中使用如下代码即可：
+
+```go
+hello := "world，golang"
+iv := tools.GenerateRandStr(16, 3)
+encryptStr, _ := encrypt.AesEncrypt(hello, meta.GlobalConfig.Common.AesKey, iv)
+decryptStr, _ := encrypt.AesDecrypt(encryptStr, meta.GlobalConfig.Common.AesKey, iv)
 ```

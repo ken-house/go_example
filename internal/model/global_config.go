@@ -68,6 +68,7 @@ type CertInfo struct {
 // Common 项目配置信息
 type Common struct {
 	SocketWhiteIpList []string `json:"socket_white_ip_list" mapstructure:"socket_white_ip_list"`
+	AesKey            string   `json:"aes_key" mapstructure:"aes_key"`
 }
 
 // AlibabaSmsCode 阿里巴巴短信格式

@@ -9,6 +9,8 @@ import (
 	MysqlRepo "github.com/go_example/internal/repository/mysql"
 	RedisRepo "github.com/go_example/internal/repository/redis"
 	"github.com/ken-house/go-contrib/prototype/requester"
+	"github.com/ken-house/go-contrib/utils/encrypt"
+	"github.com/ken-house/go-contrib/utils/tools"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -77,8 +79,15 @@ func (svc *helloService) SayHello(c *gin.Context) map[string]string {
 	fmt.Println(response)
 	fmt.Printf("responseData：%+v\n", responseData)
 
+	hello := "world，golang"
+	iv := tools.GenerateRandStr(16, 3)
+	encryptStr, _ := encrypt.AesEncrypt(hello, meta.GlobalConfig.Common.AesKey, iv)
+	decryptStr, _ := encrypt.AesDecrypt(encryptStr, meta.GlobalConfig.Common.AesKey, iv)
+
 	return map[string]string{
-		"hello":          "world，golang",
+		"hello":          hello,
+		"encryptStr":     encryptStr,
+		"decryptStr":     decryptStr,
 		"env":            viper.GetString("server.mode"),
 		"user":           user.Username,
 		"value":          value,
