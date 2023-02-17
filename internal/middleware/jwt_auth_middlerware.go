@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JWTAuthMiddleware(authService service.AuthService) func(c *gin.Context) {
+func JWTAuthMiddleware(authService service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorization := c.Request.Header.Get("Authorization")
 		if authorization == "" {

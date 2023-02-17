@@ -485,10 +485,10 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 h1:Z9n2FFNUXsshfwJMBgNA0RU6/i7WVaAegv3PtuIHPMs=
 github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51/go.mod h1:CzGEWj7cYgsdH8dAjBGEr58BoE7ScuLd+fwFZ44+/x8=
-github.com/ken-house/go-contrib v1.1.6 h1:KYTebY+KS9a1njUtmSHi9wLjBE7j/VJZHHM3upzUD/o=
-github.com/ken-house/go-contrib v1.1.6/go.mod h1:uWpRegzYIQ3llEFwuDm8h2MVLwwu1IvvdD8V3twwysc=
-github.com/ken-house/go-contrib v1.1.8 h1:npct+ZpRGPSM6MRUoL1GQ5lPaKezf+s0HXx3obTP9PY=
-github.com/ken-house/go-contrib v1.1.8/go.mod h1:uWpRegzYIQ3llEFwuDm8h2MVLwwu1IvvdD8V3twwysc=
+github.com/ken-house/go-contrib v1.1.9-0.20230109065215-ca25a4018d73 h1:k1Iky8gz0S+hqWmH2/3ISgg76tvw5tnDMsfRyU7hhd4=
+github.com/ken-house/go-contrib v1.1.9-0.20230109065215-ca25a4018d73/go.mod h1:uWpRegzYIQ3llEFwuDm8h2MVLwwu1IvvdD8V3twwysc=
+github.com/ken-house/go-contrib v1.1.9-0.20230109071317-2faecca0ff69 h1:4IdvpjUmyaAZX8jFF/jzMG53IXeFffCAdsPVZaLaX5o=
+github.com/ken-house/go-contrib v1.1.9-0.20230109071317-2faecca0ff69/go.mod h1:uWpRegzYIQ3llEFwuDm8h2MVLwwu1IvvdD8V3twwysc=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.13.6/go.mod h1:/3/Vjq9QcHkK5uEr5lBEmyoZ1iFhe47etQ6QUkpK6sk=
