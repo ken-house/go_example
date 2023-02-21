@@ -33,6 +33,7 @@
 - 提供 ip 查询地区服务；
 - 增加 jsoniter 优化 json 格式化；
 - 支持 sentry 异常监控；
+- 支持 Rabbitmq 消息队列；
 
 ## 主要贡献
 
@@ -63,6 +64,7 @@
 - https://github.com/lionsoul2014/ip2region
 - https://github.com/json-iterator/go
 - https://github.com/getsentry/sentry-go
+- https://github.com/streadway/amqp
 
 ## 版本
 
@@ -107,6 +109,7 @@
 - 版本 v3.4.0 增加邮件服务、ip 查询地区、优化 json 格式化；
 - 版本 v3.4.1 支持 sentry 异常监控；
 - 版本 v3.4.2 支持 AES 对称加密；
+- 版本 v3.5.0 支持 Rabbitmq 消息队列；
 
 ## 环境安装
 
@@ -242,6 +245,22 @@ docker run -d -p 9094:9094 --net mynet -e KAFKA_BROKER_ID=2 -e KAFKA_ZOOKEEPER_C
 kubectl cluster-info
 # 查看集群节点列表
 kubectl get nodes
+```
+
+9. Rabbitmq 部署
+
+```shell
+# 拉取镜像
+docker pull rabbitmq:3.11-management
+# 运行容器
+docker run -d \
+-v ~/dockerVolumes/rabbitmqVolume/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf \
+-e RABBITMQ_DEFAULT_USER=admin \
+-e RABBITMQ_DEFAULT_PASS=admin \
+--name rabbitmq \
+-p 5672:5672 \
+-p 15672:15672 \
+rabbitmq:3.11-management
 ```
 
 ## 使用
@@ -6869,4 +6888,253 @@ hello := "world，golang"
 iv := tools.GenerateRandStr(16, 3)
 encryptStr, _ := encrypt.AesEncrypt(hello, meta.GlobalConfig.Common.AesKey, iv)
 decryptStr, _ := encrypt.AesDecrypt(encryptStr, meta.GlobalConfig.Common.AesKey, iv)
+```
+
+## RabbitMQ 消息队列
+
+### 安装
+
+```bash
+go get github.com/streadway/amqp
+```
+
+### 封装 RabbitMQ 服务
+
+```go
+package rabbitmqClient
+
+import (
+	"context"
+	"time"
+
+	"github.com/streadway/amqp"
+)
+
+type Config struct {
+	Dsn string `json:"dsn" mapstructure:"dsn"`
+}
+
+type RabbitMqClient interface {
+	GetChannel(ctx context.Context) *amqp.Channel
+	MakeMessage(ctx context.Context, message string, args map[string]interface{}) amqp.Publishing
+	Publish(ctx context.Context, exchangeName string, bindingKey string, mandatory bool, immediate bool, message amqp.Publishing) error
+	ExchangeDeclare(ctx context.Context, exchangeName string, exchangeType string, durable bool, autoDelete bool, internal bool, noWait bool, params map[string]interface{}) error
+	QueueDeclare(ctx context.Context, queueName string, durable bool, autoDelete bool, exclusive bool, noWait bool, params map[string]interface{}) (amqp.Queue, error)
+	QueueBind(ctx context.Context, queueName string, bindingKey string, exchangeName string, noWait bool, params map[string]interface{}) error
+	Consume(ctx context.Context, queueName string, consumerName string, autoAck bool, exclusive bool, noLocal bool, noWait bool, params map[string]interface{}) (<-chan amqp.Delivery, error)
+}
+
+type rabbitmqClient struct {
+	config  Config
+	conn    *amqp.Connection
+	channel *amqp.Channel
+}
+
+func NewRabbitmqClient(cfg Config) (RabbitMqClient, func(), error) {
+	client := &rabbitmqClient{
+		config: cfg,
+	}
+
+	// 连接rabbitmq服务器
+	conn, err := amqp.Dial(cfg.Dsn)
+	if err != nil {
+		return nil, nil, err
+	}
+	client.conn = conn
+
+	// 从连接中获取channel
+	channel, err := conn.Channel()
+	if err != nil {
+		return nil, nil, err
+	}
+	client.channel = channel
+
+	return client, func() {
+		if client.channel != nil {
+			client.channel.Close()
+		}
+
+		if client.conn != nil {
+			client.conn.Close()
+		}
+	}, nil
+}
+
+// GetChannel 获取channel
+func (cli *rabbitmqClient) GetChannel(ctx context.Context) *amqp.Channel {
+	return cli.channel
+}
+
+// MakeMessage 构造消息
+func (cli *rabbitmqClient) MakeMessage(ctx context.Context, message string, args map[string]interface{}) amqp.Publishing {
+	return amqp.Publishing{
+		Headers:         args["headers"].(amqp.Table),     // header头信息
+		ContentType:     args["contentType"].(string),     // MIME内容类型
+		ContentEncoding: args["contentEncoding"].(string), // MIME内容编码
+		DeliveryMode:    args["deliveryMode"].(uint8),     // 瞬时（0或1）或持续（2）
+		Priority:        args["priority"].(uint8),         // 优先级 0 to 9
+		CorrelationId:   args["correlationId"].(string),   // 相关标识符
+		ReplyTo:         args["replyTo"].(string),         // 要答复的地址（例如：RPC）
+		Expiration:      args["expiration"].(string),      // 消息过期规范
+		MessageId:       args["messageId"].(string),       // 消息标识符
+		Timestamp:       time.Time{},                      // 消息时间戳
+		Type:            args["type"].(string),            // 消息类型
+		UserId:          args["userId"].(string),          // 创建用户id 例如:“guest”
+		AppId:           args["appId"].(string),           // 创建应用程序id
+		Body:            []byte(message),                  // 消息内容
+	}
+}
+
+// Publish 生产消息
+// 参数说明：
+// mandatory：是否强制，若为true时，当没有对应的队列时，消息将丢弃；
+// immediate：是否立即，若为true时，若没有对应的消费者时，消息将丢弃；
+func (cli *rabbitmqClient) Publish(ctx context.Context, exchangeName string, bindingKey string, mandatory bool, immediate bool, message amqp.Publishing) error {
+	return cli.channel.Publish(exchangeName, bindingKey, mandatory, immediate, message)
+}
+
+// ExchangeDeclare 声明一个交换机
+// 参数说明：
+// exchangeType：交换机类型"direct", "fanout", "topic"
+// durable：是否持久性
+// autoDelete：是否自动删除
+// internal：是否为内部交换机，内部交换机不支持发布
+// noWait：是否等待服务器确认消息
+// params：header头信息
+func (cli *rabbitmqClient) ExchangeDeclare(ctx context.Context, exchangeName string, exchangeType string, durable bool, autoDelete bool, internal bool, noWait bool, params map[string]interface{}) error {
+	args := amqp.Table(params)
+	return cli.channel.ExchangeDeclare(exchangeName, exchangeType, durable, autoDelete, internal, noWait, args)
+}
+
+// QueueDeclare 声明一个队列
+// 参数说明：
+// exclusive：是否独占队列。独占队列只能由声明它们的连接访问，并且在连接关闭时将被删除。
+func (cli *rabbitmqClient) QueueDeclare(ctx context.Context, queueName string, durable bool, autoDelete bool, exclusive bool, noWait bool, params map[string]interface{}) (amqp.Queue, error) {
+	args := amqp.Table(params)
+	return cli.channel.QueueDeclare(queueName, durable, autoDelete, exclusive, noWait, args)
+}
+
+// QueueBind 绑定队列到交换机
+// 参数说明：
+func (cli *rabbitmqClient) QueueBind(ctx context.Context, queueName string, bindingKey string, exchangeName string, noWait bool, params map[string]interface{}) error {
+	args := amqp.Table(params)
+	return cli.channel.QueueBind(queueName, bindingKey, exchangeName, noWait, args)
+}
+
+// Consume 消费
+// 参数说明：
+// consumerName：消费者名称
+// noLocal：rabbitmq不支持该参数
+func (cli *rabbitmqClient) Consume(ctx context.Context, queueName string, consumerName string, autoAck bool, exclusive bool, noLocal bool, noWait bool, params map[string]interface{}) (<-chan amqp.Delivery, error) {
+	args := amqp.Table(params)
+	return cli.channel.Consume(queueName, consumerName, autoAck, exclusive, noLocal, noWait, args)
+}
+
+```
+
+### Rabbitmq 生产者
+
+在 http 服务增加一个 rabbitmq_controller.go 文件，代码如下：
+
+```go
+package controller
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/meta"
+	"github.com/go_example/internal/utils/negotiate"
+	"github.com/ken-house/go-contrib/prototype/errorAssets"
+	"github.com/streadway/amqp"
+	"net/http"
+)
+
+type RabbitmqController interface {
+	Producer(ctx *gin.Context) (int, gin.Negotiate)
+}
+
+type rabbitmqController struct {
+	rabbitmqClient meta.RabbitmqClient
+}
+
+func NewRabbitmqController(rabbitmqClient meta.RabbitmqClient) RabbitmqController {
+	return &rabbitmqController{
+		rabbitmqClient: rabbitmqClient,
+	}
+}
+
+func (ctr *rabbitmqController) Producer(ctx *gin.Context) (int, gin.Negotiate) {
+	message := "你好啊"
+	publishMsg := amqp.Publishing{
+		Body: []byte(message),
+	}
+	err := ctr.rabbitmqClient.Publish(ctx, "hello_exchange", "hello", false, false, publishMsg)
+	if err != nil {
+		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
+	}
+	return negotiate.JSON(http.StatusOK, gin.H{
+		"data": "发送成功",
+	})
+}
+```
+
+### Rabbitmq 消费者
+
+通过 cobra 命令生成一个程序入口 rabbitmq_consumer.go，代码如下：
+
+```go
+/*
+Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+
+*/
+package cmd
+
+import (
+	"context"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/go_example/internal/assembly"
+	"github.com/ken-house/go-contrib/utils/env"
+	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
+// rabbitmqConsumerCmd represents the rabbitmqConsumer command
+var rabbitmqConsumerCmd = &cobra.Command{
+	Use:   "rabbitmq_consumer",
+	Short: "rabbitmq_consumer",
+	Long:  `rabbitmq_consumer`,
+	Run: func(cmd *cobra.Command, args []string) {
+		gin.SetMode(env.Mode())
+		rabbitmqService, cleanup, err := assembly.NewRabbitmqService()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer cleanup()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		queueName := "hello_queue"
+		// 声明并绑定
+		err = rabbitmqService.DeclareAndBind(ctx, "hello_exchange", "direct", queueName, "hello")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println("开始消费...")
+		// 消费
+		rabbitmqService.Process(ctx, queueName, "C1")
+
+		// 优雅关闭
+		quit := make(chan os.Signal)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+		<-quit
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(rabbitmqConsumerCmd)
+}
 ```
