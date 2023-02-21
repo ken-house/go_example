@@ -14,7 +14,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/google/wire v0.5.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/ken-house/go-contrib v1.1.10-0.20230221062030-0404e0042696
+	github.com/ken-house/go-contrib v1.1.10
 	github.com/mbobakov/grpc-consul-resolver v1.4.4
 	github.com/nacos-group/nacos-sdk-go/v2 v2.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible

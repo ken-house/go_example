@@ -6915,6 +6915,7 @@ type Config struct {
 }
 
 type RabbitMqClient interface {
+	GetConn(ctx context.Context) *amqp.Connection
 	GetChannel(ctx context.Context) *amqp.Channel
 	MakeMessage(ctx context.Context, message string, args map[string]interface{}) amqp.Publishing
 	Publish(ctx context.Context, exchangeName string, bindingKey string, mandatory bool, immediate bool, message amqp.Publishing) error
@@ -6958,6 +6959,11 @@ func NewRabbitmqClient(cfg Config) (RabbitMqClient, func(), error) {
 			client.conn.Close()
 		}
 	}, nil
+}
+
+// GetConn 获取conn
+func (cli *rabbitmqClient) GetConn(ctx context.Context) *amqp.Connection {
+	return cli.conn
 }
 
 // GetChannel 获取channel
