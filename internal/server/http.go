@@ -23,6 +23,7 @@ type httpServer struct {
 	jenkinsCtr    controller.JenkinsController
 	smsCtr        controller.SmsController
 	kafkaCtr      controller.KafkaController
+	rabbitCtr     controller.RabbitmqController
 	// Crud Makefile Point2
 	authService service.AuthService
 }
@@ -36,6 +37,7 @@ func NewHttpServer(
 	jenkinsCtr controller.JenkinsController,
 	smsCtr controller.SmsController,
 	kafkaCtr controller.KafkaController,
+	rabbitCtr controller.RabbitmqController,
 	// Crud Makefile Point3
 	authService service.AuthService,
 ) HttpServer {
@@ -48,6 +50,7 @@ func NewHttpServer(
 		jenkinsCtr:    jenkinsCtr,
 		smsCtr:        smsCtr,
 		kafkaCtr:      kafkaCtr,
+		rabbitCtr:     rabbitCtr,
 		// Crud Makefile Point4
 		authService: authService,
 	}
@@ -93,6 +96,8 @@ func (srv *httpServer) Register(router *gin.Engine) {
 	router.GET("/kafka/producer-sync", srv.KafkaProducerSync())
 	// kafka异步生产者
 	router.GET("/kafka/producer-async", srv.KafkaProducerAsync())
+	// rabbitmq生产者
+	router.GET("/rabbitmq/producer", srv.RabbitmqProducer())
 
 	// Crud Makefile Point5
 }
@@ -167,5 +172,11 @@ func (srv *httpServer) KafkaProducerSync() gin.HandlerFunc {
 func (srv *httpServer) KafkaProducerAsync() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Negotiate(srv.kafkaCtr.ProducerAsync(c))
+	}
+}
+
+func (srv *httpServer) RabbitmqProducer() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Negotiate(srv.rabbitCtr.Producer(c))
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
+	"github.com/ken-house/go-contrib/prototype/rabbitmqClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
 	"github.com/ken-house/go-contrib/prototype/sentryClient"
 )
@@ -50,6 +51,8 @@ type GlobalConfig struct {
 	Email emailClient.EmailConf `json:"email" mapstructure:"email"`
 
 	Sentry sentryClient.SentryConfig `json:"sentry" mapstructure:"sentry"`
+
+	Rabbitmq rabbitmqClient.Config `json:"rabbitmq" mapstructure:"rabbitmq"`
 }
 
 // ServerInfo 服务信息

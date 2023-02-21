@@ -130,6 +130,17 @@ func NewKafkaController() (controller.KafkaController, func(), error) {
 	}, nil
 }
 
+func NewRabbitmqController() (controller.RabbitmqController, func(), error) {
+	rabbitmqClient, cleanup, err := NewRabbitmqClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	rabbitmqController := controller.NewRabbitmqController(rabbitmqClient)
+	return rabbitmqController, func() {
+		cleanup()
+	}, nil
+}
+
 // Injectors from server.go:
 
 func NewHttpServer() (server.HttpServer, func(), error) {
@@ -193,7 +204,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	authService, cleanup9, err := NewAuthService()
+	rabbitmqController, cleanup9, err := NewRabbitmqController()
 	if err != nil {
 		cleanup8()
 		cleanup7()
@@ -205,8 +216,22 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, smsController, kafkaController, authService)
+	authService, cleanup10, err := NewAuthService()
+	if err != nil {
+		cleanup9()
+		cleanup8()
+		cleanup7()
+		cleanup6()
+		cleanup5()
+		cleanup4()
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHttpServer(grpcClientController, helloController, authController, homeController, excelController, jenkinsController, smsController, kafkaController, rabbitmqController, authService)
 	return httpServer, func() {
+		cleanup10()
 		cleanup9()
 		cleanup8()
 		cleanup7()
@@ -356,17 +381,14 @@ func NewKafkaService() (service.KafkaService, func(), error) {
 }
 
 func NewEmailService() (service.EmailService, func(), error) {
-	emailClient, cleanup, err := NewEmailClient()
+	emailClient, err := NewEmailClient()
 	if err != nil {
 		return nil, nil, err
 	}
-	emailService, cleanup2, err := service.NewEmailService(emailClient)
+	emailService, err := service.NewEmailService(emailClient)
 	if err != nil {
-		cleanup()
 		return nil, nil, err
 	}
 	return emailService, func() {
-		cleanup2()
-		cleanup()
 	}, nil
 }

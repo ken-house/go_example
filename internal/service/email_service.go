@@ -14,10 +14,10 @@ type emailService struct {
 	emailClient meta.EmailClient
 }
 
-func NewEmailService(emailClient meta.EmailClient) (EmailService, func(), error) {
+func NewEmailService(emailClient meta.EmailClient) (EmailService, error) {
 	return &emailService{
 		emailClient: emailClient,
-	}, nil, nil
+	}, nil
 }
 
 func (svc *emailService) Send(ctx context.Context) error {

@@ -72,3 +72,10 @@ func NewKafkaController() (controller.KafkaController, func(), error) {
 		controller.NewKafkaController,
 	))
 }
+
+func NewRabbitmqController() (controller.RabbitmqController, func(), error) {
+	panic(wire.Build(
+		NewRabbitmqClient,
+		controller.NewRabbitmqController,
+	))
+}

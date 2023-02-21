@@ -7,6 +7,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/jenkinsClient"
 	"github.com/ken-house/go-contrib/prototype/kafkaClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/ken-house/go-contrib/prototype/rabbitmqClient"
 	"github.com/ken-house/go-contrib/prototype/sentryClient"
 	"time"
 
@@ -89,3 +90,6 @@ type KafkaConsumerGroupClient kafkaClient.ConsumerGroupClient
 
 // EmailClient 邮件服务对象
 type EmailClient emailClient.EmailClient
+
+// RabbitmqClient rabbitmq队列
+type RabbitmqClient rabbitmqClient.RabbitMqClient

@@ -17,6 +17,7 @@ func NewHttpServer() (server.HttpServer, func(), error) {
 		NewJenkinsController,
 		NewSmsController,
 		NewKafkaController,
+		NewRabbitmqController,
 		NewAuthService,
 		// Crud Makefile Point1
 		server.NewHttpServer,

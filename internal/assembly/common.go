@@ -10,6 +10,7 @@ import (
 	"github.com/ken-house/go-contrib/prototype/mongoClient"
 	"github.com/ken-house/go-contrib/prototype/mysqlClient"
 	"github.com/ken-house/go-contrib/prototype/nacosClient"
+	"github.com/ken-house/go-contrib/prototype/rabbitmqClient"
 	"github.com/ken-house/go-contrib/prototype/redisClient"
 	"github.com/ken-house/go-contrib/utils/env"
 )
@@ -84,6 +85,10 @@ func NewConsumerGroupClient() (meta.KafkaConsumerGroupClient, func(), error) {
 }
 
 // NewEmailClient 邮件服务
-func NewEmailClient() (meta.EmailClient, func(), error) {
+func NewEmailClient() (meta.EmailClient, error) {
 	return emailClient.NewEmailClient(meta.GlobalConfig.Email)
+}
+
+func NewRabbitmqClient() (meta.RabbitmqClient, func(), error) {
+	return rabbitmqClient.NewRabbitmqClient(meta.GlobalConfig.Rabbitmq)
 }
