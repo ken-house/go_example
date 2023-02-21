@@ -79,3 +79,10 @@ func NewEmailService() (service.EmailService, func(), error) {
 		service.NewEmailService,
 	))
 }
+
+func NewRabbitmqService() (service.RabbitmqService, func(), error) {
+	panic(wire.Build(
+		NewRabbitmqClient,
+		service.NewRabbitmqService,
+	))
+}

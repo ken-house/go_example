@@ -24,13 +24,11 @@ func NewRabbitmqController(rabbitmqClient meta.RabbitmqClient) RabbitmqControlle
 }
 
 func (ctr *rabbitmqController) Producer(ctx *gin.Context) (int, gin.Negotiate) {
-	channel := ctr.rabbitmqClient.GetChannel(ctx)
-
 	message := "你好啊"
 	publishMsg := amqp.Publishing{
 		Body: []byte(message),
 	}
-	err := channel.Publish("hello_exchange", "hello", false, false, publishMsg)
+	err := ctr.rabbitmqClient.Publish(ctx, "hello_exchange", "hello", false, false, publishMsg)
 	if err != nil {
 		return negotiate.JSON(http.StatusOK, errorAssets.ERR_SYSTEM.ToastError())
 	}

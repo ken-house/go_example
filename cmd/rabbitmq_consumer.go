@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go_example/internal/assembly"
 	"github.com/ken-house/go-contrib/utils/env"
@@ -23,7 +24,7 @@ var rabbitmqConsumerCmd = &cobra.Command{
 	Long:  `rabbitmq_consumer`,
 	Run: func(cmd *cobra.Command, args []string) {
 		gin.SetMode(env.Mode())
-		client, cleanup, err := assembly.NewRabbitmqClient()
+		rabbitmqService, cleanup, err := assembly.NewRabbitmqService()
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -31,6 +32,16 @@ var rabbitmqConsumerCmd = &cobra.Command{
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
+		queueName := "hello_queue"
+		// 声明并绑定
+		err = rabbitmqService.DeclareAndBind(ctx, "hello_exchange", "direct", queueName, "hello")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println("开始消费...")
+		// 消费
+		rabbitmqService.Process(ctx, queueName, "C1")
 
 		// 优雅关闭
 		quit := make(chan os.Signal)
@@ -41,14 +52,4 @@ var rabbitmqConsumerCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(rabbitmqConsumerCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// rabbitmqConsumerCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// rabbitmqConsumerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

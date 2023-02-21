@@ -392,3 +392,14 @@ func NewEmailService() (service.EmailService, func(), error) {
 	return emailService, func() {
 	}, nil
 }
+
+func NewRabbitmqService() (service.RabbitmqService, func(), error) {
+	rabbitmqClient, cleanup, err := NewRabbitmqClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	rabbitmqService := service.NewRabbitmqService(rabbitmqClient)
+	return rabbitmqService, func() {
+		cleanup()
+	}, nil
+}
