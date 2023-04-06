@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -57,7 +58,12 @@ func initConfig() {
 	getNacosConfig()
 
 	if env.IsDebugging() && !meta.DebugUseConfigCenter { // 本地调试若不使用配置中心则直接读取common.yaml文件
-		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/common.yaml")
+		sysType := runtime.GOOS
+		configFileName := "common_huawei.yaml"
+		if sysType == "darwin" {
+			configFileName = "common_mac.yaml"
+		}
+		viper.SetConfigFile(meta.CfgFile + "/" + meta.EnvMode + "/" + configFileName)
 		if err := viper.ReadInConfig(); err != nil {
 			log.Fatalln(err)
 		}
